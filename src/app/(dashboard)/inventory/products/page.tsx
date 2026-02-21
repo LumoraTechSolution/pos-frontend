@@ -32,7 +32,7 @@ export default function ProductsPage() {
   });
 
   const handleEdit = (product: Product) => {
-    router.push(`/inventory/products/edit/${product.id}`);
+    router.push(`/inventory/products/${product.id}`);
   };
 
   const handleDelete = (product: Product) => {

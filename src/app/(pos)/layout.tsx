@@ -4,7 +4,7 @@ export default function PosLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="h-screen w-full bg-black text-white selection:bg-indigo-500/30">
       {children}
     </div>
   );

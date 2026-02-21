@@ -80,7 +80,7 @@ export default function BrandsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {brands?.data?.map((brand: any) => (
+                {brands?.map((brand: any) => (
                   <TableRow key={brand.id} className="border-gray-800 hover:bg-gray-800/50">
                     <TableCell className="font-medium">{brand.name}</TableCell>
                     <TableCell className="text-indigo-400">
@@ -118,7 +118,7 @@ export default function BrandsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {brands?.data?.length === 0 && (
+                {brands?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-gray-500">
                       No brands found.

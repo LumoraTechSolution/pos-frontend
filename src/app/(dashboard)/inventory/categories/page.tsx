@@ -80,7 +80,7 @@ export default function CategoriesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories?.data?.map((category: any) => (
+                {categories?.map((category: any) => (
                   <TableRow key={category.id} className="border-gray-800 hover:bg-gray-800/50">
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="text-gray-400">{category.slug || '-'}</TableCell>
@@ -89,7 +89,7 @@ export default function CategoriesPage() {
                     </TableCell>
                     <TableCell className="text-gray-400">
                       {category.parentId ? (
-                        categories?.data?.find((c: any) => c.id === category.parentId)?.name || category.parentId
+                        categories?.find((c: any) => c.id === category.parentId)?.name || category.parentId
                       ) : '-'}
                     </TableCell>
                     <TableCell className="text-right">
@@ -114,7 +114,7 @@ export default function CategoriesPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {categories?.data?.length === 0 && (
+                {categories?.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-gray-500">
                       No categories found.
@@ -136,7 +136,7 @@ export default function CategoriesPage() {
               <CardContent>
                  <CategoryForm 
                     initialData={editingCategory}
-                    categories={categories?.data || []}
+                    categories={categories || []}
                     onSuccess={() => setIsFormOpen(false)}
                     onCancel={() => setIsFormOpen(false)}
                  />
