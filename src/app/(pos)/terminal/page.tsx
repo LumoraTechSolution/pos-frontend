@@ -14,10 +14,13 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Receipt } from '@/components/pos/Receipt';
 import { ShiftSummary } from '@/components/pos/ShiftSummary';
+import { CustomerSelector } from '@/components/pos/CustomerSelector';
+import { Customer } from '@/services/customerService';
 
 export default function TerminalPage() {
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE'>('CASH');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
   const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -35,6 +38,7 @@ export default function TerminalPage() {
     onSuccess: (data) => {
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
       setLastSale(data);
+      setSelectedCustomer(null);
       clearCart();
       // Small timeout to allow state to react before printing
       setTimeout(() => {
@@ -50,6 +54,7 @@ export default function TerminalPage() {
     if (items.length === 0) return;
 
     const saleRequest: SaleRequest = {
+      customerId: selectedCustomer?.id,
       paymentMethod: paymentMethod,
       items: items.map(item => ({
         productId: item.id,
@@ -191,6 +196,13 @@ export default function TerminalPage() {
           <div className="ml-auto bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold">
             {itemCount} ITEMS
           </div>
+        </div>
+
+        <div className="px-4 py-3 border-b border-gray-800/50">
+          <CustomerSelector 
+            selectedCustomer={selectedCustomer} 
+            onSelect={setSelectedCustomer} 
+          />
         </div>
 
         {/* Cart Items List */}
