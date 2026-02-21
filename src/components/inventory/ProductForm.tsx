@@ -1,0 +1,351 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { 
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { inventoryService } from "@/services/inventoryService";
+import { toast } from "sonner";
+import { Product, ProductRequest } from "@/types/inventory";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Save } from "lucide-react";
+import Link from "next/link";
+
+const productSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  description: z.string().optional(),
+  basePrice: z.coerce.number().min(0),
+  costPrice: z.coerce.number().min(0).optional(),
+  stockQuantity: z.coerce.number().int().min(0),
+  lowStockThreshold: z.coerce.number().int().min(0),
+  categoryId: z.string().uuid().optional().nullable(),
+  brandId: z.string().uuid().optional().nullable(),
+  isActive: z.boolean().default(true),
+  imageUrl: z.string().url().or(z.literal("")).optional(),
+});
+
+type ProductFormValues = z.infer<typeof productSchema>;
+
+interface ProductFormProps {
+  initialData?: Product | null;
+}
+
+export default function ProductForm({ initialData }: ProductFormProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: inventoryService.getCategories
+  });
+
+  const { data: brands } = useQuery({
+    queryKey: ['brands'],
+    queryFn: inventoryService.getBrands
+  });
+
+  const form = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: initialData?.name || "",
+      sku: initialData?.sku || "",
+      barcode: initialData?.barcode || "",
+      description: initialData?.description || "",
+      basePrice: initialData?.basePrice || 0,
+      costPrice: initialData?.costPrice || 0,
+      stockQuantity: initialData?.stockQuantity || 0,
+      lowStockThreshold: initialData?.lowStockThreshold || 5,
+      categoryId: initialData?.categoryId || null,
+      brandId: initialData?.brandId || null,
+      isActive: initialData?.isActive ?? true,
+      imageUrl: initialData?.imageUrl || "",
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: ProductFormValues) => {
+      const payload: ProductRequest = {
+        ...data,
+        categoryId: data.categoryId || undefined,
+        brandId: data.brandId || undefined,
+        costPrice: data.costPrice || undefined,
+        sku: data.sku || undefined,
+        barcode: data.barcode || undefined
+      };
+      
+      if (initialData) {
+        return inventoryService.updateProduct(initialData.id, payload);
+      }
+      return inventoryService.createProduct(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(initialData ? "Product updated" : "Product created");
+      router.push("/inventory/products");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to save product");
+    }
+  });
+
+  const onSubmit = (values: ProductFormValues) => {
+    mutation.mutate(values);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/inventory/products">
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-800" type="button">
+              <ArrowLeft size={20} />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {initialData ? 'Edit Product' : 'New Product'}
+          </h1>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg">General Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product name" className="bg-gray-950 border-gray-800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <textarea 
+                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Provide details about the product..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg">Pricing & Identification</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="basePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sale Price ($)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" className="bg-gray-950 border-gray-800" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="costPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cost Price ($)</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" className="bg-gray-950 border-gray-800" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="sku"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>SKU</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Leave empty for auto-generation" className="bg-gray-950 border-gray-800" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="barcode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Barcode</FormLabel>
+                        <FormControl>
+                          <Input placeholder="UPC / EAN" className="bg-gray-950 border-gray-800" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg">Inventory</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="stockQuantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>In Stock</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="bg-gray-950 border-gray-800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lowStockThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Low Stock Threshold</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="bg-gray-950 border-gray-800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900 border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-lg">Classification</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <FormControl>
+                        <select 
+                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        >
+                          <option value="">Select Category</option>
+                          {categories?.data?.map((c: any) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="brandId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Brand</FormLabel>
+                      <FormControl>
+                        <select 
+                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        >
+                          <option value="">Select Brand</option>
+                          {brands?.data?.map((b: any) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+              <CardHeader>
+                <CardTitle className="text-lg">Product Image</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative group overflow-hidden">
+                  {form.watch("imageUrl") ? (
+                    <img src={form.watch("imageUrl")} alt="Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-center text-gray-600">
+                      <div className="text-2xl mb-1">🖼️</div>
+                      <p className="text-xs font-medium">No Image</p>
+                    </div>
+                  )}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Image URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://..." className="bg-gray-950 border-gray-800 text-xs" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-4 pb-12 border-t border-gray-800 pt-8">
+          <Link href="/inventory/products">
+            <Button variant="ghost" type="button">Discard</Button>
+          </Link>
+          <Button type="submit" className="gap-2 min-w-[150px]" disabled={mutation.isPending}>
+            <Save size={18} /> {mutation.isPending ? 'Saving...' : (initialData ? 'Update Product' : 'Save Product')}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
