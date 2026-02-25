@@ -1,0 +1,63 @@
+/**
+ * Dashboard analytics types — mirrors the backend DashboardResponse DTO.
+ */
+
+export interface DashboardData {
+  // KPI Cards
+  todaySales: number;
+  yesterdaySales: number;
+  todayTransactions: number;
+  yesterdayTransactions: number;
+  avgOrderValue: number;
+  yesterdayAvgOrderValue: number;
+  activeProducts: number;
+  totalProducts: number;
+
+  // Charts
+  salesTrend: DailySalesTrend[];
+  topProducts: TopProduct[];
+  paymentBreakdown: PaymentMethodBreakdown[];
+
+  // Alerts & Activity
+  lowStockAlerts: LowStockAlert[];
+  recentTransactions: RecentTransaction[];
+}
+
+export interface DailySalesTrend {
+  date: string;       // "2026-02-25"
+  dayLabel: string;   // "Tue"
+  revenue: number;
+  orders: number;
+}
+
+export interface TopProduct {
+  productId: string;
+  productName: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface PaymentMethodBreakdown {
+  method: string;     // "CASH", "CARD", "ONLINE", etc.
+  amount: number;
+  count: number;
+}
+
+export interface LowStockAlert {
+  productId: string;
+  productName: string;
+  sku: string;
+  currentStock: number;
+  threshold: number;
+}
+
+export interface RecentTransaction {
+  saleId: string;
+  invoiceNumber: string;
+  netAmount: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  customerName: string;
+  createdAt: string;
+  itemCount: number;
+}
