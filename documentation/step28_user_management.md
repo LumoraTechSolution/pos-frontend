@@ -53,6 +53,7 @@ Full-stack User Management feature allowing admins to create, edit, activate/dea
 ### Bug Fix
 
 - `active` vs `isActive` mismatch: Jackson strips `is` prefix from boolean fields; frontend was reading `isActive` but backend was sending `active`
+- **Edit Modal State fix**: Added `useEffect` to properly hydrate the edit form when switching between different employees.
 
 ## Also Fixed (Reports Page)
 
