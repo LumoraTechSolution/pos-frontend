@@ -3,24 +3,57 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+  Table, TableBody, TableCell, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, Globe } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Pencil, Trash2, Globe, Search } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import BrandForm from "@/components/inventory/BrandForm";
+import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
+import { Brand } from "@/types/inventory";
 
 export default function BrandsPage() {
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<any>(null);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    const timeout = setTimeout(() => setDebouncedSearch(value), 300);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const { data: brands, isLoading } = useQuery({
-    queryKey: ['brands'],
-    queryFn: inventoryService.getBrands
+    queryKey: ['brands', debouncedSearch],
+    queryFn: () => inventoryService.getBrands(debouncedSearch || undefined),
   });
+
+  // Client-side sort (since brands is a flat list without backend pagination)
+  const sortedBrands = useMemo(() => {
+    if (!brands) return [];
+    if (!sortKey || !sortDirection) return brands;
+
+    return [...brands].sort((a, b) => {
+      let valA: any, valB: any;
+      if (sortKey === 'name') {
+        valA = a.name.toLowerCase();
+        valB = b.name.toLowerCase();
+      } else if (sortKey === 'createdAt') {
+        valA = new Date(a.createdAt).getTime();
+        valB = new Date(b.createdAt).getTime();
+      }
+      if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [brands, sortKey, sortDirection]);
 
   const deleteMutation = useMutation({
     mutationFn: inventoryService.deleteBrand,
@@ -49,6 +82,11 @@ export default function BrandsPage() {
     setIsFormOpen(true);
   };
 
+  const handleSort = (key: string, direction: SortDirection) => {
+    setSortKey(direction ? key : null);
+    setSortDirection(direction);
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex justify-between items-center">
@@ -61,28 +99,72 @@ export default function BrandsPage() {
         </Button>
       </div>
 
+      {/* Search Bar */}
+      <div className="flex gap-4 items-center bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Input 
+            placeholder="Search brands by name..." 
+            className="pl-10 bg-gray-950 border-gray-800"
+            value={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+        </div>
+        <div className="text-sm text-gray-500">
+          {sortedBrands.length} {sortedBrands.length === 1 ? 'brand' : 'brands'}
+        </div>
+      </div>
+
       <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle>All Brands</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
             <div className="py-10 text-center text-gray-400">Loading brands...</div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-gray-800 hover:bg-transparent">
-                  <TableHead className="text-gray-400">Name</TableHead>
-                  <TableHead className="text-gray-400">Website</TableHead>
-                  <TableHead className="text-gray-400">Description</TableHead>
-                  <TableHead className="text-gray-400">Added Date</TableHead>
-                  <TableHead className="text-gray-400 text-right">Actions</TableHead>
+                <TableRow className="border-gray-800 hover:bg-transparent bg-gray-800/20">
+                  <SortableHeader
+                    label="Name"
+                    sortKey="name"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Website"
+                    sortKey="website"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Description"
+                    sortKey="description"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Added Date"
+                    sortKey="createdAt"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
+                    label="Actions"
+                    sortKey=""
+                    currentSort={null}
+                    currentDirection={null}
+                    onSort={() => {}}
+                    className="text-right"
+                  />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {brands?.data?.map((brand: any) => (
-                  <TableRow key={brand.id} className="border-gray-800 hover:bg-gray-800/50">
-                    <TableCell className="font-medium">{brand.name}</TableCell>
+                {sortedBrands.map((brand: Brand) => (
+                  <TableRow key={brand.id} className="border-gray-800 hover:bg-gray-800/50 transition-colors">
+                    <TableCell className="font-medium text-white">{brand.name}</TableCell>
                     <TableCell className="text-indigo-400">
                       {brand.website ? (
                         <a href={brand.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
@@ -118,7 +200,7 @@ export default function BrandsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {brands?.data?.length === 0 && (
+                {sortedBrands.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-gray-500">
                       No brands found.

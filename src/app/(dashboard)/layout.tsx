@@ -10,9 +10,12 @@ import {
   UserSquare2, 
   BarChart3, 
   Settings,
-  Monitor
+  Monitor,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/authStore';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardLayout({
   children,
@@ -20,6 +23,13 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   const navItems = [
     { label: 'Overview', href: '/overview', icon: LayoutDashboard },
@@ -30,7 +40,18 @@ export default function DashboardLayout({
     { label: 'Employees', href: '/employees', icon: UserSquare2 },
     { label: 'Reports', href: '/reports', icon: BarChart3 },
     { label: 'Settings', href: '/settings', icon: Settings },
-  ];
+  ].filter(item => {
+    // Inventory Managers shouldn't see these items
+    if (['Overview', 'Employees', 'Settings', 'Reports'].includes(item.label)) {
+      return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
+    }
+    
+    // Customers tab is visible to ADMIN, MANAGER, and CASHIER
+    if (item.label === 'Customers') {
+      return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('CASHIER');
+    }
+    return true; // Everyone else (including INVENTORY_MANAGER) sees the rest
+  });
 
   return (
     <div className="min-h-screen bg-black text-white flex">
@@ -68,14 +89,39 @@ export default function DashboardLayout({
           })}
         </nav>
 
-        {/* POS Terminal Link */}
-        <div className="p-4 border-t border-gray-900">
-          <Link
-            href="/terminal"
-            className="flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-indigo-600/20"
-          >
-            <Monitor size={18} /> Open POS Terminal
-          </Link>
+        {/* POS Terminal Link & Profile */}
+        <div className="p-4 border-t border-gray-900 space-y-4">
+          {/* POS Terminal Link - Only for specific roles */}
+          {(user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('CASHIER')) && (
+            <Link
+              href="/terminal"
+              className="flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-indigo-600/20"
+            >
+              <Monitor size={18} /> Open POS Terminal
+            </Link>
+          )}
+
+          {/* User Profile Footer */}
+          <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0 shadow-inner">
+              {user?.firstName?.charAt(0) || 'U'}{user?.lastName?.charAt(0) || ''}
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-sm font-semibold text-gray-200 truncate pr-2">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <span className="text-xs text-indigo-400 font-medium truncate">
+                {user?.roles?.[0]?.replace('_', ' ') || 'EMPLOYEE'}
+              </span>
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+              title="Log out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </aside>
 

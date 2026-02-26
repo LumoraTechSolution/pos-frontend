@@ -6,10 +6,22 @@ import {
 } from "@/types/inventory";
 import { ApiResponse, Page } from "@/types/common";
 
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  brandId?: string;
+  isActive?: boolean;
+  sort?: string;      // e.g. "basePrice,desc" or "name,asc"
+}
+
 export const inventoryService = {
   // --- Categories ---
-  getCategories: () => 
-    api.get<ApiResponse<Category[]>>("/categories").then(res => res.data.data),
+  getCategories: (search?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    const query = params.toString();
+    return api.get<ApiResponse<Category[]>>(`/categories${query ? `?${query}` : ''}`).then(res => res.data.data);
+  },
   
   getCategory: (id: string) => 
     api.get<ApiResponse<Category>>(`/categories/${id}`).then(res => res.data.data),
@@ -24,8 +36,12 @@ export const inventoryService = {
     api.delete<ApiResponse<void>>(`/categories/${id}`).then(res => res.data.data),
 
   // --- Brands ---
-  getBrands: () => 
-    api.get<ApiResponse<Brand[]>>("/brands").then(res => res.data.data),
+  getBrands: (search?: string) => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    const query = params.toString();
+    return api.get<ApiResponse<Brand[]>>(`/brands${query ? `?${query}` : ''}`).then(res => res.data.data);
+  },
   
   getBrand: (id: string) => 
     api.get<ApiResponse<Brand>>(`/brands/${id}`).then(res => res.data.data),
@@ -40,8 +56,17 @@ export const inventoryService = {
     api.delete<ApiResponse<void>>(`/brands/${id}`).then(res => res.data.data),
 
   // --- Products ---
-  getProducts: (page = 0, size = 10) => 
-    api.get<ApiResponse<Page<Product>>>(`/products?page=${page}&size=${size}`).then(res => res.data.data),
+  getProducts: (page = 0, size = 10, filters?: ProductFilters) => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('size', size.toString());
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.categoryId) params.set('categoryId', filters.categoryId);
+    if (filters?.brandId) params.set('brandId', filters.brandId);
+    if (filters?.isActive !== undefined) params.set('isActive', filters.isActive.toString());
+    if (filters?.sort) params.set('sort', filters.sort);
+    return api.get<ApiResponse<Page<Product>>>(`/products?${params.toString()}`).then(res => res.data.data);
+  },
   
   getProduct: (id: string) => 
     api.get<ApiResponse<Product>>(`/products/${id}`).then(res => res.data.data),

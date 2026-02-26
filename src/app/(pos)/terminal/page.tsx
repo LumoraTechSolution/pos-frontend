@@ -1,83 +1,185 @@
 'use client';
 
-/**
- * POS Terminal page — placeholder for Step 7 (POS UI implementation).
- * Will contain: product grid, cart panel, payment screen, quick actions.
- */
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { inventoryService } from '@/services/inventoryService';
+import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
+import { useCart } from '@/hooks/useCart';
+import { ShoppingCart } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { Customer } from '@/services/customerService';
+
+// POS Components
+import { POSHeader } from '@/components/pos/POSHeader';
+import { ProductSearch } from '@/components/pos/ProductSearch';
+import { ProductGrid } from '@/components/pos/ProductGrid';
+import { CartItemCard } from '@/components/pos/CartItemCard';
+import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
+import { CustomerSelector } from '@/components/pos/CustomerSelector';
+import { Receipt } from '@/components/pos/Receipt';
+import { ShiftSummary } from '@/components/pos/ShiftSummary';
+
 export default function TerminalPage() {
+  // State
+  const [search, setSearch] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE'>('CASH');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
+  const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+
+  // Auth & Navigation
+  const { user, logout } = useAuthStore();
+  const router = useRouter();
+
+  // Cart
+  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, total, itemCount } = useCart();
+
+  // Data Fetching
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ['products', search],
+    queryFn: () => inventoryService.getProducts(0, 50),
+  });
+
+  const products = productsData?.content || [];
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+    p.barcode?.includes(search)
+  );
+
+  // Checkout Mutation
+  const checkoutMutation = useMutation({
+    mutationFn: (data: SaleRequest) => salesService.createSale(data),
+    onSuccess: (data) => {
+      toast.success(`Sale Processed: ${data.invoiceNumber}`);
+      setLastSale(data);
+      setSelectedCustomer(null);
+      clearCart();
+      setTimeout(() => { window.print(); }, 500);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to process sale");
+    }
+  });
+
+  // Handlers
+  const handleCheckout = () => {
+    if (items.length === 0) return;
+    checkoutMutation.mutate({
+      customerId: selectedCustomer?.id,
+      paymentMethod,
+      items: items.map(item => ({
+        productId: item.id,
+        quantity: item.cartQuantity,
+        unitPrice: item.basePrice,
+        discountAmount: 0
+      }))
+    });
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  const handleFetchSummary = async () => {
+    try {
+      const data = await salesService.getDailySummary();
+      setSummary(data);
+      setShowSummary(true);
+    } catch {
+      toast.error("Failed to load shift summary");
+    }
+  };
+
+  const handleDiscard = () => {
+    if (items.length > 0 && confirm('Discard current sale?')) {
+      clearCart();
+    }
+  };
+
+  // Render
   return (
-    <div className="h-screen flex">
-      {/* Left Side — Product Grid */}
-      <div className="flex-1 flex flex-col">
-        {/* Header Bar */}
-        <div className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6">
-          <h1 className="text-xl font-bold">
-            Lumora<span className="text-indigo-400"> POS</span>
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400">
-              Terminal #1
-            </div>
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="p-4">
-          <input
-            type="text"
-            placeholder="Search products by name, SKU, or scan barcode..."
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          />
-        </div>
-
-        {/* Product Grid Placeholder */}
-        <div className="flex-1 p-4 pt-0 overflow-auto">
-          <div className="grid grid-cols-4 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:border-indigo-500/50 hover:bg-gray-800 transition-all cursor-pointer active:scale-95"
-              >
-                <div className="w-12 h-12 rounded-lg bg-gray-800 animate-pulse" />
-                <div className="h-3 w-20 rounded bg-gray-800 animate-pulse" />
-                <div className="h-3 w-14 rounded bg-gray-700 animate-pulse" />
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="h-screen flex bg-black overflow-hidden font-sans">
+      {/* Left Side — Products */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <POSHeader
+          userName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
+          userRole={user?.roles?.[0] ?? ''}
+          onShiftSummary={handleFetchSummary}
+          onLogout={handleLogout}
+        />
+        <ProductSearch search={search} onSearchChange={setSearch} />
+        <ProductGrid
+          products={filteredProducts}
+          isLoading={isLoading}
+          searchTerm={search}
+          onProductClick={addToCart}
+        />
       </div>
 
-      {/* Right Side — Cart Panel */}
-      <div className="w-96 bg-gray-900 border-l border-gray-800 flex flex-col">
+      {/* Right Side — Cart */}
+      <div className="w-[400px] bg-gray-900/40 backdrop-blur-xl border-l border-gray-800 flex flex-col shadow-2xl">
         {/* Cart Header */}
         <div className="h-16 border-b border-gray-800 flex items-center px-6">
-          <h2 className="font-semibold text-lg">Current Sale</h2>
-          <span className="ml-auto text-sm text-gray-500">0 items</span>
+          <ShoppingCart className="text-indigo-400 mr-2" size={20} />
+          <h2 className="font-bold text-lg text-white">Current Sale</h2>
+          <div className="ml-auto bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold">
+            {itemCount} ITEMS
+          </div>
+        </div>
+
+        {/* Customer Selector */}
+        <div className="px-4 py-3 border-b border-gray-800/50">
+          <CustomerSelector selectedCustomer={selectedCustomer} onSelect={setSelectedCustomer} />
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 flex items-center justify-center text-gray-600">
-          <p className="text-sm">No items in cart</p>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+          {items.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-600 italic gap-2">
+              <ShoppingCart size={40} className="opacity-10" />
+              <p className="text-sm">Cart is empty</p>
+            </div>
+          ) : (
+            items.map((item) => (
+              <CartItemCard
+                key={item.id}
+                item={item}
+                onUpdateQuantity={updateQuantity}
+                onRemove={removeFromCart}
+              />
+            ))
+          )}
         </div>
 
-        {/* Cart Footer */}
-        <div className="border-t border-gray-800 p-4 space-y-3">
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Subtotal</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Tax</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-lg font-bold">
-            <span>Total</span>
-            <span className="text-indigo-400">$0.00</span>
-          </div>
-          <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-lg shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 active:scale-[0.98]">
-            Pay Now
-          </button>
+        {/* Checkout */}
+        <CheckoutPanel
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          subtotal={subtotal}
+          taxAmount={taxAmount}
+          total={total}
+          itemCount={itemCount}
+          isProcessing={checkoutMutation.isPending}
+          onCheckout={handleCheckout}
+          onHoldSale={() => {}}
+          onDiscard={handleDiscard}
+        />
+      </div>
+
+      {/* Shift Summary Modal */}
+      {showSummary && (
+        <ShiftSummary summary={summary} onClose={() => setShowSummary(false)} />
+      )}
+
+      {/* Hidden Receipt for Printing */}
+      <div className="hidden">
+        <div id="receipt-print">
+          <Receipt sale={lastSale} />
         </div>
       </div>
     </div>
