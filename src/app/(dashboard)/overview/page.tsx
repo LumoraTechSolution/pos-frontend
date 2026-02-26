@@ -483,6 +483,7 @@ export default function OverviewPage() {
                 <tr className="text-gray-500 text-xs uppercase">
                   <th className="text-left pb-3 font-medium">Invoice</th>
                   <th className="text-left pb-3 font-medium">Customer</th>
+                  <th className="text-left pb-3 font-medium">Cashier</th>
                   <th className="text-center pb-3 font-medium">Items</th>
                   <th className="text-left pb-3 font-medium">Payment</th>
                   <th className="text-left pb-3 font-medium">Status</th>
@@ -495,6 +496,7 @@ export default function OverviewPage() {
                   <tr key={txn.saleId} className="hover:bg-gray-800/40 transition-colors">
                     <td className="py-3 font-mono text-indigo-400 text-xs">{txn.invoiceNumber}</td>
                     <td className="py-3 text-gray-300">{txn.customerName}</td>
+                    <td className="py-3 text-gray-400 text-xs">{txn.cashierName}</td>
                     <td className="py-3 text-center">
                       <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full text-xs">
                         {txn.itemCount}

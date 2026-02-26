@@ -33,6 +33,7 @@ export interface SaleResponse {
   paymentStatus: string;
   paymentMethod: string;
   createdAt: string;
+  cashierName?: string;
   items: SaleItemResponse[];
 }
 

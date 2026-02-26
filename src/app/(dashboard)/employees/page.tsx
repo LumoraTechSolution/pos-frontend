@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
+import { useAuthStore } from "@/stores/authStore";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, string> = {
@@ -280,6 +281,7 @@ function EditUserModal({
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuthStore();
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
@@ -312,9 +314,11 @@ export default function EmployeesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Employee Management</h1>
           <p className="text-gray-400 mt-1">Manage staff accounts, roles, and access permissions.</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-500 gap-2 h-10">
-          <UserPlus size={16} /> Add Employee
-        </Button>
+        {(currentUser?.roles?.includes('ADMIN')) && (
+          <Button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-500 gap-2 h-10">
+            <UserPlus size={16} /> Add Employee
+          </Button>
+        )}
       </div>
 
       {/* KPI Row */}
@@ -347,19 +351,21 @@ export default function EmployeesPage() {
               <TableHead className="text-gray-400 font-medium">Roles</TableHead>
               <TableHead className="text-gray-400 font-medium">Last Login</TableHead>
               <TableHead className="text-gray-400 font-medium">Status</TableHead>
-              <TableHead className="text-gray-400 font-medium text-right">Actions</TableHead>
+              {currentUser?.roles?.includes('ADMIN') && (
+                <TableHead className="text-gray-400 font-medium text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               [...Array(4)].map((_, i) => (
                 <TableRow key={i} className="border-gray-800">
-                  <TableCell colSpan={6}><div className="h-5 bg-gray-800 rounded animate-pulse" /></TableCell>
+                  <TableCell colSpan={currentUser?.roles?.includes('ADMIN') ? 6 : 5}><div className="h-5 bg-gray-800 rounded animate-pulse" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow className="border-gray-800">
-                <TableCell colSpan={6} className="text-center py-12 text-gray-500">No employees found.</TableCell>
+                <TableCell colSpan={currentUser?.roles?.includes('ADMIN') ? 6 : 5} className="text-center py-12 text-gray-500">No employees found.</TableCell>
               </TableRow>
             ) : (
               filtered.map((user) => (
@@ -416,35 +422,37 @@ export default function EmployeesPage() {
                   </TableCell>
 
                   {/* Actions */}
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8 border-gray-700 hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-500/5 transition-all"
-                        onClick={() => setEditingUser(user)}
-                      >
-                        <Pencil size={12} className="mr-1" /> Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`text-xs h-8 border-gray-700 transition-all ${
-                          user.active
-                            ? "hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/5"
-                            : "hover:border-emerald-500/50 hover:text-emerald-400 hover:bg-emerald-500/5"
-                        }`}
-                        onClick={() => toggleStatus(user.id)}
-                        disabled={toggling}
-                      >
-                        {user.active ? (
-                          <><XCircle size={12} className="mr-1" /> Deactivate</>
-                        ) : (
-                          <><CheckCircle2 size={12} className="mr-1" /> Activate</>
-                        )}
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {currentUser?.roles?.includes('ADMIN') && (
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-8 border-gray-700 hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-500/5 transition-all"
+                          onClick={() => setEditingUser(user)}
+                        >
+                          <Pencil size={12} className="mr-1" /> Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`text-xs h-8 border-gray-700 transition-all ${
+                            user.active
+                              ? "hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/5"
+                              : "hover:border-emerald-500/50 hover:text-emerald-400 hover:bg-emerald-500/5"
+                          }`}
+                          onClick={() => toggleStatus(user.id)}
+                          disabled={toggling}
+                        >
+                          {user.active ? (
+                            <><XCircle size={12} className="mr-1" /> Deactivate</>
+                          ) : (
+                            <><CheckCircle2 size={12} className="mr-1" /> Activate</>
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}

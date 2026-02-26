@@ -58,6 +58,7 @@ export interface RecentTransaction {
   paymentMethod: string;
   paymentStatus: string;
   customerName: string;
+  cashierName: string;
   createdAt: string;
   itemCount: number;
 }

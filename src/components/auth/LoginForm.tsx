@@ -57,9 +57,11 @@ export function LoginForm() {
       
       toast.success("Login successful!");
       
-      // Redirect based on role
-      if (response.user.roles.includes('ADMIN') || response.user.roles.includes('MANAGER')) {
+      const roles = response.user.roles;
+      if (roles.includes('ADMIN') || roles.includes('MANAGER')) {
         router.push('/overview');
+      } else if (roles.includes('INVENTORY_MANAGER')) {
+        router.push('/inventory/products');
       } else {
         router.push('/terminal');
       }

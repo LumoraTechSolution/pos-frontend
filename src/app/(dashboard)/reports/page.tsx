@@ -97,6 +97,7 @@ export default function ReportsPage() {
           <td>${s.invoiceNumber}</td>
           <td>${format(new Date(s.createdAt), "MMM dd, yyyy HH:mm")}</td>
           <td>${s.customerName}</td>
+          <td>${s.cashierName}</td>
           <td>${s.paymentMethod}</td>
           <td>${s.paymentStatus}</td>
           <td style="text-align:right">${formatCurrency(s.netAmount)}</td>
@@ -126,7 +127,7 @@ export default function ReportsPage() {
           <table>
             <thead>
               <tr>
-                <th>Invoice #</th><th>Date & Time</th><th>Customer</th>
+                <th>Invoice #</th><th>Date & Time</th><th>Customer</th><th>Cashier</th>
                 <th>Payment</th><th>Status</th><th style="text-align:right">Net Amount</th>
               </tr>
             </thead>
@@ -226,6 +227,7 @@ export default function ReportsPage() {
                       <TableHead>Invoice #</TableHead>
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Customer</TableHead>
+                      <TableHead>Cashier</TableHead>
                       <TableHead>Payment</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Net Amount</TableHead>
@@ -234,13 +236,13 @@ export default function ReportsPage() {
                   <TableBody>
                     {salesLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground animate-pulse">
+                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground animate-pulse">
                           Loading sales report...
                         </TableCell>
                       </TableRow>
                     ) : salesData?.content.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                           No sales found for the selected period.
                         </TableCell>
                       </TableRow>
@@ -252,6 +254,7 @@ export default function ReportsPage() {
                             {format(new Date(sale.createdAt), "MMM dd, yyyy HH:mm")}
                           </TableCell>
                           <TableCell>{sale.customerName}</TableCell>
+                          <TableCell className="text-gray-400 text-xs">{sale.cashierName}</TableCell>
                           <TableCell>
                             <span className="text-xs text-gray-400 uppercase">{sale.paymentMethod}</span>
                           </TableCell>
