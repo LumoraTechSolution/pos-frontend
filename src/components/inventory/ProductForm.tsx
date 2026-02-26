@@ -270,7 +270,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Category</option>
-                          {categories?.map((c: any) => (
+                          {categories?.data?.map((c: any) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
@@ -292,7 +292,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Brand</option>
-                          {brands?.map((b: any) => (
+                          {brands?.data?.map((b: any) => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                           ))}
                         </select>

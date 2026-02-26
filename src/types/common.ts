@@ -14,9 +14,6 @@ export interface Page<T> {
   empty: boolean;
 }
 
-/** Alias for Spring Page — same structure */
-export type PageResponse<T> = Page<T>;
-
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

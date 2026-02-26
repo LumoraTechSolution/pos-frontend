@@ -4,10 +4,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, MoreHorizontal, AlertTriangle } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { formatCurrency } from "@/lib/utils";
-import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
+import { Badge } from "@/components/ui/badge"; // Need to create this basic UI component
 
 interface ProductTableProps {
   data: Product[];
@@ -17,9 +17,6 @@ interface ProductTableProps {
   onPageChange: (page: number) => void;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
-  sortKey: string | null;
-  sortDirection: SortDirection;
-  onSort: (key: string, direction: SortDirection) => void;
 }
 
 export default function ProductTable({ 
@@ -29,10 +26,7 @@ export default function ProductTable({
   currentPage, 
   onPageChange,
   onEdit,
-  onDelete,
-  sortKey,
-  sortDirection,
-  onSort,
+  onDelete
 }: ProductTableProps) {
   if (isLoading) {
     return <div className="py-20 text-center text-gray-400">Loading products...</div>;
@@ -44,32 +38,11 @@ export default function ProductTable({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-800 hover:bg-transparent bg-gray-800/20">
-              <SortableHeader
-                label="Product"
-                sortKey="name"
-                currentSort={sortKey}
-                currentDirection={sortDirection}
-                onSort={onSort}
-                className="py-4"
-              />
+              <TableHead className="text-gray-400 font-semibold py-4">Product</TableHead>
               <TableHead className="text-gray-400 font-semibold">SKU</TableHead>
               <TableHead className="text-gray-400 font-semibold">Category</TableHead>
-              <SortableHeader
-                label="Price"
-                sortKey="basePrice"
-                currentSort={sortKey}
-                currentDirection={sortDirection}
-                onSort={onSort}
-                className="text-right"
-              />
-              <SortableHeader
-                label="Stock"
-                sortKey="stockQuantity"
-                currentSort={sortKey}
-                currentDirection={sortDirection}
-                onSort={onSort}
-                className="text-center"
-              />
+              <TableHead className="text-gray-400 font-semibold text-right">Price</TableHead>
+              <TableHead className="text-gray-400 font-semibold text-center">Stock</TableHead>
               <TableHead className="text-gray-400 font-semibold">Status</TableHead>
               <TableHead className="text-gray-400 font-semibold text-right">Actions</TableHead>
             </TableRow>
@@ -154,7 +127,7 @@ export default function ProductTable({
         </Table>
       </div>
 
-      {/* Pagination */}
+      {/* Basic Pagination Header */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 py-4">
           <Button 
