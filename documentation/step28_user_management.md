@@ -62,3 +62,8 @@ Full-stack User Management feature allowing admins to create, edit, activate/dea
 - Added `date-fns` dependency
 - Added `PageResponse` type alias in `common.ts`
 - Fixed unused imports in reports page
+
+### Role-Based Access UI Polish
+
+- Hidden specific navigation links (Overview, Employees, Settings) from the sidebar for `INVENTORY_MANAGER` users, steering them right to their scoped workflows (Products).
+- Encapsulated 'Add Employee' and 'Edit' actions exclusively behind `ADMIN` role checks on the Employees page, ensuring `MANAGER` users can view the list without being teased by buttons they are unauthorized to trigger.
