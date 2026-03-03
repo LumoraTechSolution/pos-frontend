@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
+import { branchService } from "@/services/branchService";
 import { toast } from "sonner";
 import { Product, ProductRequest } from "@/types/inventory";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ const productSchema = z.object({
   brandId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().default(true),
   imageUrl: z.string().url().or(z.literal("")).optional(),
+  branchStockLevels: z.record(z.string().uuid(), z.coerce.number().int().min(0)).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -52,6 +54,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     queryFn: inventoryService.getBrands
   });
 
+  const { data: branches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: branchService.getBranches
+  });
+
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -67,6 +74,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       brandId: initialData?.brandId || null,
       isActive: initialData?.isActive ?? true,
       imageUrl: initialData?.imageUrl || "",
+      branchStockLevels: {},
     },
   });
 
@@ -78,7 +86,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         brandId: data.brandId || undefined,
         costPrice: data.costPrice || undefined,
         sku: data.sku || undefined,
-        barcode: data.barcode || undefined
+        barcode: data.barcode || undefined,
+        branchStockLevels: data.branchStockLevels ? Object.entries(data.branchStockLevels).map(([branchId, quantity]) => ({
+          branchId,
+          quantity
+        })) : undefined
       };
       
       if (initialData) {
@@ -223,19 +235,41 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <CardTitle className="text-lg">Inventory</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="stockQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>In Stock</FormLabel>
-                      <FormControl>
-                        <Input type="number" className="bg-gray-950 border-gray-800" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!initialData && branches && branches.length > 1 ? (
+                  <div className="space-y-4">
+                    <FormLabel className="text-sm font-semibold text-gray-400">Initial Stock per Branch</FormLabel>
+                    {branches.map((branch: any) => (
+                      <FormField
+                        key={branch.id}
+                        control={form.control}
+                        name={`branchStockLevels.${branch.id}`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                            <FormLabel className="text-xs text-gray-400 w-1/2">{branch.name}</FormLabel>
+                            <FormControl className="w-1/2">
+                              <Input type="number" className="bg-gray-950 border-gray-800 h-8" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="stockQuantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{initialData ? 'Total Stock (Read-only)' : 'Initial Stock'}</FormLabel>
+                        <FormControl>
+                          <Input type="number" className="bg-gray-950 border-gray-800" {...field} disabled={!!initialData} />
+                        </FormControl>
+                        {initialData && <p className="text-[10px] text-gray-500">Stock can be managed via the Inventory Adjustment tool in the product list.</p>}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="lowStockThreshold"

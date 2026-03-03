@@ -10,6 +10,7 @@ export interface SaleItemRequest {
 
 export interface SaleRequest {
   customerId?: string;
+  branchId?: string;
   paymentMethod: 'CASH' | 'CARD' | 'ONLINE' | 'SPLIT' | 'CREDIT';
   items: SaleItemRequest[];
 }

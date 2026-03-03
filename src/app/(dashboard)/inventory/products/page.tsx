@@ -4,9 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService, ProductFilters } from "@/services/inventoryService";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Upload, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProductTable from "@/components/inventory/ProductTable";
+import ImportProductsModal from "@/components/inventory/ImportProductsModal";
+import InventoryAdjustmentModal from "@/components/inventory/InventoryAdjustmentModal";
 import Link from "next/link";
 import { Product } from "@/types/inventory";
 import { useRouter } from "next/navigation";
@@ -22,6 +24,9 @@ export default function ProductsPage() {
   const [isActive, setIsActive] = useState<string>("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [productForAdjustment, setProductForAdjustment] = useState<Product | null>(null);
 
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -83,6 +88,11 @@ export default function ProductsPage() {
     }
   };
 
+  const handleManageInventory = (product: Product) => {
+    setProductForAdjustment(product);
+    setIsAdjustmentModalOpen(true);
+  };
+
   const handleSort = (key: string, direction: SortDirection) => {
     setSortKey(direction ? key : null);
     setSortDirection(direction);
@@ -107,11 +117,27 @@ export default function ProductsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground">Manage your inventory, pricing, and stock levels.</p>
         </div>
-        <Link href="/inventory/products/new">
-          <Button className="gap-2">
-            <Plus size={18} /> Add Product
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2 border-gray-800"
+            onClick={() => inventoryService.exportProducts()}
+          >
+            <Download size={18} /> Export
           </Button>
-        </Link>
+          <Button 
+            variant="outline" 
+            className="gap-2 border-gray-800"
+            onClick={() => setIsImportModalOpen(true)}
+          >
+            <Upload size={18} /> Import
+          </Button>
+          <Link href="/inventory/products/new">
+            <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+              <Plus size={18} /> Add Product
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Search & Filters Bar */}
@@ -208,9 +234,25 @@ export default function ProductsPage() {
         onPageChange={setPage}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onManageInventory={handleManageInventory}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}
+      />
+
+      <ImportProductsModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["products"] })}
+      />
+
+      <InventoryAdjustmentModal
+        product={productForAdjustment}
+        isOpen={isAdjustmentModalOpen}
+        onClose={() => {
+          setIsAdjustmentModalOpen(false);
+          setProductForAdjustment(null);
+        }}
       />
     </div>
   );

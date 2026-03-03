@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
+import { branchService, Branch } from '@/services/branchService';
 import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
 import { useCart } from '@/hooks/useCart';
 import { ShoppingCart } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function TerminalPage() {
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE'>('CASH');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
   const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -33,6 +35,22 @@ export default function TerminalPage() {
   // Auth & Navigation
   const { user, logout } = useAuthStore();
   const router = useRouter();
+
+  // Data Fetching
+  const { data: branchesData } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getAllBranches(),
+  });
+
+  const branches = branchesData || [];
+
+  // Since we are using TanStack Query v5, handle side effects in useEffect
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranch) {
+      const defaultBranch = branches.find(b => b.isDefault) || branches[0];
+      setSelectedBranch(defaultBranch);
+    }
+  }, [branches, selectedBranch]);
 
   // Cart
   const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, total, itemCount } = useCart();
@@ -70,6 +88,7 @@ export default function TerminalPage() {
     if (items.length === 0) return;
     checkoutMutation.mutate({
       customerId: selectedCustomer?.id,
+      branchId: selectedBranch?.id,
       paymentMethod,
       items: items.map(item => ({
         productId: item.id,
@@ -109,6 +128,9 @@ export default function TerminalPage() {
         <POSHeader
           userName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
           userRole={user?.roles?.[0] ?? ''}
+          branches={branches}
+          selectedBranch={selectedBranch}
+          onBranchChange={setSelectedBranch}
           onShiftSummary={handleFetchSummary}
           onLogout={handleLogout}
         />

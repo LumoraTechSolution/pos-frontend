@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle, LayoutList } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { formatCurrency } from "@/lib/utils";
 import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
@@ -17,6 +17,7 @@ interface ProductTableProps {
   onPageChange: (page: number) => void;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  onManageInventory?: (product: Product) => void;
   sortKey: string | null;
   sortDirection: SortDirection;
   onSort: (key: string, direction: SortDirection) => void;
@@ -30,6 +31,7 @@ export default function ProductTable({
   onPageChange,
   onEdit,
   onDelete,
+  onManageInventory,
   sortKey,
   sortDirection,
   onSort,
@@ -76,7 +78,7 @@ export default function ProductTable({
           </TableHeader>
           <TableBody>
             {data.map((product) => (
-              <TableRow key={product.id} className="border-gray-800 hover:bg-gray-800/40 transition-colors">
+              <TableRow key={product.id} className="border-gray-800 hover:bg-gray-800/40 transition-colors group">
                 <TableCell className="py-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-600 font-bold overflow-hidden border border-gray-700">
@@ -111,6 +113,18 @@ export default function ProductTable({
                         <AlertTriangle size={10} /> LOW
                       </span>
                     )}
+                    
+                    {/* Branch Breakdown */}
+                    {product.stockLevels && product.stockLevels.length > 1 && (
+                      <div className="mt-1 pt-1 border-t border-gray-800 w-full hidden group-hover:block transition-all duration-200">
+                        {product.stockLevels.map((sl) => (
+                           <div key={sl.id} className="text-[10px] text-gray-500 flex justify-between gap-2 px-2">
+                             <span>{sl.branchName}:</span>
+                             <span className="font-mono">{sl.quantity}</span>
+                           </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -123,6 +137,15 @@ export default function ProductTable({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10"
+                      onClick={() => onManageInventory?.(product)}
+                      title="Adjust Inventory"
+                    >
+                      <LayoutList size={14} />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 

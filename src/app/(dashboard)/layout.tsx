@@ -11,7 +11,8 @@ import {
   BarChart3, 
   Settings,
   Monitor,
-  LogOut
+  LogOut,
+  Store
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
@@ -39,10 +40,11 @@ export default function DashboardLayout({
     { label: 'Customers', href: '/customers', icon: Users },
     { label: 'Employees', href: '/employees', icon: UserSquare2 },
     { label: 'Reports', href: '/reports', icon: BarChart3 },
+    { label: 'Branches', href: '/branches', icon: Store },
     { label: 'Settings', href: '/settings', icon: Settings },
   ].filter(item => {
     // Inventory Managers shouldn't see these items
-    if (['Overview', 'Employees', 'Settings', 'Reports'].includes(item.label)) {
+    if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     
