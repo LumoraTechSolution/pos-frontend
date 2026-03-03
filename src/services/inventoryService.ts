@@ -82,4 +82,27 @@ export const inventoryService = {
   
   deleteProduct: (id: string) => 
     api.delete<ApiResponse<void>>(`/products/${id}`).then(res => res.data.data),
+
+  // --- Bulk Operations ---
+  importProducts: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post("/bulk/products/import", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }).then(res => res.data);
+  },
+
+  exportProducts: () => {
+    return api.get("/bulk/products/export", { responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `products_export_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  },
 };

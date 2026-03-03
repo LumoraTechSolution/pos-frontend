@@ -1,0 +1,416 @@
+"use client";
+
+import { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { inventoryAdjustmentService, AdjustmentType } from "@/services/inventoryAdjustmentService";
+import { branchService, Branch } from "@/services/branchService";
+import { Product } from "@/types/inventory";
+import { toast } from "sonner";
+import { 
+  History, 
+  ArrowLeftRight, 
+  PackagePlus, 
+  Loader2, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  RefreshCw,
+  Info
+} from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+
+const adjustmentSchema = z.object({
+  branchId: z.string().uuid("Please select a branch"),
+  type: z.enum(['STOCK_IN', 'STOCK_OUT', 'RECONCILIATION', 'DAMAGE', 'RETURN'] as const),
+  quantity: z.coerce.number().min(0.01, "Quantity must be greater than 0"),
+  reason: z.string().optional(),
+});
+
+const transferSchema = z.object({
+  sourceBranchId: z.string().uuid("Please select source branch"),
+  destinationBranchId: z.string().uuid("Please select destination branch"),
+  quantity: z.coerce.number().min(0.01, "Quantity must be greater than 0"),
+  reason: z.string().optional(),
+}).refine(data => data.sourceBranchId !== data.destinationBranchId, {
+  message: "Source and destination branches must be different",
+  path: ["destinationBranchId"]
+});
+
+interface InventoryAdjustmentModalProps {
+  product: Product | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function InventoryAdjustmentModal({ product, isOpen, onClose }: InventoryAdjustmentModalProps) {
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("adjust");
+
+  const { data: branches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: branchService.getAllBranches
+  });
+
+  const { data: history, isLoading: isHistoryLoading } = useQuery({
+    queryKey: ['inventory-adjustments', product?.id],
+    queryFn: () => inventoryAdjustmentService.getAdjustments(product!.id),
+    enabled: !!product && isOpen && activeTab === "history"
+  });
+
+  const adjForm = useForm<z.infer<typeof adjustmentSchema>>({
+    resolver: zodResolver(adjustmentSchema),
+    defaultValues: {
+      type: 'RECONCILIATION',
+      quantity: 0,
+      reason: "",
+    }
+  });
+
+  const transferForm = useForm<z.infer<typeof transferSchema>>({
+    resolver: zodResolver(transferSchema),
+    defaultValues: {
+      quantity: 0,
+      reason: "",
+    }
+  });
+
+  const adjustMutation = useMutation({
+    mutationFn: (data: z.infer<typeof adjustmentSchema>) => 
+      inventoryAdjustmentService.adjustStock({
+        ...data,
+        productId: product!.id
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-adjustments', product?.id] });
+      toast.success("Inventory adjusted successfully");
+      adjForm.reset();
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Adjustment failed");
+    }
+  });
+
+  const transferMutation = useMutation({
+    mutationFn: (data: z.infer<typeof transferSchema>) => 
+      inventoryAdjustmentService.transferStock({
+        ...data,
+        productId: product!.id
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-adjustments', product?.id] });
+      toast.success("Stock transferred successfully");
+      transferForm.reset();
+      onClose();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Transfer failed");
+    }
+  });
+
+  if (!product) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] bg-gray-950 border-gray-800 text-gray-200">
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+              <PackagePlus size={20} />
+            </div>
+            <div>
+              <DialogTitle className="text-xl">Inventory Management</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Adjust stock levels or transfer items for <span className="text-indigo-400 font-semibold">{product.name}</span>
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-gray-800 p-1 mb-6">
+            <TabsTrigger value="adjust" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+              <PackagePlus size={16} /> Adjust
+            </TabsTrigger>
+            <TabsTrigger value="transfer" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+              <ArrowLeftRight size={16} /> Transfer
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+              <History size={16} /> History
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="adjust" className="space-y-4">
+            <Form {...adjForm}>
+              <form onSubmit={adjForm.handleSubmit(data => adjustMutation.mutate(data))} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={adjForm.control}
+                    name="branchId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Target Branch</FormLabel>
+                        <FormControl>
+                          <select 
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            {...field}
+                          >
+                            <option value="">Select Branch</option>
+                            {branches?.map((b: Branch) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={adjForm.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Adjustment Type</FormLabel>
+                        <FormControl>
+                          <select 
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            {...field}
+                          >
+                            <option value="RECONCILIATION">Reconciliation (Set Value)</option>
+                            <option value="STOCK_IN">Stock In (Add)</option>
+                            <option value="STOCK_OUT">Stock Out (Deduct)</option>
+                            <option value="DAMAGE">Damaged/Expired</option>
+                            <option value="RETURN">Customer Return</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={adjForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter amount" className="bg-gray-900 border-gray-800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={adjForm.control}
+                  name="reason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reason (Optional)</FormLabel>
+                      <FormControl>
+                        <textarea 
+                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                          placeholder="Why is this adjustment being made?"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]" disabled={adjustMutation.isPending}>
+                    {adjustMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                    Confirm Adjustment
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="transfer" className="space-y-4">
+            <Form {...transferForm}>
+              <form onSubmit={transferForm.handleSubmit(data => transferMutation.mutate(data))} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={transferForm.control}
+                    name="sourceBranchId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>From Branch</FormLabel>
+                        <FormControl>
+                          <select 
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            {...field}
+                          >
+                            <option value="">Select Source</option>
+                            {branches?.map((b: Branch) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={transferForm.control}
+                    name="destinationBranchId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>To Branch</FormLabel>
+                        <FormControl>
+                          <select 
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            {...field}
+                          >
+                            <option value="">Select Destination</option>
+                            {branches?.map((b: Branch) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={transferForm.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Transfer Quantity</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter amount" className="bg-gray-900 border-gray-800" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={transferForm.control}
+                  name="reason"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Note</FormLabel>
+                      <FormControl>
+                        <textarea 
+                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                          placeholder="Describe the transfer..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-3 flex gap-3 text-xs text-indigo-300">
+                  <Info className="shrink-0" size={14} />
+                  <p>Stock will be deducted from the source and added to the destination branch atomically.</p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]" disabled={transferMutation.isPending}>
+                    {transferMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                    Transfer Stock
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="history" className="h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-800">
+            {isHistoryLoading ? (
+              <div className="flex h-full items-center justify-center text-gray-500 flex-col gap-2">
+                <Loader2 className="animate-spin" />
+                <p className="text-sm">Fetching audit logs...</p>
+              </div>
+            ) : history && history.length > 0 ? (
+              <div className="space-y-4 pb-4">
+                {history.map((log) => (
+                  <div key={log.id} className="p-4 bg-gray-900/50 border border-gray-800 rounded-xl flex items-start justify-between gap-4">
+                    <div className="flex gap-3">
+                      <div className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center",
+                        log.type.includes('IN') || log.type === 'RETURN' ? "bg-emerald-500/10 text-emerald-400" :
+                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "bg-red-500/10 text-red-400" :
+                        "bg-indigo-500/10 text-indigo-400"
+                      )}>
+                        {log.type.includes('IN') || log.type === 'RETURN' ? <ArrowUpRight size={16} /> :
+                         log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? <ArrowDownRight size={16} /> :
+                         <RefreshCw size={16} />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-white">
+                          {log.type.replace(/_/g, ' ')}
+                        </div>
+                        <div className="text-[10px] text-gray-500 font-mono uppercase">
+                          {log.branchName} • {format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}
+                        </div>
+                        {log.reason && (
+                          <p className="text-xs text-gray-400 mt-1 italic">"{log.reason}"</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={cn(
+                        "text-sm font-bold",
+                        log.type.includes('IN') || log.type === 'RETURN' ? "text-emerald-400" :
+                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "text-red-400" :
+                        "text-indigo-400"
+                      )}>
+                        {log.type.includes('IN') || log.type === 'RETURN' ? '+' :
+                         log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? '-' : ''}
+                        {log.quantity}
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                         {log.previousQuantity} → {log.newQuantity}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-gray-500 flex-col gap-2">
+                <History className="opacity-20" size={48} />
+                <p className="text-sm font-medium">No adjustment history found.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

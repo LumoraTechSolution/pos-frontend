@@ -15,6 +15,14 @@ export interface Brand {
   createdAt: string;
 }
 
+export interface StockLevel {
+  id: string;
+  productId: string;
+  branchId: string;
+  branchName: string;
+  quantity: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -31,6 +39,7 @@ export interface Product {
   categoryName?: string;
   brandId?: string;
   brandName?: string;
+  stockLevels?: StockLevel[];
   createdAt: string;
   updatedAt: string;
 }
