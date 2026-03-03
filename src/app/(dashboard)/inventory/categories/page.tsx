@@ -152,6 +152,13 @@ export default function CategoriesPage() {
                     onSort={handleSort}
                   />
                   <SortableHeader
+                    label="Tax Rate"
+                    sortKey="taxRateName"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
                     label="Actions"
                     sortKey=""
                     currentSort={null}
@@ -173,6 +180,15 @@ export default function CategoriesPage() {
                       {category.parentId ? (
                         categories?.find((c: Category) => c.id === category.parentId)?.name || category.parentId
                       ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {category.taxRateName ? (
+                        <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                          {category.taxRateName}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500 italic">Default</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -198,7 +214,7 @@ export default function CategoriesPage() {
                 ))}
                 {sortedCategories.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                    <TableCell colSpan={6} className="h-24 text-center text-gray-500">
                       No categories found.
                     </TableCell>
                   </TableRow>

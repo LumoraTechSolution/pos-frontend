@@ -4,6 +4,8 @@ export interface Category {
   slug?: string;
   description?: string;
   parentId?: string;
+  taxRateId?: string;
+  taxRateName?: string;
   createdAt: string;
 }
 
@@ -64,6 +66,7 @@ export interface CategoryRequest {
   slug?: string;
   description?: string;
   parentId?: string;
+  taxRateId?: string;
 }
 
 export interface BrandRequest {

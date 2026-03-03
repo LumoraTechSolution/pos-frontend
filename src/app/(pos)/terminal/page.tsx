@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService, Branch } from '@/services/branchService';
+import { taxService } from '@/services/taxService';
 import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
-import { useCart } from '@/hooks/useCart';
+import { useCart, TaxContext } from '@/hooks/useCart';
 import { ShoppingCart } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
@@ -44,6 +45,26 @@ export default function TerminalPage() {
 
   const branches = branchesData || [];
 
+  // Fetch tax rates and categories for dynamic tax calculation
+  const { data: activeTaxRates } = useQuery({
+    queryKey: ['tax-rates-active'],
+    queryFn: () => taxService.getActiveTaxRates(),
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => inventoryService.getCategories(),
+  });
+
+  // Build the tax context for per-item tax resolution
+  const taxContext: TaxContext | null = useMemo(() => {
+    if (!activeTaxRates) return null;
+    return {
+      taxRates: activeTaxRates,
+      categories: categories || [],
+    };
+  }, [activeTaxRates, categories]);
+
   // Since we are using TanStack Query v5, handle side effects in useEffect
   useEffect(() => {
     if (branches.length > 0 && !selectedBranch) {
@@ -52,8 +73,8 @@ export default function TerminalPage() {
     }
   }, [branches, selectedBranch]);
 
-  // Cart
-  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, total, itemCount } = useCart();
+  // Cart — now with dynamic tax context
+  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, taxLabel, total, itemCount } = useCart(taxContext);
 
   // Data Fetching
   const { data: productsData, isLoading } = useQuery({
@@ -184,6 +205,7 @@ export default function TerminalPage() {
           onPaymentMethodChange={setPaymentMethod}
           subtotal={subtotal}
           taxAmount={taxAmount}
+          taxLabel={taxLabel}
           total={total}
           itemCount={itemCount}
           isProcessing={checkoutMutation.isPending}

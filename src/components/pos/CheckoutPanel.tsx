@@ -10,6 +10,7 @@ interface CheckoutPanelProps {
   onPaymentMethodChange: (method: PaymentMethod) => void;
   subtotal: number;
   taxAmount: number;
+  taxLabel?: string;
   total: number;
   itemCount: number;
   isProcessing: boolean;
@@ -29,6 +30,7 @@ export function CheckoutPanel({
   onPaymentMethodChange,
   subtotal,
   taxAmount,
+  taxLabel = 'Tax',
   total,
   itemCount,
   isProcessing,
@@ -63,7 +65,7 @@ export function CheckoutPanel({
           <span className="text-gray-300 font-medium">${subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Tax (10%)</span>
+          <span className="text-gray-500">{taxLabel}</span>
           <span className="text-gray-300 font-medium">${taxAmount.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-2xl font-black pt-3 border-t border-gray-800/50">
