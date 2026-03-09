@@ -165,7 +165,7 @@ export default function BrandsPage() {
                 {sortedBrands.map((brand: Brand) => (
                   <TableRow key={brand.id} className="border-gray-800 hover:bg-gray-800/50 transition-colors">
                     <TableCell className="font-medium text-white">{brand.name}</TableCell>
-                    <TableCell className="text-indigo-400">
+                    <TableCell className="text-primary">
                       {brand.website ? (
                         <a href={brand.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
                           <Globe size={14} /> {brand.website.replace(/^https?:\/\//, '')}
@@ -184,7 +184,7 @@ export default function BrandsPage() {
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleEdit(brand)}
-                          className="hover:bg-indigo-500/20 hover:text-indigo-400"
+                          className="hover:bg-primary/20 hover:text-primary"
                         >
                           <Pencil size={16} />
                         </Button>

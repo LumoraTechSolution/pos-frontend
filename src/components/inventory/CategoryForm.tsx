@@ -131,7 +131,7 @@ export default function CategoryForm({
                 <FormLabel>Parent Category</FormLabel>
                 <FormControl>
                   <select 
-                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     value={field.value || ""}
                     onChange={(e) => field.onChange(e.target.value || null)}
                   >
@@ -159,7 +159,7 @@ export default function CategoryForm({
                 <FormLabel>Tax Rate</FormLabel>
                 <FormControl>
                   <select 
-                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     value={field.value || ""}
                     onChange={(e) => field.onChange(e.target.value || null)}
                   >

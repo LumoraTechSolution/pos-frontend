@@ -154,7 +154,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Settings className="text-indigo-500" size={24} />
+            <Settings className="text-primary" size={24} />
             <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           </div>
           <p className="text-muted-foreground">
@@ -167,29 +167,29 @@ export default function SettingsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Percent className="text-indigo-400" size={20} />
+            <Percent className="text-primary" size={20} />
             <h2 className="text-xl font-semibold text-white">
               Tax Configuration
             </h2>
           </div>
           <Button
             onClick={openCreate}
-            className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+            className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Plus size={18} /> Add Tax Rate
           </Button>
         </div>
 
         {/* Info Banner */}
-        <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-4 flex gap-3 items-start">
-          <Info className="text-indigo-400 shrink-0 mt-0.5" size={18} />
+        <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex gap-3 items-start">
+          <Info className="text-primary shrink-0 mt-0.5" size={18} />
           <div className="text-sm text-indigo-300/80 leading-relaxed space-y-1">
             <p>
               Tax rates are applied to products based on their category. Assign
               a tax rate to a category, and all products in that category will
               use it.
             </p>
-            <p className="text-indigo-400/60">
+            <p className="text-primary/60">
               <strong>Resolution Order:</strong> Product Category Tax Rate →
               Default Tax Rate → 0% (tax-exempt)
             </p>
@@ -200,8 +200,8 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-gray-950 border-gray-800">
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                <Percent className="text-indigo-400" size={22} />
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Percent className="text-primary" size={22} />
               </div>
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                     <TableCell colSpan={6} className="h-48 text-center">
                       <div className="flex flex-col items-center gap-2 text-gray-500">
                         <Loader2
-                          className="animate-spin text-indigo-500"
+                          className="animate-spin text-primary"
                           size={28}
                         />
                         <p className="text-sm font-medium">
@@ -303,7 +303,7 @@ export default function SettingsPage() {
                         </p>
                         <Button
                           variant="link"
-                          className="text-indigo-400"
+                          className="text-primary"
                           onClick={openCreate}
                         >
                           Create your first tax rate
@@ -323,7 +323,7 @@ export default function SettingsPage() {
                             className={cn(
                               "w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold",
                               rate.isActive
-                                ? "bg-indigo-500/10 text-indigo-400"
+                                ? "bg-primary/10 text-primary"
                                 : "bg-gray-800 text-gray-500"
                             )}
                           >
@@ -335,7 +335,7 @@ export default function SettingsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-lg font-black text-indigo-400">
+                        <span className="text-lg font-black text-primary">
                           {rate.ratePercent}%
                         </span>
                       </TableCell>
@@ -371,7 +371,7 @@ export default function SettingsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-indigo-400 hover:bg-indigo-500/10"
+                            className="h-8 w-8 text-primary hover:bg-primary/10"
                             onClick={() => openEdit(rate)}
                           >
                             <Edit2 size={15} />
@@ -479,7 +479,7 @@ export default function SettingsPage() {
               </div>
               <input
                 type="checkbox"
-                className="w-5 h-5 accent-indigo-600 rounded"
+                className="w-5 h-5 accent-primary rounded"
                 checked={formIsDefault}
                 onChange={(e) => setFormIsDefault(e.target.checked)}
               />
@@ -496,7 +496,7 @@ export default function SettingsPage() {
               </div>
               <input
                 type="checkbox"
-                className="w-5 h-5 accent-indigo-600 rounded"
+                className="w-5 h-5 accent-primary rounded"
                 checked={formIsActive}
                 onChange={(e) => setFormIsActive(e.target.checked)}
               />
@@ -514,7 +514,7 @@ export default function SettingsPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !formName || !formRate}
-                className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]"
+                className="bg-primary hover:bg-primary/90 min-w-[120px]"
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -90,13 +90,13 @@ function KPICard({
   gradient: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-6 transition-all hover:border-gray-700 hover:shadow-lg hover:shadow-indigo-500/5 group">
+    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-6 transition-all hover:border-gray-700 hover:shadow-lg hover:shadow-primary/5 group">
       {/* Gradient glow */}
       <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 blur-2xl ${gradient} group-hover:opacity-20 transition-opacity`} />
 
       <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-xl bg-gradient-to-br ${gradient}`}>
-          <Icon size={20} className="text-white" />
+        <div className={`p-3 rounded-xl bg-primary`}>
+          <Icon size={20} className="text-primary-foreground" />
         </div>
         <div
           className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -209,7 +209,7 @@ export default function OverviewPage() {
           value={data.todayTransactions.toString()}
           change={txnChange}
           icon={ShoppingCart}
-          gradient="from-indigo-500 to-indigo-600"
+          gradient="from-primary to-primary"
         />
         <KPICard
           title="Avg. Order Value"
@@ -237,7 +237,7 @@ export default function OverviewPage() {
               <p className="text-xs text-gray-500 mt-0.5">Last 7 days revenue</p>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
-              <TrendingUp size={14} className="text-indigo-400" /> Revenue
+              <TrendingUp size={14} className="text-primary" /> Revenue
             </div>
           </div>
           <div className="h-64">
@@ -293,7 +293,7 @@ export default function OverviewPage() {
               {data.topProducts.map((product, idx) => {
                 const maxQty = data.topProducts[0]?.quantitySold || 1;
                 const barWidth = (product.quantitySold / maxQty) * 100;
-                const colors = ["bg-indigo-500", "bg-emerald-500", "bg-amber-500", "bg-violet-500", "bg-rose-500"];
+                const colors = ["bg-primary", "bg-emerald-500", "bg-amber-500", "bg-violet-500", "bg-rose-500"];
 
                 return (
                   <div key={product.productId} className="space-y-1.5">
@@ -467,7 +467,7 @@ export default function OverviewPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Clock size={18} className="text-indigo-400" />
+            <Clock size={18} className="text-primary" />
             <h3 className="text-lg font-semibold">Recent Transactions</h3>
           </div>
           <span className="text-xs text-gray-500">Last 10 sales</span>
@@ -494,7 +494,7 @@ export default function OverviewPage() {
               <tbody className="divide-y divide-gray-800">
                 {data.recentTransactions.map((txn) => (
                   <tr key={txn.saleId} className="hover:bg-gray-800/40 transition-colors">
-                    <td className="py-3 font-mono text-indigo-400 text-xs">{txn.invoiceNumber}</td>
+                    <td className="py-3 font-mono text-primary text-xs">{txn.invoiceNumber}</td>
                     <td className="py-3 text-gray-300">{txn.customerName}</td>
                     <td className="py-3 text-gray-400 text-xs">{txn.cashierName}</td>
                     <td className="py-3 text-center">

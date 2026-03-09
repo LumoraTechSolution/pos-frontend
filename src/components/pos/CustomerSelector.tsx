@@ -39,9 +39,9 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
 
   if (selectedCustomer) {
     return (
-      <div className="flex items-center justify-between p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl animate-in slide-in-from-top-2">
+      <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-xl animate-in slide-in-from-top-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold">
             {selectedCustomer.firstName[0]}
           </div>
           <div>
@@ -52,7 +52,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
                <span className="text-[10px] text-gray-400 flex items-center gap-1">
                  <Phone size={10} /> {selectedCustomer.phone || 'No phone'}
                </span>
-               <span className="text-[10px] text-indigo-400 font-bold flex items-center gap-1">
+               <span className="text-[10px] text-primary font-bold flex items-center gap-1">
                  <Star size={10} fill="currentColor" /> {selectedCustomer.loyaltyPoints} pts
                </span>
             </div>
@@ -62,7 +62,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
           variant="ghost" 
           size="icon" 
           onClick={() => onSelect(null)}
-          className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20"
+          className="h-8 w-8 text-primary hover:text-indigo-300 hover:bg-primary/20"
         >
           <X size={16} />
         </Button>
@@ -89,7 +89,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
               placeholder="Search by name or phone..."
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 h-11 bg-gray-900 border-gray-800 focus:ring-indigo-500"
+              className="pl-10 h-11 bg-gray-900 border-gray-800 focus:ring-primary"
             />
             <Button 
               variant="ghost" 
@@ -117,7 +117,7 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
                       className="w-full text-left p-3 hover:bg-gray-800 rounded-lg flex items-center justify-between group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-800 group-hover:bg-indigo-600/20 rounded-full flex items-center justify-center text-xs font-bold text-gray-400 group-hover:text-indigo-400 transition-colors">
+                        <div className="w-8 h-8 bg-gray-800 group-hover:bg-primary/20 rounded-full flex items-center justify-center text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">
                           {c.firstName[0]}
                         </div>
                         <div>
@@ -126,14 +126,14 @@ export const CustomerSelector: React.FC<CustomerSelectorProps> = ({ selectedCust
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-bold text-indigo-400">{c.loyaltyPoints} pts</p>
+                        <p className="text-[10px] font-bold text-primary">{c.loyaltyPoints} pts</p>
                       </div>
                     </button>
                   ))
                 ) : (
                   <div className="p-4 text-center">
                     <p className="text-sm text-gray-500 mb-2">No customer found</p>
-                    <Button size="sm" variant="outline" className="text-indigo-400 border-indigo-400/20 h-7 text-xs">
+                    <Button size="sm" variant="outline" className="text-primary border-primary/20 h-7 text-xs">
                       + Register New Customer
                     </Button>
                   </div>

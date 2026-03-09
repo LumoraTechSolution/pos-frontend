@@ -149,9 +149,9 @@ export default function BranchFormModal({
                   <FormControl>
                     <input 
                       type="checkbox" 
-                      className="w-5 h-5 accent-indigo-600 rounded"
+                      className="w-5 h-5 accent-primary rounded"
                       checked={field.value}
-                      onChange={field.onChange}
+                      onChange={(e) => field.onChange(e.target.checked)}
                     />
                   </FormControl>
                 </FormItem>
@@ -162,7 +162,7 @@ export default function BranchFormModal({
               <Button type="button" variant="ghost" onClick={onClose} disabled={isLoading}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 min-w-[100px]">
+              <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90 min-w-[100px]">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {initialData ? "Save Changes" : "Create Branch"}
               </Button>

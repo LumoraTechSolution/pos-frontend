@@ -183,7 +183,7 @@ export default function CategoriesPage() {
                     </TableCell>
                     <TableCell>
                       {category.taxRateName ? (
-                        <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
                           {category.taxRateName}
                         </div>
                       ) : (
@@ -196,7 +196,7 @@ export default function CategoriesPage() {
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleEdit(category)}
-                          className="hover:bg-indigo-500/20 hover:text-indigo-400"
+                          className="hover:bg-primary/20 hover:text-primary"
                         >
                           <Pencil size={16} />
                         </Button>

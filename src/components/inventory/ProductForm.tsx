@@ -154,7 +154,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="Provide details about the product..."
                           {...field}
                         />

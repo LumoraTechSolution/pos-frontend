@@ -43,7 +43,7 @@ export default function TerminalPage() {
     queryFn: () => branchService.getAllBranches(),
   });
 
-  const branches = branchesData || [];
+  const branches = (branchesData || []).filter(b => b.isActive);
 
   // Fetch tax rates and categories for dynamic tax calculation
   const { data: activeTaxRates } = useQuery({
@@ -161,6 +161,7 @@ export default function TerminalPage() {
           isLoading={isLoading}
           searchTerm={search}
           onProductClick={addToCart}
+          selectedBranchId={selectedBranch?.id}
         />
       </div>
 
@@ -168,9 +169,9 @@ export default function TerminalPage() {
       <div className="w-[400px] bg-gray-900/40 backdrop-blur-xl border-l border-gray-800 flex flex-col shadow-2xl">
         {/* Cart Header */}
         <div className="h-16 border-b border-gray-800 flex items-center px-6">
-          <ShoppingCart className="text-indigo-400 mr-2" size={20} />
+          <ShoppingCart className="text-primary mr-2" size={20} />
           <h2 className="font-bold text-lg text-white">Current Sale</h2>
-          <div className="ml-auto bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold">
+          <div className="ml-auto bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold">
             {itemCount} ITEMS
           </div>
         </div>

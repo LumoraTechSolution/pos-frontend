@@ -9,13 +9,14 @@ interface ProductGridProps {
   isLoading: boolean;
   searchTerm: string;
   onProductClick: (product: Product) => void;
+  selectedBranchId?: string;
 }
 
-export function ProductGrid({ products, isLoading, searchTerm, onProductClick }: ProductGridProps) {
+export function ProductGrid({ products, isLoading, searchTerm, onProductClick, selectedBranchId }: ProductGridProps) {
   if (isLoading) {
     return (
       <div className="flex-1 p-4 pt-0 flex items-center justify-center">
-        <Loader2 className="animate-spin text-indigo-500" size={32} />
+        <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
@@ -32,10 +33,15 @@ export function ProductGrid({ products, isLoading, searchTerm, onProductClick }:
   return (
     <div className="flex-1 p-4 pt-0 overflow-y-auto custom-scrollbar">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {products.map((product) => (
+        {products.map((product) => {
+          const displayStock = selectedBranchId && product.stockLevels
+            ? (product.stockLevels.find(sl => sl.branchId === selectedBranchId)?.quantity || 0)
+            : product.stockQuantity;
+
+          return (
           <Card
             key={product.id}
-            className="bg-gray-900 border-gray-800 hover:border-indigo-500/50 hover:bg-gray-800/50 transition-all cursor-pointer group active:scale-[0.98]"
+            className="bg-gray-900 border-gray-800 hover:border-primary/50 hover:bg-gray-800/50 transition-all cursor-pointer group active:scale-[0.98]"
             onClick={() => onProductClick(product)}
           >
             <CardContent className="p-0">
@@ -45,29 +51,29 @@ export function ProductGrid({ products, isLoading, searchTerm, onProductClick }:
                 ) : (
                   <Package className="text-gray-800" size={40} />
                 )}
-                <div className="absolute inset-0 bg-indigo-600/0 group-hover:bg-indigo-600/10 transition-colors" />
+                <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors" />
               </div>
               <div className="p-3">
-                <h3 className="font-medium text-white text-sm line-clamp-1 group-hover:text-indigo-400 transition-colors">
+                <h3 className="font-medium text-white text-sm line-clamp-1 group-hover:text-primary transition-colors">
                   {product.name}
                 </h3>
                 <p className="text-xs text-gray-500 mb-2">{product.sku}</p>
                 <div className="flex justify-between items-center">
-                  <span className="text-indigo-400 font-bold">${product.basePrice.toFixed(2)}</span>
+                  <span className="text-primary font-bold">${product.basePrice.toFixed(2)}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded ${
-                      product.stockQuantity < 10
+                      displayStock < 10
                         ? 'bg-red-500/10 text-red-500'
                         : 'bg-emerald-500/10 text-emerald-500'
                     }`}
                   >
-                    {product.stockQuantity} in stock
+                    {displayStock} in stock
                   </span>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
     </div>
   );

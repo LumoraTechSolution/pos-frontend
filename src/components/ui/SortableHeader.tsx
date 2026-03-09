@@ -43,9 +43,9 @@ export function SortableHeader({
         {label}
         <span className="inline-flex">
           {isActive && currentDirection === 'asc' ? (
-            <ArrowUp size={14} className="text-indigo-400" />
+            <ArrowUp size={14} className="text-primary" />
           ) : isActive && currentDirection === 'desc' ? (
-            <ArrowDown size={14} className="text-indigo-400" />
+            <ArrowDown size={14} className="text-primary" />
           ) : (
             <ArrowUpDown size={14} className="opacity-0 group-hover:opacity-40 transition-opacity" />
           )}

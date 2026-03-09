@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { reportService } from "@/services/reportService";
-import { SalesReportRecord, InventoryValuationReport } from "@/types/report";
+import { returnService, ReturnResponse } from "@/services/returnService";
+import { SalesReportRecord, SalesReportItemRecord, InventoryValuationReport } from "@/types/report";
 import { PageResponse } from "@/types/common";
 import { format } from "date-fns";
 import {
@@ -21,7 +22,24 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+import { ReturnModal } from "@/components/pos/ReturnModal";
+import { ExchangeModal } from "@/components/pos/ExchangeModal";
+import { RotateCcw, ShieldCheck, ShieldAlert, ChevronRight, ChevronDown } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
+
 export default function ReportsPage() {
+  const { user } = useAuthStore();
+  // Action states
+  const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
+  const [exchangeData, setExchangeData] = useState<{ saleId: string; returnItems: SalesReportItemRecord[]; returnCredit: number } | null>(null);
+
+  // Expanded rows state
+  const [expandedSales, setExpandedSales] = useState<Record<string, boolean>>({});
+  const [expandedReturns, setExpandedReturns] = useState<Record<string, boolean>>({});
+
+  const toggleSaleExpanded = (id: string) => setExpandedSales(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleReturnExpanded = (id: string) => setExpandedReturns(prev => ({ ...prev, [id]: !prev[id] }));
+
   const [dateRange, setDateRange] = useState({
     start: format(new Date(new Date().setDate(new Date().getDate() - 7)), "yyyy-MM-dd'T'00:00:00"),
     end: format(new Date(), "yyyy-MM-dd'T'23:59:59"),
@@ -32,9 +50,21 @@ export default function ReportsPage() {
     queryFn: () => reportService.getSalesReport(dateRange.start, dateRange.end),
   });
 
+  const { data: returnsData, isLoading: returnsLoading, refetch: refetchReturns } = useQuery<PageResponse<ReturnResponse>>({
+    queryKey: ["reports", "returns"],
+    queryFn: () => returnService.getAllReturns(),
+  });
+
   const { data: valuationData, isLoading: valuationLoading } = useQuery<InventoryValuationReport>({
     queryKey: ["reports", "valuation"],
     queryFn: reportService.getInventoryValuation,
+  });
+
+  const approveReturnMutation = useMutation({
+    mutationFn: ({ id, approve }: { id: string; approve: boolean }) => returnService.approveReturn(id, approve),
+    onSuccess: () => {
+      refetchReturns();
+    }
   });
 
   const formatCurrency = (val: number) =>
@@ -173,7 +203,7 @@ export default function ReportsPage() {
             Export CSV
           </Button>
           <Button
-            className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+            className="gap-2 bg-primary hover:bg-primary/90"
             onClick={printPDF}
             disabled={!salesData?.content?.length}
           >
@@ -187,6 +217,9 @@ export default function ReportsPage() {
         <TabsList className="bg-gray-900/50 p-1 border border-gray-800">
           <TabsTrigger value="sales" className="gap-2">
             <TrendingUp size={16} /> Sales History
+          </TabsTrigger>
+          <TabsTrigger value="returns" className="gap-2">
+            <RotateCcw size={16} /> Returns History
           </TabsTrigger>
           <TabsTrigger value="inventory" className="gap-2">
             <PieChart size={16} /> Inventory Valuation
@@ -224,6 +257,7 @@ export default function ReportsPage() {
                 <Table>
                   <TableHeader className="bg-gray-800/50">
                     <TableRow>
+                      <TableHead className="w-10"></TableHead>
                       <TableHead>Invoice #</TableHead>
                       <TableHead>Date & Time</TableHead>
                       <TableHead>Customer</TableHead>
@@ -231,42 +265,233 @@ export default function ReportsPage() {
                       <TableHead>Payment</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Net Amount</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {salesLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground animate-pulse">
+                        <TableCell colSpan={9} className="text-center py-10 text-muted-foreground animate-pulse">
                           Loading sales report...
                         </TableCell>
                       </TableRow>
                     ) : salesData?.content.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                           No sales found for the selected period.
                         </TableCell>
                       </TableRow>
                     ) : (
                       salesData?.content.map((sale) => (
-                        <TableRow key={sale.saleId} className="hover:bg-gray-800/50">
-                          <TableCell className="font-mono text-indigo-400">{sale.invoiceNumber}</TableCell>
-                          <TableCell className="text-gray-300">
-                            {format(new Date(sale.createdAt), "MMM dd, yyyy HH:mm")}
-                          </TableCell>
-                          <TableCell>{sale.customerName}</TableCell>
-                          <TableCell className="text-gray-400 text-xs">{sale.cashierName}</TableCell>
-                          <TableCell>
-                            <span className="text-xs text-gray-400 uppercase">{sale.paymentMethod}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={sale.paymentStatus === 'PAID' ? 'default' : 'outline'} className={sale.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : ''}>
-                              {sale.paymentStatus}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-bold text-gray-100">
-                            {formatCurrency(sale.netAmount)}
-                          </TableCell>
-                        </TableRow>
+                        <>
+                          <TableRow key={sale.saleId} className="hover:bg-gray-800/50 cursor-pointer" onClick={() => toggleSaleExpanded(sale.saleId)}>
+                            <TableCell className="w-10 px-3">
+                              {expandedSales[sale.saleId] ? <ChevronDown size={16} className="text-primary" /> : <ChevronRight size={16} className="text-gray-500" />}
+                            </TableCell>
+                            <TableCell className="font-mono text-primary">{sale.invoiceNumber}</TableCell>
+                            <TableCell className="text-gray-300">
+                              {format(new Date(sale.createdAt), "MMM dd, yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell>{sale.customerName}</TableCell>
+                            <TableCell className="text-gray-400 text-xs">{sale.cashierName}</TableCell>
+                            <TableCell>
+                              <span className="text-xs text-gray-400 uppercase">{sale.paymentMethod}</span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={sale.paymentStatus === 'PAID' ? 'default' : 'outline'} className={sale.paymentStatus === 'PAID' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : sale.paymentStatus === 'REFUNDED' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : ''}>
+                                {sale.paymentStatus}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-gray-100">
+                              {formatCurrency(sale.netAmount)}
+                            </TableCell>
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setReturnSaleId(sale.saleId)}
+                                className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                              >
+                                <RotateCcw size={14} className="mr-1" /> Return
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          {expandedSales[sale.saleId] && (
+                            <TableRow key={`${sale.saleId}-items`}>
+                              <TableCell colSpan={9} className="p-0 border-b border-gray-800">
+                                <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
+                                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Items in this Transaction</h4>
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="text-gray-500 text-xs uppercase">
+                                        <th className="text-left pb-2 pr-4">Product</th>
+                                        <th className="text-left pb-2 pr-4">SKU</th>
+                                        <th className="text-center pb-2 pr-4">Qty</th>
+                                        <th className="text-right pb-2 pr-4">Unit Price</th>
+                                        <th className="text-right pb-2 pr-4">Tax</th>
+                                        <th className="text-right pb-2 pr-4">Discount</th>
+                                        <th className="text-right pb-2">Total</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {sale.items?.map((item, idx) => (
+                                        <tr key={idx} className="border-t border-gray-800/30">
+                                          <td className="py-2 pr-4">
+                                            <span className="text-gray-200 font-medium">{item.productName}</span>
+                                            {item.description && (
+                                              <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">↳ {item.description}</p>
+                                            )}
+                                          </td>
+                                          <td className="py-2 pr-4 text-gray-400 font-mono text-xs">{item.sku || '—'}</td>
+                                          <td className="py-2 pr-4 text-center text-gray-300">{item.quantity}</td>
+                                          <td className="py-2 pr-4 text-right text-gray-300">{formatCurrency(item.unitPrice)}</td>
+                                          <td className="py-2 pr-4 text-right text-gray-400">{formatCurrency(item.taxAmount)}</td>
+                                          <td className="py-2 pr-4 text-right text-gray-400">{formatCurrency(item.discountAmount)}</td>
+                                          <td className="py-2 text-right font-semibold text-gray-100">{formatCurrency(item.totalAmount)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="returns" className="space-y-6">
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle>Returns History</CardTitle>
+                <CardDescription>View past returns and manage pending approvals.</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-gray-800 bg-gray-900/40">
+                <Table>
+                  <TableHeader className="bg-gray-800/50">
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Return #</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead>Processed By</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Refund Amount</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {returnsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-10 text-muted-foreground animate-pulse">
+                          Loading returns history...
+                        </TableCell>
+                      </TableRow>
+                    ) : returnsData?.content?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                          No returns found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      returnsData?.content?.map((ret: ReturnResponse) => (
+                        <>
+                          <TableRow key={ret.id} className="hover:bg-gray-800/50 cursor-pointer" onClick={() => toggleReturnExpanded(ret.id)}>
+                            <TableCell className="w-10 px-3">
+                              {expandedReturns[ret.id] ? <ChevronDown size={16} className="text-primary" /> : <ChevronRight size={16} className="text-gray-500" />}
+                            </TableCell>
+                            <TableCell className="font-mono text-primary">{ret.returnNumber}</TableCell>
+                            <TableCell className="text-gray-300">
+                              {format(new Date(ret.createdAt), "MMM dd, yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell>{ret.reason}</TableCell>
+                            <TableCell className="text-gray-400 text-xs">{ret.processedByName || 'Unknown'}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={
+                                  ret.status === 'COMPLETED' ? 'default' : 
+                                  ret.status === 'PENDING' ? 'secondary' : 
+                                  ret.status === 'APPROVED' ? 'default' : 'destructive'
+                                }
+                                className={
+                                  ret.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 
+                                  ret.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20' : ''
+                                }
+                              >
+                                {ret.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-gray-100">
+                              {formatCurrency(ret.refundAmount)}
+                            </TableCell>
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              {ret.status === 'PENDING' && (user?.roles?.includes('MANAGER') || user?.roles?.includes('ADMIN')) ? (
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => approveReturnMutation.mutate({ id: ret.id, approve: true })}
+                                    disabled={approveReturnMutation.isPending}
+                                    className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 px-2"
+                                    title="Approve Return"
+                                  >
+                                    <ShieldCheck size={16} />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => approveReturnMutation.mutate({ id: ret.id, approve: false })}
+                                    disabled={approveReturnMutation.isPending}
+                                    className="text-red-500 hover:text-red-400 hover:bg-red-500/10 px-2"
+                                    title="Reject Return"
+                                  >
+                                    <ShieldAlert size={16} />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground mr-2">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {expandedReturns[ret.id] && (
+                            <TableRow key={`${ret.id}-items`}>
+                              <TableCell colSpan={8} className="p-0 border-b border-gray-800">
+                                <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
+                                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Returned Items</h4>
+                                  <table className="w-full text-sm">
+                                    <thead>
+                                      <tr className="text-gray-500 text-xs uppercase">
+                                        <th className="text-left pb-2 pr-4">Product</th>
+                                        <th className="text-center pb-2 pr-4">Qty Returned</th>
+                                        <th className="text-right pb-2 pr-4">Unit Price</th>
+                                        <th className="text-right pb-2">Refund Amount</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {ret.items?.map((item, idx) => (
+                                        <tr key={idx} className="border-t border-gray-800/30">
+                                          <td className="py-2 pr-4 text-gray-200 font-medium">{item.productName || 'Unknown Product'}</td>
+                                          <td className="py-2 pr-4 text-center text-gray-300">{item.quantityReturned}</td>
+                                          <td className="py-2 pr-4 text-right text-gray-300">{formatCurrency(item.unitPrice)}</td>
+                                          <td className="py-2 text-right font-semibold text-gray-100">{formatCurrency(item.refundAmount)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
                       ))
                     )}
                   </TableBody>
@@ -282,7 +507,7 @@ export default function ReportsPage() {
               <CardHeader className="pb-2">
                 <CardDescription>Total Inventory Cost</CardDescription>
                 <CardTitle className="text-3xl font-bold flex items-center gap-2">
-                  <DollarSign className="text-indigo-400" />
+                  <DollarSign className="text-primary" />
                   {valuationLoading ? "..." : formatCurrency(valuationData?.totalCostValue || 0)}
                 </CardTitle>
               </CardHeader>
@@ -369,6 +594,24 @@ export default function ReportsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      {returnSaleId && (
+        <ReturnModal 
+          saleId={returnSaleId} 
+          onClose={() => setReturnSaleId(null)} 
+          onExchange={(saleId, items, credit) => setExchangeData({ saleId, returnItems: items as any, returnCredit: credit })}
+        />
+      )}
+
+      {exchangeData && (
+        <ExchangeModal
+          saleId={exchangeData.saleId}
+          returnItems={exchangeData.returnItems as any}
+          returnCredit={exchangeData.returnCredit}
+          onClose={() => setExchangeData(null)}
+        />
+      )}
     </div>
   );
 }

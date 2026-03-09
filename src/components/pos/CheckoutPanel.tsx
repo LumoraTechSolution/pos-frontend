@@ -48,7 +48,7 @@ export function CheckoutPanel({
             onClick={() => onPaymentMethodChange(method)}
             className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
               paymentMethod === method
-                ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/20'
+                ? 'bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20'
                 : 'bg-gray-950 border-gray-800 text-gray-500 hover:bg-gray-800'
             }`}
           >
@@ -70,14 +70,14 @@ export function CheckoutPanel({
         </div>
         <div className="flex justify-between text-2xl font-black pt-3 border-t border-gray-800/50">
           <span className="text-white">TOTAL</span>
-          <span className="text-indigo-400">${total.toFixed(2)}</span>
+          <span className="text-primary">${total.toFixed(2)}</span>
         </div>
       </div>
 
       {/* Complete Sale Button */}
       <Button
         onClick={onCheckout}
-        className="w-full h-16 bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 text-white font-bold text-xl rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none group"
+        className="w-full h-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xl rounded-2xl shadow-xl shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none group"
         disabled={itemCount === 0 || isProcessing}
       >
         {isProcessing ? (
