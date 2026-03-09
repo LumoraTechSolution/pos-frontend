@@ -152,6 +152,13 @@ export default function CategoriesPage() {
                     onSort={handleSort}
                   />
                   <SortableHeader
+                    label="Tax Rate"
+                    sortKey="taxRateName"
+                    currentSort={sortKey}
+                    currentDirection={sortDirection}
+                    onSort={handleSort}
+                  />
+                  <SortableHeader
                     label="Actions"
                     sortKey=""
                     currentSort={null}
@@ -174,13 +181,22 @@ export default function CategoriesPage() {
                         categories?.find((c: Category) => c.id === category.parentId)?.name || category.parentId
                       ) : '-'}
                     </TableCell>
+                    <TableCell>
+                      {category.taxRateName ? (
+                        <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                          {category.taxRateName}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500 italic">Default</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleEdit(category)}
-                          className="hover:bg-indigo-500/20 hover:text-indigo-400"
+                          className="hover:bg-primary/20 hover:text-primary"
                         >
                           <Pencil size={16} />
                         </Button>
@@ -198,7 +214,7 @@ export default function CategoriesPage() {
                 ))}
                 {sortedCategories.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                    <TableCell colSpan={6} className="h-24 text-center text-gray-500">
                       No categories found.
                     </TableCell>
                   </TableRow>

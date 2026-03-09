@@ -121,7 +121,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="w-full bg-indigo-600 hover:bg-indigo-500 font-bold h-11"
+          className="w-full bg-primary hover:bg-primary font-bold h-11"
         >
           {isLoading ? <Loader2 className="animate-spin" /> : 'Save Customer Profile'}
         </Button>

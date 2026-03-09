@@ -86,10 +86,10 @@ export default function CustomersPage() {
     <div className="space-y-6 animate-in fade-in duration-500 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-white mb-1">Customer <span className="text-indigo-500">Database</span></h1>
+          <h1 className="text-3xl font-black tracking-tight text-white mb-1">Customer <span className="text-primary">Database</span></h1>
           <p className="text-gray-400 text-sm">Manage client profiles and loyalty points.</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold gap-2">
+        <Button onClick={() => setShowCreate(true)} className="bg-primary hover:bg-primary text-primary-foreground font-bold gap-2">
           <UserPlus size={18} /> Add New Customer
         </Button>
       </div>
@@ -143,7 +143,7 @@ export default function CustomersPage() {
                 placeholder="Search by name, email or phone..."
                 value={search}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-                className="pl-10 bg-gray-950 border-gray-800 text-white focus:ring-indigo-500"
+                className="pl-10 bg-gray-950 border-gray-800 text-white focus:ring-primary"
               />
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function CustomersPage() {
                 <TableRow>
                   <TableCell colSpan={5} className="h-64 text-center">
                     <div className="flex flex-col items-center gap-2 text-gray-500">
-                      <Loader2 className="animate-spin text-indigo-500" size={32} />
+                      <Loader2 className="animate-spin text-primary" size={32} />
                       <p className="font-medium">Loading customer directory...</p>
                     </div>
                   </TableCell>
@@ -175,7 +175,7 @@ export default function CustomersPage() {
                     <div className="flex flex-col items-center gap-2 text-gray-500">
                        <UserPlus size={48} className="opacity-10 mb-2" />
                        <p className="font-medium">No customers found</p>
-                       <Button variant="link" className="text-indigo-400" onClick={() => setSearch('')}>Clear Search</Button>
+                       <Button variant="link" className="text-primary" onClick={() => setSearch('')}>Clear Search</Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -184,7 +184,7 @@ export default function CustomersPage() {
                   <TableRow key={customer.id} className="border-gray-800 hover:bg-white/5 transition-colors group">
                     <TableCell className="py-4 pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg text-xs">
+                        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg text-xs">
                           {customer.firstName[0]}{customer.lastName?.[0] || ''}
                         </div>
                         <div>
@@ -196,7 +196,7 @@ export default function CustomersPage() {
                     <TableCell>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm text-gray-300">
-                          <Mail size={14} className="text-indigo-400" /> {customer.email || 'N/A'}
+                          <Mail size={14} className="text-primary" /> {customer.email || 'N/A'}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                           <Phone size={14} className="text-emerald-500" /> {customer.phone || 'N/A'}
@@ -211,9 +211,9 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>
                        <div className="flex items-center gap-2">
-                          <div className="bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full flex items-center gap-2">
-                             <Star size={14} className="text-indigo-400" fill="currentColor" />
-                             <span className="font-black text-indigo-400">{customer.loyaltyPoints}</span>
+                          <div className="bg-primary/10 border border-primary/20 px-3 py-1 rounded-full flex items-center gap-2">
+                             <Star size={14} className="text-primary" fill="currentColor" />
+                             <span className="font-black text-primary">{customer.loyaltyPoints}</span>
                           </div>
                        </div>
                     </TableCell>
@@ -223,7 +223,7 @@ export default function CustomersPage() {
                           variant="ghost" 
                           size="icon" 
                           onClick={() => setEditingCustomer(customer)}
-                          className="h-8 w-8 text-indigo-400 hover:bg-indigo-500/10"
+                          className="h-8 w-8 text-primary hover:bg-primary/10"
                         >
                           <Edit2 size={16} />
                         </Button>

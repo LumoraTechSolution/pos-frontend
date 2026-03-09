@@ -14,6 +14,19 @@ export interface SalesReportRecord {
   netAmount: number;
   paymentMethod: string;
   paymentStatus: string;
+  items: SalesReportItemRecord[];
+}
+
+export interface SalesReportItemRecord {
+  productId: string;
+  productName: string;
+  sku: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
 }
 
 export interface InventoryValuationReport {

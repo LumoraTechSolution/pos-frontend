@@ -111,7 +111,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
@@ -133,7 +133,7 @@ export default function ProductsPage() {
             <Upload size={18} /> Import
           </Button>
           <Link href="/inventory/products/new">
-            <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+            <Button className="gap-2 bg-primary hover:bg-primary/90">
               <Plus size={18} /> Add Product
             </Button>
           </Link>
@@ -157,7 +157,7 @@ export default function ProductsPage() {
           <select
             value={categoryId}
             onChange={(e) => { setCategoryId(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-indigo-500 focus:outline-none min-w-[150px]"
+            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[150px]"
           >
             <option value="">All Categories</option>
             {categories?.map((c) => (
@@ -169,7 +169,7 @@ export default function ProductsPage() {
           <select
             value={brandId}
             onChange={(e) => { setBrandId(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-indigo-500 focus:outline-none min-w-[150px]"
+            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[150px]"
           >
             <option value="">All Brands</option>
             {brands?.map((b) => (
@@ -181,7 +181,7 @@ export default function ProductsPage() {
           <select
             value={isActive}
             onChange={(e) => { setIsActive(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-indigo-500 focus:outline-none min-w-[120px]"
+            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[120px]"
           >
             <option value="">All Status</option>
             <option value="true">Active</option>
@@ -205,7 +205,7 @@ export default function ProductsPage() {
         {hasActiveFilters && (
           <div className="flex gap-2 flex-wrap">
             {categoryId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-medium border border-indigo-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
                 Category: {categories?.find(c => c.id === categoryId)?.name}
                 <button onClick={() => setCategoryId("")} className="hover:text-white"><X size={12} /></button>
               </span>

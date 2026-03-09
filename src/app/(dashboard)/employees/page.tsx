@@ -27,12 +27,14 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { useAuthStore } from "@/stores/authStore";
+import { useRouter } from "next/navigation";
+import { UserSquare2 } from "lucide-react";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, string> = {
   ADMIN: "bg-rose-500/10 text-rose-400 border-rose-500/30",
   MANAGER: "bg-violet-500/10 text-violet-400 border-violet-500/30",
-  CASHIER: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
+  CASHIER: "bg-primary/10 text-primary border-primary/30",
   INVENTORY_MANAGER: "bg-amber-500/10 text-amber-400 border-amber-500/30",
 };
 
@@ -91,8 +93,8 @@ function CreateUserModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
-            <UserPlus size={20} className="text-indigo-400" />
+          <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+            <UserPlus size={20} className="text-primary" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Add New Employee</h2>
@@ -153,7 +155,7 @@ function CreateUserModal({
         </div>
         <div className="flex gap-3 mt-8">
           <Button variant="outline" className="flex-1 border-gray-700" onClick={onClose} disabled={isPending}>Cancel</Button>
-          <Button className="flex-1 bg-indigo-600 hover:bg-indigo-500" onClick={() => mutate(form)} disabled={isPending || !form.firstName || !form.email || !form.password}>
+          <Button className="flex-1 bg-primary hover:bg-primary" onClick={() => mutate(form)} disabled={isPending || !form.firstName || !form.email || !form.password}>
             {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <UserPlus size={16} className="mr-2" />}
             Create Employee
           </Button>
@@ -280,6 +282,7 @@ function EditUserModal({
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuthStore();
   const [search, setSearch] = useState("");
@@ -314,11 +317,18 @@ export default function EmployeesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Employee Management</h1>
           <p className="text-gray-400 mt-1">Manage staff accounts, roles, and access permissions.</p>
         </div>
-        {(currentUser?.roles?.includes('ADMIN')) && (
-          <Button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-500 gap-2 h-10">
-            <UserPlus size={16} /> Add Employee
-          </Button>
-        )}
+        <div className="flex gap-3">
+          {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
+            <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300 gap-2 h-10 shadow-sm">
+              <Clock size={16} className="text-primary" /> View Timesheets
+            </Button>
+          )}
+          {(currentUser?.roles?.includes('ADMIN')) && (
+            <Button onClick={() => setShowCreate(true)} className="bg-primary hover:bg-primary gap-2 h-10 shadow-lg shadow-primary/20">
+              <UserPlus size={16} /> Add Employee
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* KPI Row */}
@@ -373,7 +383,7 @@ export default function EmployeesPage() {
                   {/* Name + Avatar */}
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-primary-foreground flex-shrink-0">
                         {user.firstName[0]}{user.lastName[0]}
                       </div>
                       <div>

@@ -70,18 +70,18 @@ export default function BranchesPage() {
       <div className="flex justify-between items-end">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <Store className="text-indigo-500" size={24} />
+            <Store className="text-primary" size={24} />
             <h1 className="text-3xl font-bold tracking-tight">Branches</h1>
           </div>
           <p className="text-muted-foreground">Manage your physical store locations and warehouses.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-primary hover:bg-primary/90">
           <Plus size={18} /> Add Branch
         </Button>
       </div>
 
-      <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-4 flex gap-3 items-start">
-        <Info className="text-indigo-400 shrink-0 mt-0.5" size={18} />
+      <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex gap-3 items-start">
+        <Info className="text-primary shrink-0 mt-0.5" size={18} />
         <p className="text-sm text-indigo-300/80 leading-relaxed">
           Branches allow you to track inventory across different physical sites. Each transaction at the POS 
           terminal should be associated with a branch to ensure stock is deducted from the correct location.

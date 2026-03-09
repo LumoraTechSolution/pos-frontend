@@ -140,7 +140,7 @@ export default function ProductTable({
                     <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="h-8 w-8 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10"
+                      className="h-8 w-8 text-primary hover:text-indigo-300 hover:bg-primary/10"
                       onClick={() => onManageInventory?.(product)}
                       title="Adjust Inventory"
                     >

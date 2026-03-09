@@ -80,7 +80,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
 
         <div className="space-y-4 py-4">
           <div 
-            className="border-2 border-dashed border-gray-800 rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:border-indigo-500/50 transition-colors cursor-pointer bg-gray-900/20"
+            className="border-2 border-dashed border-gray-800 rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary/50 transition-colors cursor-pointer bg-gray-900/20"
             onClick={() => document.getElementById('csv-upload')?.click()}
           >
             <Upload className="text-gray-500" size={32} />
@@ -137,7 +137,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
           <Button 
             onClick={handleUpload} 
             disabled={!file || isUploading}
-            className="bg-indigo-600 hover:bg-indigo-700 gap-2"
+            className="bg-primary hover:bg-primary/90 gap-2"
           >
             {isUploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
             {isUploading ? "Uploading..." : "Start Import"}

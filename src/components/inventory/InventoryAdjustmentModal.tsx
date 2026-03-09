@@ -138,13 +138,13 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
       <DialogContent className="sm:max-w-[600px] bg-gray-950 border-gray-800 text-gray-200">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+            <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
               <PackagePlus size={20} />
             </div>
             <div>
               <DialogTitle className="text-xl">Inventory Management</DialogTitle>
               <DialogDescription className="text-gray-400">
-                Adjust stock levels or transfer items for <span className="text-indigo-400 font-semibold">{product.name}</span>
+                Adjust stock levels or transfer items for <span className="text-primary font-semibold">{product.name}</span>
               </DialogDescription>
             </div>
           </div>
@@ -152,13 +152,13 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-gray-800 p-1 mb-6">
-            <TabsTrigger value="adjust" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+            <TabsTrigger value="adjust" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
               <PackagePlus size={16} /> Adjust
             </TabsTrigger>
-            <TabsTrigger value="transfer" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+            <TabsTrigger value="transfer" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
               <ArrowLeftRight size={16} /> Transfer
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-indigo-400">
+            <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
               <History size={16} /> History
             </TabsTrigger>
           </TabsList>
@@ -175,7 +175,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         <FormLabel>Target Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Branch</option>
@@ -196,7 +196,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         <FormLabel>Adjustment Type</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="RECONCILIATION">Reconciliation (Set Value)</option>
@@ -234,7 +234,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                       <FormLabel>Reason (Optional)</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                           placeholder="Why is this adjustment being made?"
                           {...field}
                         />
@@ -246,7 +246,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]" disabled={adjustMutation.isPending}>
+                  <Button type="submit" className="bg-primary hover:bg-primary/90 min-w-[120px]" disabled={adjustMutation.isPending}>
                     {adjustMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                     Confirm Adjustment
                   </Button>
@@ -267,7 +267,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         <FormLabel>From Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Source</option>
@@ -288,7 +288,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         <FormLabel>To Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Destination</option>
@@ -325,7 +325,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                       <FormLabel>Note</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                           placeholder="Describe the transfer..."
                           {...field}
                         />
@@ -335,14 +335,14 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                   )}
                 />
 
-                <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-lg p-3 flex gap-3 text-xs text-indigo-300">
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 flex gap-3 text-xs text-indigo-300">
                   <Info className="shrink-0" size={14} />
                   <p>Stock will be deducted from the source and added to the destination branch atomically.</p>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 min-w-[120px]" disabled={transferMutation.isPending}>
+                  <Button type="submit" className="bg-primary hover:bg-primary/90 min-w-[120px]" disabled={transferMutation.isPending}>
                     {transferMutation.isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                     Transfer Stock
                   </Button>
@@ -366,7 +366,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         "w-8 h-8 rounded-lg flex items-center justify-center",
                         log.type.includes('IN') || log.type === 'RETURN' ? "bg-emerald-500/10 text-emerald-400" :
                         log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "bg-red-500/10 text-red-400" :
-                        "bg-indigo-500/10 text-indigo-400"
+                        "bg-primary/10 text-primary"
                       )}>
                         {log.type.includes('IN') || log.type === 'RETURN' ? <ArrowUpRight size={16} /> :
                          log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? <ArrowDownRight size={16} /> :
@@ -389,7 +389,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                         "text-sm font-bold",
                         log.type.includes('IN') || log.type === 'RETURN' ? "text-emerald-400" :
                         log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "text-red-400" :
-                        "text-indigo-400"
+                        "text-primary"
                       )}>
                         {log.type.includes('IN') || log.type === 'RETURN' ? '+' :
                          log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? '-' : ''}

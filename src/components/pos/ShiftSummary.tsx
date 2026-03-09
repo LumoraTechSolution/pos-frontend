@@ -19,7 +19,7 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
       <Card className="w-full max-w-md bg-gray-900 border-gray-800 shadow-2xl overflow-hidden">
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <ShoppingBag className="text-indigo-400" size={20} />
+            <ShoppingBag className="text-primary" size={20} />
             Shift Summary
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-white">
@@ -35,7 +35,7 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
             </div>
             <div className="p-4 bg-black/40 rounded-2xl border border-gray-800">
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Net Sales</p>
-              <p className="text-2xl font-black text-indigo-400">${summary.totalNetSales.toFixed(2)}</p>
+              <p className="text-2xl font-black text-primary">${summary.totalNetSales.toFixed(2)}</p>
             </div>
           </div>
 

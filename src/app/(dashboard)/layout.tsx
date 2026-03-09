@@ -12,11 +12,14 @@ import {
   Settings,
   Monitor,
   LogOut,
-  Store
+  Store,
+  Building2,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
+import { TimeClockWidget } from '@/components/employee/TimeClockWidget';
 
 export default function DashboardLayout({
   children,
@@ -38,6 +41,8 @@ export default function DashboardLayout({
     { label: 'Categories', href: '/inventory/categories', icon: Tags },
     { label: 'Brands', href: '/inventory/brands', icon: Bookmark },
     { label: 'Customers', href: '/customers', icon: Users },
+    { label: 'Suppliers', href: '/inventory/suppliers', icon: Building2 },
+    { label: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Truck },
     { label: 'Employees', href: '/employees', icon: UserSquare2 },
     { label: 'Reports', href: '/reports', icon: BarChart3 },
     { label: 'Branches', href: '/branches', icon: Store },
@@ -46,6 +51,11 @@ export default function DashboardLayout({
     // Inventory Managers shouldn't see these items
     if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
+    }
+    
+    // Suppliers and POs are visible to ADMIN, MANAGER, and INVENTORY_MANAGER
+    if (['Suppliers', 'Purchase Orders'].includes(item.label)) {
+        return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('INVENTORY_MANAGER');
     }
     
     // Customers tab is visible to ADMIN, MANAGER, and CASHIER
@@ -62,7 +72,7 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-gray-900">
           <Link href="/overview" className="text-xl font-bold tracking-tight">
-            Lumora<span className="text-indigo-500">POS</span>
+            Lumora<span className="text-primary">POS</span>
           </Link>
         </div>
 
@@ -77,13 +87,13 @@ export default function DashboardLayout({
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 group",
                   isActive 
-                    ? "bg-indigo-600/10 text-indigo-400 font-semibold" 
+                    ? "bg-primary/10 text-primary font-semibold" 
                     : "text-gray-400 hover:text-white hover:bg-gray-900"
                 )}
               >
                 <item.icon size={20} className={cn(
                   "transition-colors",
-                  isActive ? "text-indigo-400" : "text-gray-500 group-hover:text-white"
+                  isActive ? "text-primary" : "text-gray-500 group-hover:text-white"
                 )} />
                 {item.label}
               </Link>
@@ -93,11 +103,13 @@ export default function DashboardLayout({
 
         {/* POS Terminal Link & Profile */}
         <div className="p-4 border-t border-gray-900 space-y-4">
+          {!user?.roles?.includes('ADMIN') && <TimeClockWidget />}
+
           {/* POS Terminal Link - Only for specific roles */}
           {(user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('CASHIER')) && (
             <Link
               href="/terminal"
-              className="flex items-center justify-center gap-2 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-indigo-600/20"
+              className="flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-primary/20"
             >
               <Monitor size={18} /> Open POS Terminal
             </Link>
@@ -105,14 +117,14 @@ export default function DashboardLayout({
 
           {/* User Profile Footer */}
           <div className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-xl border border-gray-800">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0 shadow-inner">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shrink-0 shadow-inner">
               {user?.firstName?.charAt(0) || 'U'}{user?.lastName?.charAt(0) || ''}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-sm font-semibold text-gray-200 truncate pr-2">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="text-xs text-indigo-400 font-medium truncate">
+              <span className="text-xs text-primary font-medium truncate">
                 {user?.roles?.[0]?.replace('_', ' ') || 'EMPLOYEE'}
               </span>
             </div>
