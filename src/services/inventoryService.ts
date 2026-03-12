@@ -2,7 +2,8 @@ import api from "./api";
 import { 
   Category, CategoryRequest, 
   Brand, BrandRequest, 
-  Product, ProductRequest 
+  Product, ProductRequest,
+  LowStockResponse
 } from "@/types/inventory";
 import { ApiResponse, Page } from "@/types/common";
 
@@ -82,6 +83,16 @@ export const inventoryService = {
   
   deleteProduct: (id: string) => 
     api.delete<ApiResponse<void>>(`/products/${id}`).then(res => res.data.data),
+
+  getLowStockAlerts: (branchId?: string, page = 0, size = 10) => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('size', size.toString());
+    if (branchId) params.set('branchId', branchId);
+    
+    return api.get<ApiResponse<Page<LowStockResponse>>>(`/products/low-stock?${params.toString()}`)
+      .then(res => res.data.data);
+  },
 
   // --- Bulk Operations ---
   importProducts: (file: File) => {
