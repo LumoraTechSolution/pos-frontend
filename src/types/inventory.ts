@@ -61,6 +61,16 @@ export interface ProductRequest {
   isActive: boolean;
 }
 
+export interface LowStockResponse {
+  productId: string;
+  productName: string;
+  productSku: string;
+  branchId: string;
+  branchName: string;
+  currentQuantity: number;
+  threshold: number;
+}
+
 export interface CategoryRequest {
   name: string;
   slug?: string;

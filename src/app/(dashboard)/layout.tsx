@@ -14,7 +14,8 @@ import {
   LogOut,
   Store,
   Building2,
-  Truck
+  Truck,
+  ArrowRightLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
@@ -43,6 +44,7 @@ export default function DashboardLayout({
     { label: 'Customers', href: '/customers', icon: Users },
     { label: 'Suppliers', href: '/inventory/suppliers', icon: Building2 },
     { label: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Truck },
+    { label: 'Stock Transfers', href: '/inventory/stock-transfers', icon: ArrowRightLeft },
     { label: 'Employees', href: '/employees', icon: UserSquare2 },
     { label: 'Reports', href: '/reports', icon: BarChart3 },
     { label: 'Branches', href: '/branches', icon: Store },
@@ -53,8 +55,8 @@ export default function DashboardLayout({
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     
-    // Suppliers and POs are visible to ADMIN, MANAGER, and INVENTORY_MANAGER
-    if (['Suppliers', 'Purchase Orders'].includes(item.label)) {
+    // Suppliers and POs and Transfers are visible to ADMIN, MANAGER, and INVENTORY_MANAGER
+    if (['Suppliers', 'Purchase Orders', 'Stock Transfers'].includes(item.label)) {
         return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('INVENTORY_MANAGER');
     }
     

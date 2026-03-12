@@ -25,6 +25,7 @@ import {
   Wallet,
   Clock,
 } from "lucide-react";
+import { LowStockWidget } from "@/components/dashboard/LowStockWidget";
 import {
   AreaChart,
   Area,
@@ -399,67 +400,9 @@ export default function OverviewPage() {
           )}
         </div>
 
-        {/* Low Stock Alerts — 2/3 width */}
-        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-400" />
-              <h3 className="text-lg font-semibold">Low Stock Alerts</h3>
-            </div>
-            <span className="text-xs font-medium text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full">
-              {data.lowStockAlerts.length} items
-            </span>
-          </div>
-          {data.lowStockAlerts.length === 0 ? (
-            <div className="h-40 flex items-center justify-center text-gray-600">
-              <div className="text-center">
-                <Package size={32} className="mx-auto mb-2 text-gray-700" />
-                <p className="text-sm">All stock levels are healthy</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
-              {data.lowStockAlerts.map((alert) => {
-                const pct = Math.round((alert.currentStock / alert.threshold) * 100);
-                const urgency =
-                  alert.currentStock === 0
-                    ? "bg-red-500"
-                    : pct <= 50
-                    ? "bg-amber-500"
-                    : "bg-yellow-500";
-
-                return (
-                  <div
-                    key={alert.productId}
-                    className="flex items-center gap-4 p-3 rounded-xl bg-gray-800/50 border border-gray-800 hover:border-gray-700 transition-colors"
-                  >
-                    <div className={`w-1 h-12 rounded-full ${urgency}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-white text-sm truncate">{alert.productName}</span>
-                        <span className="text-[10px] text-gray-500 font-mono">{alert.sku}</span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${urgency} transition-all`}
-                            style={{ width: `${Math.min(pct, 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">
-                          <span className={alert.currentStock === 0 ? "text-red-400 font-bold" : "text-amber-400 font-semibold"}>
-                            {alert.currentStock}
-                          </span>
-                          {" / "}
-                          {alert.threshold}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        {/* Low Stock Alerts (Replaced with Custom Widget) — 2/3 width */}
+        <div className="lg:col-span-2">
+          <LowStockWidget />
         </div>
       </div>
 
