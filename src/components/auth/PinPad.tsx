@@ -42,14 +42,7 @@ export function PinPad() {
       
       setAuth(response.user, response.accessToken, response.refreshToken);
       toast.success("Login successful!");
-      const roles = response.user.roles;
-      if (roles.includes('ADMIN') || roles.includes('MANAGER')) {
-        router.push('/overview');
-      } else if (roles.includes('INVENTORY_MANAGER')) {
-        router.push('/inventory/products');
-      } else {
-        router.push('/terminal');
-      }
+      router.push('/terminal');
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Invalid PIN");
       setPin(""); 

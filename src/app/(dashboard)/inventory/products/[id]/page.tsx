@@ -20,7 +20,7 @@ export default function EditProductPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <ProductForm initialData={productData} />
+      <ProductForm initialData={productData?.data} />
     </div>
   );
 }
