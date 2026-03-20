@@ -70,6 +70,18 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ sale }, ref) 
         </p>
       </div>
 
+      {sale.customerName && (
+        <div className="border-t border-black mt-4 pt-2 text-center space-y-1">
+          <p className="font-bold">Customer: {sale.customerName}</p>
+          {sale.earnedPoints !== undefined && sale.earnedPoints > 0 && (
+            <p>Points Earned: {sale.earnedPoints}</p>
+          )}
+          {sale.loyaltyBalance !== undefined && (
+            <p>Points Balance: {sale.loyaltyBalance}</p>
+          )}
+        </div>
+      )}
+
       <div className="text-center mt-6">
         <p className="font-bold">Thank you for your purchase!</p>
         <p className="text-[10px]">Please keep your receipt for any returns.</p>

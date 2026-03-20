@@ -45,3 +45,56 @@ export interface CategoryValuation {
   costValue: number;
   retailValue: number;
 }
+
+export interface EmployeePerformanceRecord {
+  userId: string;
+  employeeName: string;
+  email: string;
+  transactionCount: number;
+  totalRevenue: number;
+  avgTransactionValue: number;
+  totalDiscount: number;
+}
+
+export interface TopCustomerRecord {
+  customerId: string;
+  customerName: string;
+  email: string;
+  phone: string;
+  transactionCount: number;
+  totalSpent: number;
+  loyaltyPoints: number;
+}
+
+export interface TaxLineItem {
+  paymentMethod: string;
+  transactionCount: number;
+  taxCollected: number;
+  grossRevenue: number;
+}
+
+export interface TaxSummaryReport {
+  totalTaxCollected: number;
+  totalTransactions: number;
+  breakdown: TaxLineItem[];
+}
+
+export interface ProductProfitRecord {
+  productId: string;
+  productName: string;
+  sku: string;
+  category: string;
+  unitsSold: number;
+  revenue: number;
+  costOfGoodsSold: number;
+  grossProfit: number;
+  marginPct: number;
+}
+
+export interface ProfitabilityReport {
+  totalRevenue: number;
+  totalCost: number;
+  totalProfit: number;
+  overallMarginPct: number;
+  products: import("./common").Page<ProductProfitRecord>;
+}

@@ -40,14 +40,12 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
     setResult(null);
     try {
       const response = await inventoryService.importProducts(file);
-      setResult(response);
-      if (response.failureCount === 0) {
-        toast.success(`Successfully imported ${response.successCount} products`);
-        onSuccess();
-        setTimeout(onClose, 2000);
-      } else {
-        toast.warning(`Imported ${response.successCount} products, but ${response.failureCount} failed.`);
-      }
+      // Backend returns the count of successfully imported products in the `data` wrapper
+      const count = response.data;
+      setResult({ successCount: count, failureCount: 0 });
+      toast.success(`Successfully imported ${count} products`);
+      onSuccess();
+      setTimeout(onClose, 2000);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to upload file");
     } finally {
