@@ -8,29 +8,29 @@ Enable the system to track and manage inventory across multiple physical locatio
 
 ### Phase 1: Persistence & Data Model
 
-- [ ] Create `BranchEntity` to represent physical locations.
-- [ ] Create `StockLevelEntity` to map products to specific branches with quantity tracking.
-- [ ] Implement database migration (Flyway V13) to:
+- [x] Create `BranchEntity` to represent physical locations.
+- [x] Create `StockLevelEntity` to map products to specific branches with quantity tracking.
+- [x] Implement database migration (Flyway V13) to:
   - Add `branches` and `stock_levels` tables.
   - Create a 'Default' branch for every existing tenant.
   - Migrate existing `products.stock_quantity` to `stock_levels` for the 'Default' branch.
 
 ### Phase 2: Backend Logic
 
-- [ ] Implement `BranchService` and `BranchController` for CRUD operations.
-- [ ] Update `SaleService` to require a `branchId` and deduct stock from the specific location.
+- [x] Implement `BranchService` and `BranchController` for CRUD operations.
+- [x] Update `SaleService` to require a `branchId` and deduct stock from the specific location.
 - [ ] Implement `InventoryAdjustmentService` for manually moving stock or setting levels per branch.
 
 ### Phase 3: Frontend Integration
 
-- [ ] Create Branch management pages in the Admin Dashboard.
-- [ ] Add branch selection logic to the POS Terminal.
+- [x] Create Branch management pages in the Admin Dashboard.
+- [x] Add branch selection logic to the POS Terminal.
 - [ ] Update Product forms and tables to show/edit stock levels per branch.
 
 ## Current Status
 
 - [x] Task Breakdown
-- [ ] Backend Data Model
-- [ ] Database Migration
-- [ ] Multi-store Sale Logic
-- [ ] Frontend Implementation
+- [x] Backend Data Model
+- [x] Database Migration
+- [x] Multi-store Sale Logic
+- [x] Frontend Implementation (Branches & POS)

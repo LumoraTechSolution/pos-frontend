@@ -237,7 +237,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               <CardContent className="space-y-4">
                 {!initialData && branches && branches.length > 1 ? (
                   <div className="space-y-4">
-                    <FormLabel className="text-sm font-semibold text-gray-400">Initial Stock per Branch</FormLabel>
+                    <label className="text-sm font-semibold text-gray-400">Initial Stock per Branch</label>
                     {branches.map((branch: any) => (
                       <FormField
                         key={branch.id}

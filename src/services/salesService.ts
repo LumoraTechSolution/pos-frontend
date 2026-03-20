@@ -35,6 +35,10 @@ export interface SaleResponse {
   paymentMethod: string;
   createdAt: string;
   cashierName?: string;
+  customerId?: string;
+  customerName?: string;
+  earnedPoints?: number;
+  loyaltyBalance?: number;
   items: SaleItemResponse[];
 }
 
@@ -53,6 +57,9 @@ export const salesService = {
   
   getSale: (id: string) => 
     api.get<ApiResponse<SaleResponse>>(`/sales/${id}`).then(res => res.data.data),
+
+  getSalesByCustomer: (customerId: string, page: number = 0, size: number = 10) =>
+    api.get<ApiResponse<any>>(`/sales/customer/${customerId}?page=${page}&size=${size}&sort=createdAt,desc`).then(res => res.data.data),
 
   getDailySummary: () =>
     api.get<ApiResponse<SalesSummaryResponse>>("/sales/summary/daily").then(res => res.data.data),

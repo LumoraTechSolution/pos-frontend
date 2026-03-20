@@ -12,8 +12,10 @@ import {
   MapPin,
   Star,
   Loader2,
-  X
+  X,
+  Eye
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Customer, CustomerRequest, customerService } from '@/services/customerService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +37,7 @@ export default function CustomersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data, isLoading } = useQuery({
     queryKey: ['customers', search, page],
@@ -219,6 +222,14 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="text-right pr-6">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => router.push(`/customers/${customer.id}`)}
+                          className="h-8 w-8 text-indigo-400 hover:bg-indigo-500/10"
+                        >
+                          <Eye size={16} />
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 

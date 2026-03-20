@@ -1,5 +1,5 @@
 import api from "./api";
-import { ApiResponse, PageResponse } from "@/types/common";
+import { ApiResponse, Page } from "@/types/common";
 
 export type ReturnStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
 export type RefundMethod = 'ORIGINAL' | 'CASH' | 'STORE_CREDIT';
@@ -71,7 +71,7 @@ export const returnService = {
     api.get<ApiResponse<ReturnResponse[]>>(`/returns/sale/${saleId}`).then(res => res.data.data),
 
   getAllReturns: (params?: { page?: number; size?: number }) => 
-    api.get<ApiResponse<PageResponse<ReturnResponse>>>("/returns", { params }).then(res => res.data.data),
+    api.get<ApiResponse<Page<ReturnResponse>>>("/returns", { params }).then(res => res.data.data),
 
   approveReturn: (id: string, approve: boolean) => 
     api.put<ApiResponse<ReturnResponse>>(`/returns/${id}/approve`, null, { params: { approve } }).then(res => res.data.data),

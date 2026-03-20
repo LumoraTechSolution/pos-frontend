@@ -73,7 +73,7 @@ export const inventoryService = {
   importProducts: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post("/bulk/products/import", formData, {
+    return api.post("/products/import", formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -81,7 +81,7 @@ export const inventoryService = {
   },
 
   exportProducts: () => {
-    return api.get("/bulk/products/export", { responseType: 'blob' }).then(res => {
+    return api.get("/products/export", { responseType: 'blob' }).then(res => {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
