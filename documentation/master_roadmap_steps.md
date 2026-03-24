@@ -119,7 +119,7 @@ _Goal: Production-ready SaaS product with offline & compliance._
 | Tier          | Technology                                       |
 | :------------ | :----------------------------------------------- |
 | **Frontend**  | Next.js 14, Tailwind CSS, Shadcn/UI, React Query |
-| **Backend**   | Spring Boot 3.3, Java 21, Spring Security        |
+| **Backend**   | Spring Boot 3.3, Java 17, Spring Security        |
 | **Database**  | PostgreSQL 15+, Flyway                           |
 | **Cache/Bus** | Redis, RabbitMQ (Phase 3+)                       |
 | **DevOps**    | Docker, Docker Compose, GitHub Actions           |
