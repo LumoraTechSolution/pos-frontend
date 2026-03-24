@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
+import { CURRENCY } from '@/lib/utils';
 
 interface ReturnModalProps {
   saleId: string | null;
@@ -158,7 +159,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                       return (
                         <tr key={item.id} className="border-t border-gray-800/50">
                           <td className="px-4 py-3 text-white">{item.productName}</td>
-                          <td className="px-4 py-3 text-right">${item.unitPrice.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right">{CURRENCY.symbol} {item.unitPrice.toFixed(2)}</td>
                           <td className="px-4 py-3 text-center">{item.quantity}</td>
                           <td className="px-4 py-3 text-center">
                             {remaining === 0 ? (
@@ -247,7 +248,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                <div className="text-sm">
                   {totalReturnItems > 0 && (
                       <span className="text-gray-300">
-                        Total Return Value: <span className="font-bold text-white text-lg">${totalReturnAmt.toFixed(2)}</span>
+                        Total Return Value: <span className="font-bold text-white text-lg">{CURRENCY.symbol} {totalReturnAmt.toFixed(2)}</span>
                       </span>
                   )}
                </div>

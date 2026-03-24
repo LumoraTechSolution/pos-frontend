@@ -5,6 +5,7 @@ import { SalesSummaryResponse } from '@/services/salesService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Banknote, CreditCard, QrCode, ShoppingBag, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CURRENCY } from '@/lib/utils';
 
 interface ShiftSummaryProps {
   summary: SalesSummaryResponse | null;
@@ -35,7 +36,7 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
             </div>
             <div className="p-4 bg-black/40 rounded-2xl border border-gray-800">
               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Net Sales</p>
-              <p className="text-2xl font-black text-primary">${summary.totalNetSales.toFixed(2)}</p>
+              <p className="text-2xl font-black text-primary">{CURRENCY.symbol} {summary.totalNetSales.toFixed(2)}</p>
             </div>
           </div>
 
@@ -47,21 +48,21 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
                   <Banknote className="text-emerald-500" size={18} />
                   <span className="text-sm font-medium text-gray-300">Cash</span>
                 </div>
-                <span className="font-bold text-white">${(summary.salesByPaymentMethod['CASH'] || 0).toFixed(2)}</span>
+                <span className="font-bold text-white">{CURRENCY.symbol} {(summary.salesByPaymentMethod['CASH'] || 0).toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-950 rounded-xl border border-gray-800/50">
                 <div className="flex items-center gap-3">
                   <CreditCard className="text-blue-500" size={18} />
                   <span className="text-sm font-medium text-gray-300">Card</span>
                 </div>
-                <span className="font-bold text-white">${(summary.salesByPaymentMethod['CARD'] || 0).toFixed(2)}</span>
+                <span className="font-bold text-white">{CURRENCY.symbol} {(summary.salesByPaymentMethod['CARD'] || 0).toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-gray-950 rounded-xl border border-gray-800/50">
                 <div className="flex items-center gap-3">
                   <QrCode className="text-purple-500" size={18} />
                   <span className="text-sm font-medium text-gray-300">Online</span>
                 </div>
-                <span className="font-bold text-white">${(summary.salesByPaymentMethod['ONLINE'] || 0).toFixed(2)}</span>
+                <span className="font-bold text-white">{CURRENCY.symbol} {(summary.salesByPaymentMethod['ONLINE'] || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -69,15 +70,15 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
           <div className="pt-4 border-t border-gray-800 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Gross Sales</span>
-              <span className="text-gray-300">${summary.totalGrossSales.toFixed(2)}</span>
+              <span className="text-gray-300">{CURRENCY.symbol} {summary.totalGrossSales.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Total Tax</span>
-              <span className="text-gray-300">${summary.totalTax.toFixed(2)}</span>
+              <span className="text-gray-300">{CURRENCY.symbol} {summary.totalTax.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Total Discounts</span>
-              <span className="text-red-500/70">-${summary.totalDiscounts.toFixed(2)}</span>
+              <span className="text-red-500/70">-{CURRENCY.symbol} {summary.totalDiscounts.toFixed(2)}</span>
             </div>
           </div>
 

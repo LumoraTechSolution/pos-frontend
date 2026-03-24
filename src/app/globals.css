@@ -39,3 +39,17 @@
     --radius: 0.5rem;
   }
 }
+
+@media print {
+  @page {
+    margin: 0;
+    size: 80mm auto;
+  }
+  body {
+    background-color: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+}
+

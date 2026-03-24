@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { CreatePOModal } from "./CreatePOModal";
 import { ReceivePOModal } from "./ReceivePOModal";
+import { CURRENCY } from '@/lib/utils';
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-400 border-gray-500/20", icon: FileText },
@@ -137,7 +138,7 @@ export default function PurchaseOrdersPage() {
                           {po.branchName}
                         </TableCell>
                         <TableCell className="text-emerald-400 font-medium py-4">
-                          ${po.totalAmount.toFixed(2)}
+                          {CURRENCY.symbol} {po.totalAmount.toFixed(2)}
                         </TableCell>
                         <TableCell className="py-4">
                       <Badge variant="outline" className={`${statusInfo.color} font-medium border rounded-md px-2 py-0.5 whitespace-nowrap`}>
@@ -217,8 +218,8 @@ export default function PurchaseOrdersPage() {
                                       <td className="py-2 pr-4 text-gray-400 font-mono text-xs">{item.sku || 'N/A'}</td>
                                       <td className="py-2 pr-4 text-center text-gray-300 font-medium">{item.orderedQuantity}</td>
                                       <td className="py-2 pr-4 text-center text-emerald-400 font-semibold">{item.receivedQuantity}</td>
-                                      <td className="py-2 pr-4 text-right text-gray-300">${item.unitCost.toFixed(2)}</td>
-                                      <td className="py-2 text-right font-semibold text-gray-100">${item.totalCost.toFixed(2)}</td>
+                                      <td className="py-2 pr-4 text-right text-gray-300">{CURRENCY.symbol} {item.unitCost.toFixed(2)}</td>
+                                      <td className="py-2 text-right font-semibold text-gray-100">{CURRENCY.symbol} {item.totalCost.toFixed(2)}</td>
                                     </tr>
                                   ))}
                                 </tbody>

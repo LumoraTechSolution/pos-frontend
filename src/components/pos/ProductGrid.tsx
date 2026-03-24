@@ -3,6 +3,7 @@
 import { Package, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Product } from '@/types/inventory';
+import { CURRENCY } from '@/lib/utils';
 
 interface ProductGridProps {
   products: Product[];
@@ -59,7 +60,7 @@ export function ProductGrid({ products, isLoading, searchTerm, onProductClick, s
                 </h3>
                 <p className="text-xs text-gray-500 mb-2">{product.sku}</p>
                 <div className="flex justify-between items-center">
-                  <span className="text-primary font-bold">${product.basePrice.toFixed(2)}</span>
+                  <span className="text-primary font-bold">{CURRENCY.symbol} {product.basePrice.toFixed(2)}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.5 rounded ${
                       displayStock < 10

@@ -143,7 +143,8 @@ export default function TerminalPage() {
 
   // Render
   return (
-    <div className="h-screen flex bg-black overflow-hidden font-sans">
+    <>
+      <div className="h-screen flex bg-black overflow-hidden font-sans print:hidden">
       {/* Left Side — Products */}
       <div className="flex-1 flex flex-col min-w-0">
         <POSHeader
@@ -221,12 +222,14 @@ export default function TerminalPage() {
         <ShiftSummary summary={summary} onClose={() => setShowSummary(false)} />
       )}
 
+      </div>
+
       {/* Hidden Receipt for Printing */}
-      <div className="hidden">
-        <div id="receipt-print">
+      {lastSale && (
+        <div className="hidden print:block print:absolute print:left-0 print:top-0 print:w-full print:bg-white print:text-black z-[9999]">
           <Receipt sale={lastSale} />
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
