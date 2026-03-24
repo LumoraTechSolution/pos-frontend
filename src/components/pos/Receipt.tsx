@@ -2,6 +2,7 @@
 
 import React, { forwardRef } from 'react';
 import { SaleResponse } from '@/services/salesService';
+import { CURRENCY } from '@/lib/utils';
 
 interface ReceiptProps {
   sale: SaleResponse | null;
@@ -15,8 +16,8 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ sale }, ref) 
       <div className="text-center mb-4">
         <h1 className="text-lg font-bold uppercase">Lumora POS</h1>
         <p>123 Business Avenue</p>
-        <p>City, State, 12345</p>
-        <p>Tel: +1 (555) 123-4567</p>
+        <p>Colombo, Sri Lanka</p>
+        <p>Tel: +94 11 234 5678</p>
       </div>
 
       <div className="border-t border-b border-black py-2 mb-2">
@@ -40,10 +41,10 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ sale }, ref) 
           <div key={index} className="mb-1">
             <div className="grid grid-cols-[1fr_auto] gap-2">
               <span className="truncate">{item.productName}</span>
-              <span className="text-right">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+              <span className="text-right">{CURRENCY.symbol} {(item.unitPrice * item.quantity).toFixed(2)}</span>
             </div>
             <div className="text-[10px] text-gray-600">
-              {item.quantity} x ${item.unitPrice.toFixed(2)}
+              {item.quantity} x {CURRENCY.symbol} {item.unitPrice.toFixed(2)}
             </div>
           </div>
         ))}
@@ -52,21 +53,21 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ sale }, ref) 
       <div className="border-t border-black pt-2 space-y-1">
         <p className="flex justify-between">
           <span>Subtotal:</span>
-          <span>${sale.totalAmount.toFixed(2)}</span>
+          <span>{CURRENCY.symbol} {sale.totalAmount.toFixed(2)}</span>
         </p>
         <p className="flex justify-between">
           <span>Tax (10%):</span>
-          <span>${sale.taxAmount.toFixed(2)}</span>
+          <span>{CURRENCY.symbol} {sale.taxAmount.toFixed(2)}</span>
         </p>
         {sale.discountAmount > 0 && (
           <p className="flex justify-between">
             <span>Discount:</span>
-            <span>-${sale.discountAmount.toFixed(2)}</span>
+            <span>-{CURRENCY.symbol} {sale.discountAmount.toFixed(2)}</span>
           </p>
         )}
         <p className="flex justify-between font-bold text-base border-t border-black pt-1">
           <span>TOTAL:</span>
-          <span>${sale.netAmount.toFixed(2)}</span>
+          <span>{CURRENCY.symbol} {sale.netAmount.toFixed(2)}</span>
         </p>
       </div>
 

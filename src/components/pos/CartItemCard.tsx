@@ -2,6 +2,7 @@
 
 import { Trash2, Plus, Minus, Package } from 'lucide-react';
 import { CartItem } from '@/hooks/useCart';
+import { CURRENCY } from '@/lib/utils';
 
 interface CartItemCardProps {
   item: CartItem;
@@ -46,7 +47,7 @@ export function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardP
             </button>
           </div>
           <span className="font-bold text-sm text-white">
-            ${(item.basePrice * item.cartQuantity).toFixed(2)}
+            {CURRENCY.symbol} {(item.basePrice * item.cartQuantity).toFixed(2)}
           </span>
         </div>
       </div>

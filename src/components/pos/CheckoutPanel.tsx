@@ -2,6 +2,7 @@
 
 import { ShoppingCart, CreditCard, Banknote, QrCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CURRENCY } from '@/lib/utils';
 
 type PaymentMethod = 'CASH' | 'CARD' | 'ONLINE';
 
@@ -62,15 +63,15 @@ export function CheckoutPanel({
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">Subtotal</span>
-          <span className="text-gray-300 font-medium">${subtotal.toFixed(2)}</span>
+          <span className="text-gray-300 font-medium">{CURRENCY.symbol} {subtotal.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-gray-500">{taxLabel}</span>
-          <span className="text-gray-300 font-medium">${taxAmount.toFixed(2)}</span>
+          <span className="text-gray-300 font-medium">{CURRENCY.symbol} {taxAmount.toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-2xl font-black pt-3 border-t border-gray-800/50">
           <span className="text-white">TOTAL</span>
-          <span className="text-primary">${total.toFixed(2)}</span>
+          <span className="text-primary">{CURRENCY.symbol} {total.toFixed(2)}</span>
         </div>
       </div>
 

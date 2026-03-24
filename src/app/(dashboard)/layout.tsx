@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { TimeClockWidget } from '@/components/employee/TimeClockWidget';
+import AuthGuard from '@/components/providers/AuthGuard';
 
 export default function DashboardLayout({
   children,
@@ -68,7 +69,8 @@ export default function DashboardLayout({
   });
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <AuthGuard>
+      <div className="min-h-screen bg-black text-white flex">
       {/* Sidebar */}
       <aside className="w-64 bg-gray-950 border-r border-gray-900 flex flex-col sticky top-0 h-screen">
         {/* Logo */}
@@ -145,7 +147,8 @@ export default function DashboardLayout({
       <main className="flex-1 overflow-auto bg-[#050505]">
         {children}
       </main>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }
 

@@ -41,8 +41,17 @@ export const inventoryService = {
     api.delete<ApiResponse<void>>(`/brands/${id}`).then(res => res.data.data),
 
   // --- Products ---
-  getProducts: (page = 0, size = 10) => 
-    api.get<ApiResponse<Page<Product>>>(`/products?page=${page}&size=${size}`).then(res => res.data.data),
+  getProducts: (page = 0, size = 10, filters?: Record<string, any>) => {
+    const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, typeof value === 'boolean' ? value.toString() : String(value));
+        }
+      });
+    }
+    return api.get<ApiResponse<Page<Product>>>(`/products?${params.toString()}`).then(res => res.data.data);
+  },
   
   getProduct: (id: string) => 
     api.get<ApiResponse<Product>>(`/products/${id}`).then(res => res.data.data),

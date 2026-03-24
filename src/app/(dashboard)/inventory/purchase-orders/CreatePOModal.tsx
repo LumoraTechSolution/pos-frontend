@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { Truck, Plus, Trash2 } from "lucide-react";
 import { Product } from "@/types/inventory";
+import { CURRENCY } from '@/lib/utils';
 
 interface CreatePOModalProps {
   isOpen: boolean;
@@ -263,7 +264,7 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                               />
                             </td>
                             <td className="py-2 px-3 text-right font-medium text-emerald-400">
-                              ${(item.quantity * item.unitCost).toFixed(2)}
+                              {CURRENCY.symbol} {(item.quantity * item.unitCost).toFixed(2)}
                             </td>
                             <td className="py-2 px-2 text-center">
                               <Button
@@ -289,7 +290,7 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
           <div className="p-4 border-t border-gray-800 bg-gray-950 flex items-center justify-between">
             <div className="flex flex-col">
               <span className="text-sm text-gray-400">Total Order Amount</span>
-              <span className="text-xl font-bold text-emerald-400">${totalAmount.toFixed(2)}</span>
+              <span className="text-xl font-bold text-emerald-400">{CURRENCY.symbol} {totalAmount.toFixed(2)}</span>
             </div>
             <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={onClose} className="border-gray-800 hover:bg-gray-800 text-gray-300">

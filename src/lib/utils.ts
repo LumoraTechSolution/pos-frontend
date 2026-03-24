@@ -5,11 +5,30 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
+export function formatCurrency(amount: number, currency: string = 'LKR'): string {
+  const locale = currency === 'LKR' ? 'en-LK' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
+}
+
+/**
+ * Centralized currency configuration.
+ * Change CURRENCY_CODE to switch the entire application's currency.
+ * Supported: 'LKR' (Sri Lankan Rupee) | 'USD' (US Dollar)
+ */
+export const CURRENCY = {
+  code: 'LKR' as const,
+  symbol: 'Rs.',
+  locale: 'en-LK',
+} as const;
+
+/** Shorthand: format a number using the app's primary currency */
+export function fc(amount: number): string {
+  return formatCurrency(amount, CURRENCY.code);
 }
 
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {

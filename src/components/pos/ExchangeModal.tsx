@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, ArrowRightLeft, Search, Plus, Minus, Info } from "lucide-react";
 import { toast } from "sonner";
+import { CURRENCY } from '@/lib/utils';
 
 interface ExchangeModalProps {
   saleId: string | null;
@@ -142,7 +143,7 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                       <div key={product.id} className="flex justify-between items-center p-3 rounded-md hover:bg-gray-800/80 group">
                         <div>
                           <p className="text-sm font-medium text-gray-200">{product.name}</p>
-                          <p className="text-xs text-gray-500">Stock: {product.stockQuantity} | ${product.basePrice.toFixed(2)}</p>
+                          <p className="text-xs text-gray-500">Stock: {product.stockQuantity} | {CURRENCY.symbol} {product.basePrice.toFixed(2)}</p>
                         </div>
                         <Button 
                           size="sm" 
@@ -176,7 +177,7 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                     <div key={item.id} className="flex justify-between items-center bg-gray-950 p-3 rounded-lg border border-gray-800">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-200 truncate pr-2">{item.name}</p>
-                        <p className="text-xs text-primary">${(item.basePrice * item.cartQuantity).toFixed(2)}</p>
+                        <p className="text-xs text-primary">{CURRENCY.symbol} {(item.basePrice * item.cartQuantity).toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-2 bg-gray-900 rounded-md border border-gray-800">
                         <button onClick={() => updateQuantity(item.id, -1)} className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-l-md transition-colors"><Minus size={14} /></button>
@@ -193,18 +194,18 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm text-gray-400">
                     <span>Return Credit:</span>
-                    <span className="text-emerald-400">+${returnCredit.toFixed(2)}</span>
+                    <span className="text-emerald-400">+{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-400">
                     <span>Replacement Cost:</span>
-                    <span className="text-red-400">-${replacementTotal.toFixed(2)}</span>
+                    <span className="text-red-400">-{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-2 border-t border-gray-700">
                     <span>Balance:</span>
                     <span className={priceDifference > 0 ? "text-red-400" : priceDifference < 0 ? "text-emerald-400" : "text-gray-300"}>
-                      {priceDifference > 0 ? `Customer pays $${priceDifference.toFixed(2)}` : 
-                       priceDifference < 0 ? `Refund $${Math.abs(priceDifference).toFixed(2)}` : 
-                       "Even Swap ($0.00)"}
+                      {priceDifference > 0 ? `Customer pays ${CURRENCY.symbol} ${priceDifference.toFixed(2)}` : 
+                       priceDifference < 0 ? `Refund ${CURRENCY.symbol} ${Math.abs(priceDifference).toFixed(2)}` : 
+                       `Even Swap (${CURRENCY.symbol} 0.00)`}
                     </span>
                   </div>
                 </div>
@@ -250,7 +251,7 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                 </div>
                 <div className="flex justify-between items-center text-sm pt-2">
                   <span className="text-gray-400">Total Credit:</span>
-                  <span className="font-bold text-emerald-400">${returnCredit.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-400">{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -260,13 +261,13 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                   {cart.map(item => (
                     <div key={item.id} className="flex justify-between text-sm py-1 border-b border-gray-800/50 last:border-0">
                       <span className="text-gray-300 truncate pr-2">{item.name} <span className="text-gray-500">x{item.cartQuantity}</span></span>
-                      <span className="text-gray-400">${(item.basePrice * item.cartQuantity).toFixed(2)}</span>
+                      <span className="text-gray-400">{CURRENCY.symbol} {(item.basePrice * item.cartQuantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-between items-center text-sm pt-2">
                   <span className="text-gray-400">Total Cost:</span>
-                  <span className="font-bold text-red-400">${replacementTotal.toFixed(2)}</span>
+                  <span className="font-bold text-red-400">{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -274,9 +275,9 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
             <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 flex justify-between items-center">
               <span className="text-gray-300 text-lg">Final Balance</span>
               <span className={`text-2xl font-bold ${priceDifference > 0 ? "text-red-400" : priceDifference < 0 ? "text-emerald-400" : "text-gray-100"}`}>
-                 {priceDifference > 0 ? `Pay $${priceDifference.toFixed(2)}` : 
-                  priceDifference < 0 ? `Refund $${Math.abs(priceDifference).toFixed(2)}` : 
-                  "$0.00"}
+                 {priceDifference > 0 ? `Pay ${CURRENCY.symbol} ${priceDifference.toFixed(2)}` : 
+                  priceDifference < 0 ? `Refund ${CURRENCY.symbol} ${Math.abs(priceDifference).toFixed(2)}` : 
+                  `${CURRENCY.symbol} 0.00`}
               </span>
             </div>
 
