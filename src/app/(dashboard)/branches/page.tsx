@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { branchService, Branch, BranchRequest } from "@/services/branchService";
 import { Button } from "@/components/ui/button";
-import { Plus, Store, Info } from "lucide-react";
+import { Plus, Store, Info, Shield } from "lucide-react";
 import BranchTable from "@/components/branches/BranchTable";
 import BranchFormModal from "@/components/branches/BranchForm";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function BranchesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,6 +48,10 @@ export default function BranchesPage() {
     }
   });
 
+  const { user: currentUser } = useAuthStore();
+  const maxLocations = currentUser?.maxLocations || 1;
+  const isLimitReached = (branches?.length || 0) >= maxLocations;
+
   const handleSubmit = (data: BranchRequest) => {
     if (selectedBranch) {
       updateMutation.mutate({ id: selectedBranch.id, request: data });
@@ -75,17 +80,36 @@ export default function BranchesPage() {
           </div>
           <p className="text-muted-foreground">Manage your physical store locations and warehouses.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2 bg-primary hover:bg-primary/90">
-          <Plus size={18} /> Add Branch
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button 
+            disabled={isLimitReached}
+            onClick={() => setIsModalOpen(true)} 
+            className="gap-2 bg-primary hover:bg-primary/90"
+          >
+            {isLimitReached ? <Shield size={18} className="text-amber-400" /> : <Plus size={18} />}
+            Add Branch
+          </Button>
+          {isLimitReached && (
+            <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              Plan Limit: {maxLocations} Location{maxLocations > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
       </div>
 
-      <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex gap-3 items-start">
-        <Info className="text-primary shrink-0 mt-0.5" size={18} />
-        <p className="text-sm text-indigo-300/80 leading-relaxed">
-          Branches allow you to track inventory across different physical sites. Each transaction at the POS 
-          terminal should be associated with a branch to ensure stock is deducted from the correct location.
-        </p>
+      <div className={`rounded-xl p-4 flex gap-3 items-start transition-colors ${isLimitReached ? 'bg-amber-500/5 border border-amber-500/10' : 'bg-primary/5 border border-primary/10'}`}>
+        <Info className={`${isLimitReached ? 'text-amber-500' : 'text-primary'} shrink-0 mt-0.5`} size={18} />
+        <div className="space-y-1">
+          <p className={`text-sm leading-relaxed ${isLimitReached ? 'text-amber-200/80' : 'text-indigo-300/80'}`}>
+            Branches allow you to track inventory across different physical sites. Each transaction at the POS 
+            terminal should be associated with a branch to ensure stock is deducted from the correct location.
+          </p>
+          {isLimitReached && (
+            <p className="text-xs text-amber-500/60 font-medium">
+              You have reached your current plan limit. Upgrade to <strong>Medium Business</strong> to manage up to 3 locations.
+            </p>
+          )}
+        </div>
       </div>
 
       <BranchTable 

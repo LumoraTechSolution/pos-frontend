@@ -29,6 +29,7 @@ import { format } from "date-fns";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "next/navigation";
 import { UserSquare2 } from "lucide-react";
+import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, string> = {
@@ -306,7 +307,9 @@ export default function EmployeesPage() {
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Backend sends "active" (Jackson strips "is" from boolean fields)
+  // Plan Limit Check
+  const maxUsers = currentUser?.maxUsers || 5;
+  const isLimitReached = users.length >= maxUsers;
   const activeCount = users.filter((u) => u.active).length;
 
   return (
@@ -319,30 +322,56 @@ export default function EmployeesPage() {
         </div>
         <div className="flex gap-3">
           {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
-            <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300 gap-2 h-10 shadow-sm">
-              <Clock size={16} className="text-primary" /> View Timesheets
-            </Button>
+            <FeatureGuard feature="TIME_CLOCK">
+              <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300 gap-2 h-10 shadow-sm">
+                <Clock size={16} className="text-primary" /> View Timesheets
+              </Button>
+            </FeatureGuard>
           )}
           {(currentUser?.roles?.includes('ADMIN')) && (
-            <Button onClick={() => setShowCreate(true)} className="bg-primary hover:bg-primary gap-2 h-10 shadow-lg shadow-primary/20">
-              <UserPlus size={16} /> Add Employee
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              <Button 
+                onClick={() => setShowCreate(true)} 
+                disabled={isLimitReached}
+                className="bg-primary hover:bg-primary gap-2 h-10 shadow-lg shadow-primary/20"
+              >
+                {isLimitReached ? <Shield size={16} className="text-amber-400" /> : <UserPlus size={16} />}
+                Add Employee
+              </Button>
+              {isLimitReached && (
+                <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  Plan Limit Reached
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: "Total Employees", value: users.length, color: "text-white" },
-          { label: "Active", value: activeCount, color: "text-emerald-400" },
-          { label: "Inactive", value: users.length - activeCount, color: "text-red-400" },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
-            <span className="text-sm text-gray-400">{stat.label}</span>
-            <span className={`text-2xl font-bold ${stat.color}`}>{stat.value}</span>
+        <div className={`bg-gray-900 border ${isLimitReached ? 'border-amber-500/30' : 'border-gray-800'} rounded-xl p-4 flex items-center justify-between transition-colors`}>
+          <div className="space-y-0.5">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total Employees</span>
+            <div className="flex items-baseline gap-1">
+              <span className={`text-2xl font-bold ${isLimitReached ? 'text-amber-400' : 'text-white'}`}>{users.length}</span>
+              <span className="text-xs text-gray-600">/ {maxUsers}</span>
+            </div>
           </div>
-        ))}
+          {isLimitReached && (
+            <div className="p-2 bg-amber-500/10 rounded-lg">
+               <Shield size={18} className="text-amber-500" />
+            </div>
+          )}
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+          <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Active</span>
+          <span className="text-2xl font-bold text-emerald-400">{activeCount}</span>
+        </div>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+          <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Inactive</span>
+          <span className="text-2xl font-bold text-red-400">{users.length - activeCount}</span>
+        </div>
       </div>
 
       {/* Search Bar */}

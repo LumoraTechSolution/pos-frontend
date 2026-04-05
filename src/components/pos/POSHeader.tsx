@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, ShoppingBag, LogOut, Store, ChevronDown } from 'lucide-react';
+import { Package, ShoppingBag, LogOut, Store, ChevronDown, Unlock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Branch } from '@/services/branchService';
 import { cn } from '@/lib/utils';
 import { TimeClockWidget } from '@/components/employee/TimeClockWidget';
+import { FeatureGuard } from '@/components/auth/FeatureGuard';
 
 interface POSHeaderProps {
   userName: string;
@@ -88,7 +89,30 @@ export function POSHeader({
       </div>
 
       <div className="flex items-center gap-4">
-        {userRole !== 'ADMIN' && <TimeClockWidget variant="header" />}
+        {userRole !== 'ADMIN' && (
+          <FeatureGuard feature="TIME_CLOCK">
+            <TimeClockWidget variant="header" />
+          </FeatureGuard>
+        )}
+        
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              const { default: api } = await import('@/services/api');
+              await api.post('/terminal/hardware/open-drawer');
+              const { hardwareService } = await import('@/services/hardwareService');
+              hardwareService.kickCashDrawer();
+            } catch (err) {
+              console.error("Failed to audit drawer opening", err);
+              // Do NOT open the drawer if the audit fails
+            }
+          }}
+          className="hidden md:flex bg-gray-950 border-gray-800 hover:bg-gray-800 text-gray-400 hover:text-emerald-400 gap-2 h-9 rounded-lg"
+          title="Open Cash Drawer manually"
+        >
+          <Unlock size={16} /> Open Drawer
+        </Button>
         
         <Button
           variant="outline"

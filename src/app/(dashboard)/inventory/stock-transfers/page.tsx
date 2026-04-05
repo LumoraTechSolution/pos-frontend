@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { stockTransferService } from '@/services/stockTransferService';
 import { StockTransferModal } from '@/components/inventory/StockTransferModal';
 import { toast } from 'sonner';
+import { FeatureGuard } from '@/components/auth/FeatureGuard';
 
 export default function StockTransfersPage() {
   const queryClient = useQueryClient();
@@ -64,6 +65,21 @@ export default function StockTransfersPage() {
   };
 
   return (
+    <FeatureGuard
+      feature="STOCK_TRANSFERS"
+      fallback={
+        <div className="flex h-full min-h-[500px] flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+          <div className="rounded-full bg-red-500/10 p-4 mb-4">
+            <ArrowRightLeft className="h-10 w-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight mb-2">Feature Not Available</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Your current subscription plan does not include access to the Stock Transfers module. 
+            Please upgrade your workspace to manage multi-branch inventory movements.
+          </p>
+        </div>
+      }
+    >
     <div className="p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -241,5 +257,6 @@ export default function StockTransfersPage() {
 
       {isModalOpen && <StockTransferModal onClose={() => setIsModalOpen(false)} />}
     </div>
+    </FeatureGuard>
   );
 }

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { CreatePOModal } from "./CreatePOModal";
 import { ReceivePOModal } from "./ReceivePOModal";
 import { CURRENCY } from '@/lib/utils';
+import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-400 border-gray-500/20", icon: FileText },
@@ -68,6 +69,21 @@ export default function PurchaseOrdersPage() {
   };
 
   return (
+    <FeatureGuard
+      feature="PURCHASE_ORDERS"
+      fallback={
+        <div className="flex h-full min-h-[500px] flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
+          <div className="rounded-full bg-red-500/10 p-4 mb-4">
+            <FileText className="h-10 w-10 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight mb-2">Feature Not Available</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Your current subscription plan does not include access to the Purchase Orders module. 
+            Please upgrade your workspace to manage purchase orders directly from the POS.
+          </p>
+        </div>
+      }
+    >
     <div className="p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center">
         <div>
@@ -273,5 +289,6 @@ export default function PurchaseOrdersPage() {
       <ReceivePOModal isOpen={!!receiveModalPO} onClose={() => setReceiveModalPO(null)} purchaseOrder={receiveModalPO} />
 
     </div>
+    </FeatureGuard>
   );
 }

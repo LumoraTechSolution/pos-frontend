@@ -35,9 +35,11 @@ import {
   Info,
   X,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
@@ -164,238 +166,265 @@ export default function SettingsPage() {
       </div>
 
       {/* Tax Configuration Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Percent className="text-primary" size={20} />
-            <h2 className="text-xl font-semibold text-white">
-              Tax Configuration
-            </h2>
+      <FeatureGuard 
+        feature="TAX_CONFIG"
+        fallback={
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Percent className="text-gray-600" size={20} />
+              <h2 className="text-xl font-semibold text-gray-500">Tax Configuration</h2>
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 ml-2">Premium</Badge>
+            </div>
+            <Card className="bg-gray-950 border-gray-800 border-dashed border-2">
+              <CardContent className="h-64 flex flex-col items-center justify-center text-center p-8">
+                <div className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center mb-4">
+                  <Lock className="text-gray-600" size={32} />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">Feature Locked</h3>
+                <p className="text-gray-400 text-sm max-w-sm mb-6">
+                  Advanced tax configuration, category mapping, and multi-layered taxation are available in the <strong>Medium Business</strong> and <strong>Enterprise</strong> plans.
+                </p>
+                <Button className="bg-primary hover:bg-primary/90">
+                  View Upgrade Plans
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-          <Button
-            onClick={openCreate}
-            className="gap-2 bg-primary hover:bg-primary/90"
-          >
-            <Plus size={18} /> Add Tax Rate
-          </Button>
-        </div>
-
-        {/* Info Banner */}
-        <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex gap-3 items-start">
-          <Info className="text-primary shrink-0 mt-0.5" size={18} />
-          <div className="text-sm text-indigo-300/80 leading-relaxed space-y-1">
-            <p>
-              Tax rates are applied to products based on their category. Assign
-              a tax rate to a category, and all products in that category will
-              use it.
-            </p>
-            <p className="text-primary/60">
-              <strong>Resolution Order:</strong> Product Category Tax Rate →
-              Default Tax Rate → 0% (tax-exempt)
-            </p>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Percent className="text-primary" size={20} />
+              <h2 className="text-xl font-semibold text-white">
+                Tax Configuration
+              </h2>
+            </div>
+            <Button
+              onClick={openCreate}
+              className="gap-2 bg-primary hover:bg-primary/90"
+            >
+              <Plus size={18} /> Add Tax Rate
+            </Button>
           </div>
-        </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gray-950 border-gray-800">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Percent className="text-primary" size={22} />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Total Rates
-                </p>
-                <p className="text-2xl font-bold text-white">
-                  {taxRates?.length || 0}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Info Banner */}
+          <div className="bg-primary/5 border border-primary/10 rounded-xl p-4 flex gap-3 items-start">
+            <Info className="text-primary shrink-0 mt-0.5" size={18} />
+            <div className="text-sm text-indigo-300/80 leading-relaxed space-y-1">
+              <p>
+                Tax rates are applied to products based on their category. Assign
+                a tax rate to a category, and all products in that category will
+                use it.
+              </p>
+              <p className="text-primary/60">
+                <strong>Resolution Order:</strong> Product Category Tax Rate →
+                Default Tax Rate → 0% (tax-exempt)
+              </p>
+            </div>
+          </div>
 
-          <Card className="bg-gray-950 border-gray-800">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Shield className="text-emerald-400" size={22} />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Active Rates
-                </p>
-                <p className="text-2xl font-bold text-white">{activeCount}</p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-gray-950 border-gray-800">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Percent className="text-primary" size={22} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total Rates
+                  </p>
+                  <p className="text-2xl font-bold text-white">
+                    {taxRates?.length || 0}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <Card className="bg-gray-950 border-gray-800">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                <Star className="text-amber-400" size={22} />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Default Rate
-                </p>
-                <p className="text-2xl font-bold text-white">
-                  {defaultRate
-                    ? `${defaultRate.ratePercent}%`
-                    : "Not Set"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <Card className="bg-gray-950 border-gray-800">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                  <Shield className="text-emerald-400" size={22} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Active Rates
+                  </p>
+                  <p className="text-2xl font-bold text-white">{activeCount}</p>
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* Tax Rates Table */}
-        <Card className="bg-gray-950 border-gray-800 overflow-hidden">
-          <CardHeader className="bg-gray-900/30 border-b border-gray-800 pb-4">
-            <CardTitle className="text-base font-semibold text-gray-300">
-              Tax Rates Registry
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-black/20">
-                <TableRow className="border-gray-800 hover:bg-transparent">
-                  <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-6">
-                    Name
-                  </TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                    Rate
-                  </TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                    Description
-                  </TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
-                    Type
-                  </TableHead>
-                  <TableHead className="text-right text-gray-400 font-bold uppercase text-[10px] tracking-widest pr-6">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-500">
-                        <Loader2
-                          className="animate-spin text-primary"
-                          size={28}
-                        />
-                        <p className="text-sm font-medium">
-                          Loading tax rates...
-                        </p>
-                      </div>
-                    </TableCell>
+            <Card className="bg-gray-950 border-gray-800">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                  <Star className="text-amber-400" size={22} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Default Rate
+                  </p>
+                  <p className="text-2xl font-bold text-white">
+                    {defaultRate
+                      ? `${defaultRate.ratePercent}%`
+                      : "Not Set"}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Tax Rates Table */}
+          <Card className="bg-gray-950 border-gray-800 overflow-hidden">
+            <CardHeader className="bg-gray-900/30 border-b border-gray-800 pb-4">
+              <CardTitle className="text-base font-semibold text-gray-300">
+                Tax Rates Registry
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-black/20">
+                  <TableRow className="border-gray-800 hover:bg-transparent">
+                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-6">
+                      Name
+                    </TableHead>
+                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                      Rate
+                    </TableHead>
+                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                      Description
+                    </TableHead>
+                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                      Type
+                    </TableHead>
+                    <TableHead className="text-right text-gray-400 font-bold uppercase text-[10px] tracking-widest pr-6">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ) : !taxRates || taxRates.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-500">
-                        <Percent size={40} className="opacity-10" />
-                        <p className="text-sm font-medium">
-                          No tax rates configured yet
-                        </p>
-                        <Button
-                          variant="link"
-                          className="text-primary"
-                          onClick={openCreate}
-                        >
-                          Create your first tax rate
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  taxRates.map((rate) => (
-                    <TableRow
-                      key={rate.id}
-                      className="border-gray-800 hover:bg-white/5 transition-colors group"
-                    >
-                      <TableCell className="py-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={cn(
-                              "w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold",
-                              rate.isActive
-                                ? "bg-primary/10 text-primary"
-                                : "bg-gray-800 text-gray-500"
-                            )}
-                          >
-                            %
-                          </div>
-                          <span className="font-semibold text-white">
-                            {rate.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-lg font-black text-primary">
-                          {rate.ratePercent}%
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-gray-400">
-                          {rate.description || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={cn(
-                            rate.isActive
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : "bg-gray-800 text-gray-400"
-                          )}
-                        >
-                          {rate.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {rate.isDefault ? (
-                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
-                            <Star size={12} fill="currentColor" /> Default
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-gray-500">
-                            Standard
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-primary hover:bg-primary/10"
-                            onClick={() => openEdit(rate)}
-                          >
-                            <Edit2 size={15} />
-                          </Button>
-                          {!rate.isDefault && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-500/10"
-                              onClick={() => setDeleteConfirm(rate)}
-                            >
-                              <Trash2 size={15} />
-                            </Button>
-                          )}
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-48 text-center">
+                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                          <Loader2
+                            className="animate-spin text-primary"
+                            size={28}
+                          />
+                          <p className="text-sm font-medium">
+                            Loading tax rates...
+                          </p>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                  ) : !taxRates || taxRates.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-48 text-center">
+                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                          <Percent size={40} className="opacity-10" />
+                          <p className="text-sm font-medium">
+                            No tax rates configured yet
+                          </p>
+                          <Button
+                            variant="link"
+                            className="text-primary"
+                            onClick={openCreate}
+                          >
+                            Create your first tax rate
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    taxRates.map((rate) => (
+                      <TableRow
+                        key={rate.id}
+                        className="border-gray-800 hover:bg-white/5 transition-colors group"
+                      >
+                        <TableCell className="py-4 pl-6">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold",
+                                rate.isActive
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-gray-800 text-gray-500"
+                              )}
+                            >
+                              %
+                            </div>
+                            <span className="font-semibold text-white">
+                              {rate.name}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-lg font-black text-primary">
+                            {rate.ratePercent}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-gray-400">
+                            {rate.description || "—"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={cn(
+                              rate.isActive
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : "bg-gray-800 text-gray-400"
+                            )}
+                          >
+                            {rate.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {rate.isDefault ? (
+                            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
+                              <Star size={12} fill="currentColor" /> Default
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              Standard
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary hover:bg-primary/10"
+                              onClick={() => openEdit(rate)}
+                            >
+                              <Edit2 size={15} />
+                            </Button>
+                            {!rate.isDefault && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-500/10"
+                                onClick={() => setDeleteConfirm(rate)}
+                              >
+                                <Trash2 size={15} />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </FeatureGuard>
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={closeModal}>

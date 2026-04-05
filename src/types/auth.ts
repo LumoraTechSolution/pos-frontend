@@ -8,6 +8,8 @@ export interface User {
   lastName: string;
   roles: string[];
   permissions: string[];
+  featuresEnabled: string[];
+  planTier: string;
 }
 
 export interface AuthResponse {

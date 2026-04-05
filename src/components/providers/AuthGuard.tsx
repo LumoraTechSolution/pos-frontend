@@ -11,38 +11,44 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [isVerifying, setIsVerifying] = useState(true);
 
   useEffect(() => {
+    // Wait for Zustand to hydrate from localStorage before acting
+    const unsubHydrate = useAuthStore.persist.onFinishHydration(() => {
+      checkAuth();
+    });
+
     let isMounted = true;
 
-    const verifyToken = async () => {
+    const checkAuth = async () => {
       // 1. If Zustand says not authenticated, get out fast
-      if (!isAuthenticated || !token) {
+      if (!useAuthStore.getState().isAuthenticated || !useAuthStore.getState().token) {
         if (isMounted) {
-          logout();
+          useAuthStore.getState().logout();
           router.replace('/login');
         }
         return;
       }
 
       // 2. Perform a fast backend check to verify token is actually valid
-      // This prevents the POS UI from flashing before the 401 auto-logout kicks in
       try {
         await authService.getMe();
         if (isMounted) setIsVerifying(false);
       } catch (error) {
-        // If 401, the interceptor handles the redirect, but we still ensure we cleanup
         if (isMounted) {
-          logout();
+          useAuthStore.getState().logout();
           router.replace('/login');
         }
       }
     };
 
-    verifyToken();
+    if (useAuthStore.persist.hasHydrated()) {
+      checkAuth();
+    }
 
     return () => {
       isMounted = false;
+      unsubHydrate();
     };
-  }, [isAuthenticated, token, router, logout]);
+  }, [router]);
 
   if (isVerifying) {
     return (
