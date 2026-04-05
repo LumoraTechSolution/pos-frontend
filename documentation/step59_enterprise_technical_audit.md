@@ -502,14 +502,14 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 
 | # | Issue | Effort | Module |
 |:---:|:---|:---:|:---|
-| 16 | ARCH-002: Eliminate dual stock tracking | 8h | Inventory |
-| 17 | PERF-003: Replace daily summary with aggregate query | 2h | Sales |
-| 18 | PERF-004: Fix N+1 stock level queries in product listing | 3h | Inventory |
-| 19 | DB-006: Implement soft deletes for financial entities | 6h | Database |
-| 20 | API-005: Add OpenAPI/Swagger documentation | 3h | API |
-| 21 | SEC-008: Add Content Security Policy headers | 2h | Frontend |
-| 22 | DEVOPS-004: Clean log files from repository | 1h | DevOps |
-| 23 | DEVOPS-006: Add structured JSON logging | 2h | DevOps |
+| 16 | ARCH-002: Eliminate dual stock tracking | 8h ✅ | Inventory |
+| 17 | PERF-003: Replace daily summary with aggregate query | 2h ✅ | Sales |
+| 18 | PERF-004: Fix N+1 stock level queries in product listing | 3h ✅ | Inventory |
+| 19 | DB-006: Implement soft deletes for financial entities | 6h ✅ | Database |
+| 20 | API-005: Add OpenAPI/Swagger documentation | 3h ✅ | API |
+| 21 | SEC-008: Add Content Security Policy headers | 2h ✅ | Frontend |
+| 22 | DEVOPS-004: Clean log files from repository | 1h ✅ | DevOps |
+| 23 | DEVOPS-006: Add structured JSON logging | 2h ✅ | DevOps |
 | 24 | ARCH-003: Refactor inline FQCNs to imports | 2h | Backend |
 | 25 | Testing: Expand to 40%+ coverage | 32h | Testing |
 

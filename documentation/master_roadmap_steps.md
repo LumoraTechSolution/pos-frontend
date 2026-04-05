@@ -66,6 +66,13 @@ _Goal: Full control over stock, staff, and multi-location logistics._
 - [x] Full and partial refund workflows.
 - [x] Manager approval overrides for high-value returns.
 
+### 2.5 Performance & Reliability (Phase 2 Hardening)
+
+- [x] Optimized Dashboard Aggregates (Reduced per-transaction OOM risk).
+- [x] Fixed N+1 Stock Queries for massive product listing performance.
+- [x] Consolidated Stock Tracking (Real-time derived global stock).
+- [x] Implemented Soft Deletes for critical financial entities.
+
 ---
 
 ## 🔗 Phase 3: Engagement & Integrations (SaaS Scale)
