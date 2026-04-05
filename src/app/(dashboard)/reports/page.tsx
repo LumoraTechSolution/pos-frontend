@@ -41,6 +41,7 @@ import { ExchangeModal } from "@/components/pos/ExchangeModal";
 import { RotateCcw, ShieldCheck, ShieldAlert, ChevronRight, ChevronDown } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { Pagination } from "@/components/ui/pagination";
+import { FeatureGuard } from "@/components/auth/FeatureGuard";
 import {
   AreaChart,
   Area,
@@ -307,24 +308,36 @@ export default function ReportsPage() {
           <TabsTrigger value="sales" className="gap-2">
             <TrendingUp size={16} /> Sales History
           </TabsTrigger>
-          <TabsTrigger value="returns" className="gap-2">
-            <RotateCcw size={16} /> Returns History
-          </TabsTrigger>
-          <TabsTrigger value="inventory" className="gap-2">
-            <PieChart size={16} /> Inventory Valuation
-          </TabsTrigger>
-          <TabsTrigger value="employees" className="gap-2">
-            <Users size={16} /> Employee Performance
-          </TabsTrigger>
-          <TabsTrigger value="customers" className="gap-2">
-            <Star size={16} /> Top Customers
-          </TabsTrigger>
-          <TabsTrigger value="tax" className="gap-2">
-            <Receipt size={16} /> Tax Summary
-          </TabsTrigger>
-          <TabsTrigger value="profitability" className="gap-2">
-            <BarChart3 size={16} /> Profitability
-          </TabsTrigger>
+          <FeatureGuard feature="RETURNS">
+            <TabsTrigger value="returns" className="gap-2">
+              <RotateCcw size={16} /> Returns History
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="INVENTORY">
+            <TabsTrigger value="inventory" className="gap-2">
+              <PieChart size={16} /> Inventory Valuation
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="EMPLOYEES">
+            <TabsTrigger value="employees" className="gap-2">
+              <Users size={16} /> Employee Performance
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="CUSTOMERS">
+            <TabsTrigger value="customers" className="gap-2">
+              <Star size={16} /> Top Customers
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="TAX_CONFIG">
+            <TabsTrigger value="tax" className="gap-2">
+              <Receipt size={16} /> Tax Summary
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="ADVANCED_ANALYTICS">
+            <TabsTrigger value="profitability" className="gap-2">
+              <BarChart3 size={16} /> Profitability
+            </TabsTrigger>
+          </FeatureGuard>
         </TabsList>
 
         <TabsContent value="sales" className="space-y-6">
@@ -546,6 +559,7 @@ export default function ReportsPage() {
           </Card>
         </TabsContent>
 
+        <FeatureGuard feature="RETURNS">
         <TabsContent value="returns" className="space-y-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -686,7 +700,9 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
 
+        <FeatureGuard feature="INVENTORY">
         <TabsContent value="inventory" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="bg-gray-900/50 border-gray-800">
@@ -779,8 +795,10 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
 
         {/* ── Employee Performance ─────────────────────────────────────── */}
+        <FeatureGuard feature="EMPLOYEES">
         <TabsContent value="employees" className="space-y-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
             <CardHeader>
@@ -837,8 +855,10 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
 
         {/* ── Top Customers ────────────────────────────────────────────── */}
+        <FeatureGuard feature="CUSTOMERS">
         <TabsContent value="customers" className="space-y-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
             <CardHeader>
@@ -897,8 +917,10 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
 
         {/* ── Tax Summary ──────────────────────────────────────────────── */}
+        <FeatureGuard feature="TAX_CONFIG">
         <TabsContent value="tax" className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <Card className="bg-gray-900/50 border-gray-800">
@@ -957,8 +979,10 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
 
         {/* ── Profitability ────────────────────────────────────────────── */}
+        <FeatureGuard feature="ADVANCED_ANALYTICS">
         <TabsContent value="profitability" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="md:col-span-2 bg-gray-900/50 border-gray-800 backdrop-blur-sm h-[320px]">
@@ -1074,6 +1098,7 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        </FeatureGuard>
       </Tabs>
 
       {/* Modals */}

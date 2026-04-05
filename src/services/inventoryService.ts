@@ -7,6 +7,14 @@ import {
 } from "@/types/inventory";
 import { ApiResponse, Page } from "@/types/common";
 
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  brandId?: string;
+  isActive?: boolean;
+  sort?: string;
+}
+
 export const inventoryService = {
   // --- Categories ---
   getCategories: () => 

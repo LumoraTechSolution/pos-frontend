@@ -30,7 +30,7 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, hasFeature } = useAuthStore();
 
   const handleLogout = () => {
     logout();
@@ -39,20 +39,27 @@ export default function DashboardLayout({
 
   const navItems = [
     { label: 'Overview', href: '/overview', icon: LayoutDashboard },
-    { label: 'Products', href: '/inventory/products', icon: Package },
-    { label: 'Categories', href: '/inventory/categories', icon: Tags },
-    { label: 'Brands', href: '/inventory/brands', icon: Bookmark },
-    { label: 'Customers', href: '/customers', icon: Users },
-    { label: 'Suppliers', href: '/inventory/suppliers', icon: Building2 },
-    { label: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Truck },
-    { label: 'Stock Transfers', href: '/inventory/stock-transfers', icon: ArrowRightLeft },
-    { label: 'Employees', href: '/employees', icon: UserSquare2 },
-    { label: 'Reports', href: '/reports', icon: BarChart3 },
+    { label: 'Products', href: '/inventory/products', icon: Package, requiredFeature: 'INVENTORY' },
+    { label: 'Categories', href: '/inventory/categories', icon: Tags, requiredFeature: 'INVENTORY' },
+    { label: 'Brands', href: '/inventory/brands', icon: Bookmark, requiredFeature: 'INVENTORY' },
+    { label: 'Customers', href: '/customers', icon: Users, requiredFeature: 'CUSTOMERS' },
+    { label: 'Suppliers', href: '/inventory/suppliers', icon: Building2, requiredFeature: 'INVENTORY' },
+    { label: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Truck, requiredFeature: 'PURCHASE_ORDERS' },
+    { label: 'Stock Transfers', href: '/inventory/stock-transfers', icon: ArrowRightLeft, requiredFeature: 'STOCK_TRANSFERS' },
+    { label: 'Employees', href: '/employees', icon: UserSquare2, requiredFeature: 'EMPLOYEES' },
+    { label: 'Reports', href: '/reports', icon: BarChart3, requiredFeature: 'REPORTS' },
     { label: 'Branches', href: '/branches', icon: Store },
-    { label: 'Settings', href: '/settings', icon: Settings },
+    { label: 'Hardware Settings', href: '/settings/hardware', icon: Settings },
+    { label: 'Tax Settings', href: '/settings', icon: Settings },
   ].filter(item => {
+    // 1. SaaS Feature Flag Check (Must have feature if defined)
+    if (item.requiredFeature && !hasFeature(item.requiredFeature)) {
+      return false;
+    }
+
+    // 2. Role-based Access Check
     // Inventory Managers shouldn't see these items
-    if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
+    if (['Overview', 'Employees', 'Hardware Settings', 'Tax Settings', 'Reports', 'Branches'].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     
@@ -78,6 +85,11 @@ export default function DashboardLayout({
           <Link href="/overview" className="text-xl font-bold tracking-tight">
             Lumora<span className="text-primary">POS</span>
           </Link>
+          {user?.planTier && (
+            <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-800 text-gray-400 uppercase tracking-widest border border-gray-700">
+              {user.planTier.replace('_BUSINESS', '')}
+            </span>
+          )}
         </div>
 
         {/* Navigation */}
@@ -107,7 +119,7 @@ export default function DashboardLayout({
 
         {/* POS Terminal Link & Profile */}
         <div className="p-4 border-t border-gray-900 space-y-4">
-          {!user?.roles?.includes('ADMIN') && <TimeClockWidget />}
+          {!user?.roles?.includes('ADMIN') && hasFeature('TIME_CLOCK') && <TimeClockWidget />}
 
           {/* POS Terminal Link - Only for specific roles */}
           {(user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER') || user?.roles?.includes('CASHIER')) && (

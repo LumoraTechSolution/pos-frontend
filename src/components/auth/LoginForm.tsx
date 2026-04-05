@@ -26,7 +26,7 @@ import { Loader2, Mail, Lock } from "lucide-react";
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(1, { message: "Password is required" }),
-  tenantId: z.string().min(1, { message: "Invalid tenant ID" }),
+  domain: z.string().min(1, { message: "Workspace domain is required" }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -36,35 +36,53 @@ export function LoginForm() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isLoading, setIsLoading] = useState(false);
 
-  // For the demo, we use a fixed tenant ID. 
-  // In a real app, this might come from the subdomain or a separate field.
-  const DEFAULT_TENANT_ID = "a0000000-0000-0000-0000-000000000001";
-
+  // In a real multi-tenant app, domain would be extracted from Window location headers.
+  // For local testing, we let the user type the subdomain.
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      tenantId: DEFAULT_TENANT_ID,
+      domain: "DEMO",
     },
   });
+
+  async function resolveTenant(domain: string): Promise<string> {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+    const response = await fetch(`${API_BASE_URL}/api/v1/public/tenants/resolve?domain=${domain}`);
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Invalid Workspace ID");
+    }
+    return result.data.tenantId;
+  }
 
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      const response = await authService.login(values);
+      // Step 1: Resolve the Domain to the internal Tenant UUID
+      const resolvedTenantId = await resolveTenant(values.domain);
+
+      // Step 2: Login passing the resolved Tenant UUID
+      const reqPayload = {
+        email: values.email,
+        password: values.password,
+        tenantId: resolvedTenantId, 
+      };
+
+      const response = await authService.login(reqPayload);
       setAuth(response.user, response.accessToken, response.refreshToken);
       
-      toast.success("Login successful!");
+      toast.success("Welcome back!");
       
-      // Redirect based on role
       if (response.user.roles.includes('ADMIN') || response.user.roles.includes('MANAGER')) {
         router.push('/overview');
       } else {
         router.push('/terminal');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed. Please check your credentials.");
+      const msg = error.message || error.response?.data?.message || "Login failed. Please check your credentials.";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +91,29 @@ export function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="domain"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Workspace Slug</FormLabel>
+              <FormControl>
+                <div className="relative flex items-center">
+                  <Input 
+                    placeholder="DEMO" 
+                    className="rounded-r-none font-mono uppercase focus-visible:z-10 relative" 
+                    {...field} 
+                    disabled={isLoading}
+                  />
+                  <div className="bg-muted border border-l-0 px-3 py-2 text-sm text-muted-foreground rounded-r-md">
+                    .lumora.com
+                  </div>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="email"

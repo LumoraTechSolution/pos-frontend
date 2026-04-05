@@ -11,6 +11,8 @@ import { ShoppingCart } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
 import { Customer } from '@/services/customerService';
 
 // POS Components
@@ -89,6 +91,20 @@ export default function TerminalPage() {
     p.barcode?.includes(search)
   );
 
+  // Global Barcode Scanner Implementation
+  useBarcodeScanner({
+    onScan: (barcode) => {
+      // Find product by SKU or Barcode
+      const product = products.find(p => p.sku === barcode || p.barcode === barcode);
+      if (product) {
+        addToCart(product);
+        toast.success(`Scanned: ${product.name}`);
+      } else {
+        toast.error(`Barcode not found: ${barcode}`);
+      }
+    }
+  });
+
   // Checkout Mutation
   const checkoutMutation = useMutation({
     mutationFn: (data: SaleRequest) => salesService.createSale(data),
@@ -96,8 +112,30 @@ export default function TerminalPage() {
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
       setLastSale(data);
       setSelectedCustomer(null);
+      
+      // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
+      const receiptData: ReceiptData = {
+        tenantName: "Lumora POS", // Fallback if missing
+        branchName: selectedBranch?.name || "Main Branch",
+        cashierName: `${user?.firstName} ${user?.lastName}`,
+        transactionId: data.invoiceNumber,
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.cartQuantity,
+          price: item.basePrice,
+          total: item.basePrice * item.cartQuantity
+        })),
+        subtotal: subtotal,
+        tax: taxAmount,
+        discount: 0,
+        total: total,
+        paymentMethod: paymentMethod,
+        tendered: total, // Assuming exact change for now
+        change: 0
+      };
+      
+      receiptPrinterService.processHardwareCheckoutActions(receiptData);
       clearCart();
-      setTimeout(() => { window.print(); }, 500);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to process sale");

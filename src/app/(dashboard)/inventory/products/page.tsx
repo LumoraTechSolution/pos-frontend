@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService, ProductFilters } from "@/services/inventoryService";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Upload, Download } from "lucide-react";
+import { Plus, Search, X, Upload, Download, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import ProductTable from "@/components/inventory/ProductTable";
 import ImportProductsModal from "@/components/inventory/ImportProductsModal";
@@ -14,8 +14,12 @@ import { Product } from "@/types/inventory";
 import { useRouter } from "next/navigation";
 import { SortDirection } from "@/components/ui/SortableHeader";
 import { toast } from "sonner";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function ProductsPage() {
+  const { user: currentUser } = useAuthStore();
+  const maxProducts = currentUser?.maxProducts || 500;
+  
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -55,6 +59,9 @@ export default function ProductsPage() {
     queryKey: ['products', page, filters],
     queryFn: () => inventoryService.getProducts(page, 20, filters),
   });
+
+  const totalElements = productsData?.totalElements || 0;
+  const isLimitReached = totalElements >= maxProducts;
 
   // Fetch categories and brands for filter dropdowns
   const { data: categories } = useQuery({
@@ -115,7 +122,12 @@ export default function ProductsPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground">Manage your inventory, pricing, and stock levels.</p>
+          <p className="text-muted-foreground flex items-center gap-2">
+            Manage your inventory, pricing, and stock levels.
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${isLimitReached ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-gray-800 text-gray-500 border-gray-700'}`}>
+               {totalElements} / {maxProducts} Products
+            </span>
+          </p>
         </div>
         <div className="flex gap-2">
           <Button 
@@ -132,11 +144,22 @@ export default function ProductsPage() {
           >
             <Upload size={18} /> Import
           </Button>
-          <Link href="/inventory/products/new">
-            <Button className="gap-2 bg-primary hover:bg-primary/90">
-              <Plus size={18} /> Add Product
-            </Button>
-          </Link>
+          <div className="flex flex-col items-end gap-1">
+             <Link href={isLimitReached ? "#" : "/inventory/products/new"}>
+               <Button 
+                 disabled={isLimitReached}
+                 className="gap-2 bg-primary hover:bg-primary/90"
+               >
+                 {isLimitReached ? <Shield size={18} className="text-amber-400" /> : <Plus size={18} />}
+                 Add Product
+               </Button>
+             </Link>
+             {isLimitReached && (
+                <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                  Quota Exceeded
+                </span>
+             )}
+          </div>
         </div>
       </div>
 

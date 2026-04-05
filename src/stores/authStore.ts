@@ -9,6 +9,11 @@ export interface User {
   lastName: string;
   roles: string[];
   permissions: string[];
+  featuresEnabled: string[];
+  planTier: string;
+  maxLocations: number;
+  maxUsers: number;
+  maxProducts: number;
 }
 
 interface AuthState {
@@ -22,6 +27,7 @@ interface AuthState {
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
+  hasFeature: (feature: string) => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -48,6 +54,11 @@ export const useAuthStore = create<AuthState>()(
       hasRole: (role: string) => {
         const state = get();
         return state.user?.roles?.includes(role) ?? false;
+      },
+
+      hasFeature: (feature: string) => {
+        const state = get();
+        return state.user?.featuresEnabled?.includes(feature) ?? false;
       },
     }),
     {
