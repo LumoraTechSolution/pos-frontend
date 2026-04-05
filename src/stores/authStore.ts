@@ -40,10 +40,17 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (user: User, token: string, refreshToken: string) => {
         set({ user, token, refreshToken, isAuthenticated: true });
+        if (typeof document !== 'undefined') {
+          // Set cookie for Next.js middleware
+          document.cookie = `auth-token=${token}; path=/; max-age=604800; samesite=lax`;
+        }
       },
 
       logout: () => {
         set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        if (typeof document !== 'undefined') {
+          document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        }
       },
 
       hasPermission: (permission: string) => {

@@ -1,17 +1,37 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/request';
+import { NextResponse, type NextRequest } from 'next/server';
 
-/**
- * Next.js Middleware for route protection.
- * 
- * NOTE: Since Zustand persists to localStorage, which is NOT available in Middleware (Edge runtime),
- * we typically use cookies for session tracking if we want true server-side protection.
- * 
- * For this Phase 1, we will implement a "soft" client-side guard in an AuthProvider,
- * but this Middleware acts as a placeholder for when we implement cookie-based auth.
- */
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/', 
+  '/login',
+  '/system-admin/login',
+  '/forgot-password'
+];
+
 export function middleware(request: NextRequest) {
-  // Path matching logic can go here
+  const { pathname } = request.nextUrl;
+
+  // Check for auth token cookie
+  const authToken = request.cookies.get('auth-token');
+
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+
+  // If trying to access protected route without token, redirect to login
+  if (!isPublicRoute && !authToken) {
+    const url = request.nextUrl.clone();
+    // Default to main login. Or could distinguish if system-admin based on path
+    url.pathname = pathname.startsWith('/system-admin') ? '/system-admin/login' : '/login';
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // If trying to access login while already authenticated, redirect to app
+  if (isPublicRoute && authToken && (pathname === '/login' || pathname === '/system-admin/login')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname === '/system-admin/login' ? '/system-admin/dashboard' : '/overview';
+    return NextResponse.redirect(url);
+  }
+
   return NextResponse.next();
 }
 
