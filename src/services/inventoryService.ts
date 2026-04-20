@@ -61,6 +61,11 @@ export const inventoryService = {
     return api.get<ApiResponse<Page<Product>>>(`/products?${params.toString()}`).then(res => res.data.data);
   },
   
+  /** Fast barcode/SKU lookup for POS terminal scanning */
+  lookupByCode: (code: string) =>
+    api.get<ApiResponse<Product>>(`/products/lookup?code=${encodeURIComponent(code)}`)
+      .then(res => res.data.data),
+
   getProduct: (id: string) => 
     api.get<ApiResponse<Product>>(`/products/${id}`).then(res => res.data.data),
   

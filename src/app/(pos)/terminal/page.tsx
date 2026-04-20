@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService, Branch } from '@/services/branchService';
@@ -91,15 +91,24 @@ export default function TerminalPage() {
     p.barcode?.includes(search)
   );
 
-  // Global Barcode Scanner Implementation
+  // Duplicate scan protection — prevents double-fire within 500ms
+  const lastScanRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
+
+  // Global Barcode Scanner — Server-Side Lookup
   useBarcodeScanner({
-    onScan: (barcode) => {
-      // Find product by SKU or Barcode
-      const product = products.find(p => p.sku === barcode || p.barcode === barcode);
-      if (product) {
+    onScan: async (barcode) => {
+      // Guard: ignore duplicate scans within 500ms (scanner double-fire)
+      const now = Date.now();
+      if (lastScanRef.current.code === barcode && now - lastScanRef.current.time < 500) {
+        return;
+      }
+      lastScanRef.current = { code: barcode, time: now };
+
+      try {
+        const product = await inventoryService.lookupByCode(barcode);
         addToCart(product);
         toast.success(`Scanned: ${product.name}`);
-      } else {
+      } catch {
         toast.error(`Barcode not found: ${barcode}`);
       }
     }

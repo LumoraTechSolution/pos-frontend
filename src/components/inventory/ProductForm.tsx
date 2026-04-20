@@ -13,10 +13,12 @@ import { inventoryService } from "@/services/inventoryService";
 import { branchService } from "@/services/branchService";
 import { toast } from "sonner";
 import { Product, ProductRequest } from "@/types/inventory";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, PencilLine } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import InventoryAdjustmentModal from "./InventoryAdjustmentModal";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -43,6 +45,7 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isAdjModalOpen, setIsAdjModalOpen] = useState(false);
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -77,6 +80,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       branchStockLevels: {},
     },
   });
+
+  const searchParams = useSearchParams();
+  const barcodeFromUrl = searchParams.get("barcode");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (barcodeFromUrl && !initialData) {
+      form.setValue("barcode", barcodeFromUrl);
+      toast.info(`Barcode ${barcodeFromUrl} auto-filled from scanner.`);
+      
+      // Small delay to ensure the field is focused after mount
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [barcodeFromUrl, initialData, form]);
 
   const mutation = useMutation({
     mutationFn: (data: ProductFormValues) => {
@@ -140,7 +160,16 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter product name" className="bg-gray-950 border-gray-800" {...field} />
+                        <Input 
+                          placeholder="Enter product name" 
+                          className="bg-gray-950 border-gray-800" 
+                          {...field} 
+                          ref={(e) => {
+                            field.ref(e);
+                            // @ts-ignore
+                            nameInputRef.current = e;
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -218,8 +247,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>Barcode</FormLabel>
                         <FormControl>
-                          <Input placeholder="UPC / EAN" className="bg-gray-950 border-gray-800" {...field} />
-                        </FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="UPC / EAN" 
+                            className={`bg-gray-950 border-gray-800 ${barcodeFromUrl && !initialData ? 'border-primary/50 text-primary' : ''}`} 
+                            {...field} 
+                          />
+                          {barcodeFromUrl && !initialData && (
+                            <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 text-primary" size={16} />
+                          )}
+                        </div>
+                      </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -261,10 +299,24 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{initialData ? 'Total Stock (Read-only)' : 'Initial Stock'}</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="bg-gray-950 border-gray-800" {...field} disabled={!!initialData} />
-                        </FormControl>
-                        {initialData && <p className="text-[10px] text-gray-500">Stock can be managed via the Inventory Adjustment tool in the product list.</p>}
+                        <div className="flex gap-2">
+                          <FormControl className="flex-1">
+                            <Input type="number" className="bg-gray-950 border-gray-800" {...field} disabled={!!initialData} />
+                          </FormControl>
+                          {initialData && (
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon" 
+                              className="shrink-0 border-gray-800 hover:bg-gray-800"
+                              onClick={() => setIsAdjModalOpen(true)}
+                              title="Adjust Inventory"
+                            >
+                              <PencilLine size={16} className="text-primary" />
+                            </Button>
+                          )}
+                        </div>
+                        {initialData && <p className="text-[10px] text-gray-500">Stock can be managed via the Adjustment tool.</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -379,6 +431,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             <Save size={18} /> {mutation.isPending ? 'Saving...' : (initialData ? 'Update Product' : 'Save Product')}
           </Button>
         </div>
+
+        {initialData && (
+          <InventoryAdjustmentModal
+            product={initialData}
+            isOpen={isAdjModalOpen}
+            onClose={() => setIsAdjModalOpen(false)}
+          />
+        )}
       </form>
     </Form>
   );
