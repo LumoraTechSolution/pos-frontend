@@ -62,12 +62,15 @@ export const inventoryService = {
   },
   
   /** Fast barcode/SKU lookup for POS terminal scanning */
-  lookupByCode: (code: string) =>
-    api.get<ApiResponse<Product>>(`/products/lookup?code=${encodeURIComponent(code)}`)
+  lookupByCode: (code: string, onlyActive = false) =>
+    api.get<ApiResponse<Product>>(`/products/lookup?code=${encodeURIComponent(code)}&onlyActive=${onlyActive}`)
       .then(res => res.data.data),
 
   getProduct: (id: string) => 
     api.get<ApiResponse<Product>>(`/products/${id}`).then(res => res.data.data),
+  
+  toggleStatus: (id: string) =>
+    api.patch<ApiResponse<Product>>(`/products/${id}/status`).then(res => res.data.data),
   
   createProduct: (data: ProductRequest) => 
     api.post<ApiResponse<Product>>("/products", data).then(res => res.data.data),

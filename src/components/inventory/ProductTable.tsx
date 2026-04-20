@@ -8,6 +8,7 @@ import { Pencil, Trash2, AlertTriangle, LayoutList } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { formatCurrency } from "@/lib/utils";
 import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
+import { Switch } from "@/components/ui/switch";
 
 interface ProductTableProps {
   data: Product[];
@@ -21,6 +22,7 @@ interface ProductTableProps {
   sortKey: string | null;
   sortDirection: SortDirection;
   onSort: (key: string, direction: SortDirection) => void;
+  onToggleStatus?: (product: Product) => void;
 }
 
 export default function ProductTable({ 
@@ -35,6 +37,7 @@ export default function ProductTable({
   sortKey,
   sortDirection,
   onSort,
+  onToggleStatus,
 }: ProductTableProps) {
   if (isLoading) {
     return <div className="py-20 text-center text-gray-400">Loading products...</div>;
@@ -128,12 +131,16 @@ export default function ProductTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {product.isActive ? (
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                  ) : (
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>
-                  )}
-                  <span className="text-xs text-gray-400">{product.isActive ? 'Active' : 'Inactive'}</span>
+                  <div className="flex items-center gap-3">
+                    <Switch 
+                      checked={product.isActive}
+                      onCheckedChange={() => onToggleStatus?.(product)}
+                      className="data-[state=checked]:bg-emerald-500"
+                    />
+                    <span className={`text-xs font-semibold ${product.isActive ? 'text-emerald-400' : 'text-gray-500'}`}>
+                      {product.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">

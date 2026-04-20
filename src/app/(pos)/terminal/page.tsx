@@ -80,8 +80,8 @@ export default function TerminalPage() {
 
   // Data Fetching
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['products', search],
-    queryFn: () => inventoryService.getProducts(0, 50),
+    queryKey: ['products', search, 'active'], // Added 'active' to query key for clarity
+    queryFn: () => inventoryService.getProducts(0, 50, { isActive: true, search }),
   });
 
   const products = productsData?.content || [];
@@ -105,11 +105,12 @@ export default function TerminalPage() {
       lastScanRef.current = { code: barcode, time: now };
 
       try {
-        const product = await inventoryService.lookupByCode(barcode);
+        const product = await inventoryService.lookupByCode(barcode, true);
         addToCart(product);
         toast.success(`Scanned: ${product.name}`);
-      } catch {
-        toast.error(`Barcode not found: ${barcode}`);
+      } catch (err: any) {
+        const message = err.response?.data?.message || `Barcode not found: ${barcode}`;
+        toast.error(message);
       }
     }
   });

@@ -86,6 +86,17 @@ export default function ProductsPage() {
     }
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (id: string) => inventoryService.toggleStatus(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(`${data.name} is now ${data.isActive ? 'Active' : 'Inactive'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  });
+
   const handleEdit = (product: Product) => {
     router.push(`/inventory/products/${product.id}`);
   };
@@ -99,6 +110,10 @@ export default function ProductsPage() {
   const handleManageInventory = (product: Product) => {
     setProductForAdjustment(product);
     setIsAdjustmentModalOpen(true);
+  };
+
+  const handleToggleStatus = (product: Product) => {
+    toggleStatusMutation.mutate(product.id);
   };
 
   const handleSort = (key: string, direction: SortDirection) => {
@@ -123,7 +138,11 @@ export default function ProductsPage() {
     onScan: async (barcode) => {
       try {
         const product = await inventoryService.lookupByCode(barcode);
-        toast.info(`Existing product found: ${product.name}. Opening editor.`);
+        if (!product.isActive) {
+          toast.warning(`Note: ${product.name} is currently INACTIVE. Opening to reactivate.`);
+        } else {
+          toast.info(`Existing product found: ${product.name}. Opening editor.`);
+        }
         router.push(`/inventory/products/${product.id}`);
       } catch (err: any) {
         // Check quota before redirecting to creation form
@@ -285,6 +304,7 @@ export default function ProductsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageInventory={handleManageInventory}
+        onToggleStatus={handleToggleStatus}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}
