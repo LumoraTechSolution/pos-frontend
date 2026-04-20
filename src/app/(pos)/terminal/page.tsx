@@ -119,9 +119,11 @@ export default function TerminalPage() {
   const checkoutMutation = useMutation({
     mutationFn: (data: SaleRequest) => salesService.createSale(data),
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
       setLastSale(data);
       setSelectedCustomer(null);
+      clearCart(); // Also clear the cart on success
       
       // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
       const receiptData: ReceiptData = {

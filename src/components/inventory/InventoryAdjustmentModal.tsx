@@ -103,6 +103,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product', product?.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments', product?.id] });
       toast.success("Inventory adjusted successfully");
       adjForm.reset();
@@ -121,6 +122,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product', product?.id] });
       queryClient.invalidateQueries({ queryKey: ['inventory-adjustments', product?.id] });
       toast.success("Stock transferred successfully");
       transferForm.reset();

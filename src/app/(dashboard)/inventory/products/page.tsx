@@ -90,6 +90,7 @@ export default function ProductsPage() {
     mutationFn: (id: string) => inventoryService.toggleStatus(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product', data.id] });
       toast.success(`${data.name} is now ${data.isActive ? 'Active' : 'Inactive'}`);
     },
     onError: (error: any) => {

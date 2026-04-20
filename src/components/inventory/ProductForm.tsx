@@ -86,6 +86,26 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name || "",
+        sku: initialData.sku || "",
+        barcode: initialData.barcode || "",
+        description: initialData.description || "",
+        basePrice: initialData.basePrice || 0,
+        costPrice: initialData.costPrice || 0,
+        stockQuantity: initialData.stockQuantity || 0,
+        lowStockThreshold: initialData.lowStockThreshold || 5,
+        categoryId: initialData.categoryId || null,
+        brandId: initialData.brandId || null,
+        isActive: initialData.isActive ?? true,
+        imageUrl: initialData.imageUrl || "",
+        branchStockLevels: {},
+      });
+    }
+  }, [initialData, form]);
+
+  useEffect(() => {
     if (barcodeFromUrl && !initialData) {
       form.setValue("barcode", barcodeFromUrl);
       toast.info(`Barcode ${barcodeFromUrl} auto-filled from scanner.`);
