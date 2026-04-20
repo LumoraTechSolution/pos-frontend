@@ -80,7 +80,7 @@ export default function TerminalPage() {
 
   // Data Fetching
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['products', search, 'active'], // Added 'active' to query key for clarity
+    queryKey: ['products', search, 'active', selectedBranch?.id], // Branch-aware key
     queryFn: () => inventoryService.getProducts(0, 50, { isActive: true, search }),
   });
 
