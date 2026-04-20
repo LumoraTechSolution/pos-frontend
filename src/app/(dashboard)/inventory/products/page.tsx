@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { SortDirection } from "@/components/ui/SortableHeader";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 
 export default function ProductsPage() {
   const { user: currentUser } = useAuthStore();
@@ -85,6 +86,17 @@ export default function ProductsPage() {
     }
   });
 
+  const toggleStatusMutation = useMutation({
+    mutationFn: (id: string) => inventoryService.toggleStatus(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(`${data.name} is now ${data.isActive ? 'Active' : 'Inactive'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  });
+
   const handleEdit = (product: Product) => {
     router.push(`/inventory/products/${product.id}`);
   };
@@ -98,6 +110,10 @@ export default function ProductsPage() {
   const handleManageInventory = (product: Product) => {
     setProductForAdjustment(product);
     setIsAdjustmentModalOpen(true);
+  };
+
+  const handleToggleStatus = (product: Product) => {
+    toggleStatusMutation.mutate(product.id);
   };
 
   const handleSort = (key: string, direction: SortDirection) => {
@@ -117,6 +133,32 @@ export default function ProductsPage() {
     setPage(0);
   };
 
+  // Scan-to-Onboard: Fast product lookup via scanner that redirects to Edit or Create
+  useBarcodeScanner({
+    onScan: async (barcode) => {
+      try {
+        const product = await inventoryService.lookupByCode(barcode);
+        if (!product.isActive) {
+          toast.warning(`Note: ${product.name} is currently INACTIVE. Opening to reactivate.`);
+        } else {
+          toast.info(`Existing product found: ${product.name}. Opening editor.`);
+        }
+        router.push(`/inventory/products/${product.id}`);
+      } catch (err: any) {
+        // Check quota before redirecting to creation form
+        if (isLimitReached) {
+          toast.error("Product limit reached. Cannot onboard new barcode.", {
+            description: `You have reached your limit of ${maxProducts} products.`
+          });
+          return;
+        }
+        
+        toast.success("New product detected! Redirecting to onboard.");
+        router.push(`/inventory/products/new?barcode=${encodeURIComponent(barcode)}`);
+      }
+    }
+  });
+
   return (
     <div className="p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-end">
@@ -126,6 +168,10 @@ export default function ProductsPage() {
             Manage your inventory, pricing, and stock levels.
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${isLimitReached ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-gray-800 text-gray-500 border-gray-700'}`}>
                {totalElements} / {maxProducts} Products
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-primary" />
+              Scanner Active
             </span>
           </p>
         </div>
@@ -258,6 +304,7 @@ export default function ProductsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onManageInventory={handleManageInventory}
+        onToggleStatus={handleToggleStatus}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}

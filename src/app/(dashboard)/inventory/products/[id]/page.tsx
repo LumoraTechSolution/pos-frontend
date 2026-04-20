@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import ProductForm from "@/components/inventory/ProductForm";
 import { useParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function EditProductPage() {
   const { id } = useParams();
@@ -20,7 +21,9 @@ export default function EditProductPage() {
 
   return (
     <div className="bg-black min-h-screen">
-      <ProductForm initialData={productData?.data} />
+      <Suspense fallback={<div className="p-8 text-center text-gray-400">Loading form...</div>}>
+        <ProductForm initialData={productData} />
+      </Suspense>
     </div>
   );
 }

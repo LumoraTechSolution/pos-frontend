@@ -32,7 +32,7 @@ export default function CategoriesPage() {
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['categories', debouncedSearch],
-    queryFn: () => inventoryService.getCategories(debouncedSearch || undefined),
+    queryFn: () => inventoryService.getCategories(),
   });
 
   // Client-side sort (since categories is a flat list without backend pagination)

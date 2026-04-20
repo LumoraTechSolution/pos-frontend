@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService, Branch } from '@/services/branchService';
@@ -80,8 +80,8 @@ export default function TerminalPage() {
 
   // Data Fetching
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['products', search],
-    queryFn: () => inventoryService.getProducts(0, 50),
+    queryKey: ['products', search, 'active'], // Added 'active' to query key for clarity
+    queryFn: () => inventoryService.getProducts(0, 50, { isActive: true, search }),
   });
 
   const products = productsData?.content || [];
@@ -91,16 +91,26 @@ export default function TerminalPage() {
     p.barcode?.includes(search)
   );
 
-  // Global Barcode Scanner Implementation
+  // Duplicate scan protection — prevents double-fire within 500ms
+  const lastScanRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
+
+  // Global Barcode Scanner — Server-Side Lookup
   useBarcodeScanner({
-    onScan: (barcode) => {
-      // Find product by SKU or Barcode
-      const product = products.find(p => p.sku === barcode || p.barcode === barcode);
-      if (product) {
+    onScan: async (barcode) => {
+      // Guard: ignore duplicate scans within 500ms (scanner double-fire)
+      const now = Date.now();
+      if (lastScanRef.current.code === barcode && now - lastScanRef.current.time < 500) {
+        return;
+      }
+      lastScanRef.current = { code: barcode, time: now };
+
+      try {
+        const product = await inventoryService.lookupByCode(barcode, true);
         addToCart(product);
         toast.success(`Scanned: ${product.name}`);
-      } else {
-        toast.error(`Barcode not found: ${barcode}`);
+      } catch (err: any) {
+        const message = err.response?.data?.message || `Barcode not found: ${barcode}`;
+        toast.error(message);
       }
     }
   });
