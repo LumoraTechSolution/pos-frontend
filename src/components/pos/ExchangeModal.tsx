@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { returnService, ReturnItemRequest, ReturnRequest } from "@/services/returnService";
@@ -42,8 +42,8 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
       toast.success("Exchange processed successfully.");
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to process exchange");
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to process exchange");
     }
   });
 

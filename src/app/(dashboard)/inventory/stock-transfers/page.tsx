@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Truck, Search, Plus, ArrowRightLeft, Flag, X } from 'lucide-react';
+import { Truck, Plus, ArrowRightLeft, Flag, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { stockTransferService } from '@/services/stockTransferService';
 import { StockTransferModal } from '@/components/inventory/StockTransferModal';
@@ -25,7 +25,7 @@ export default function StockTransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['stockTransfers'] });
       toast.success("Transfer completed and stock updated");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Failed to complete transfer")
+    onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to complete transfer")
   });
 
   const inTransitMutation = useMutation({
@@ -34,7 +34,7 @@ export default function StockTransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['stockTransfers'] });
       toast.success("Transfer marked as In Transit");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Failed to mark as in-transit")
+    onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to mark as in-transit")
   });
 
   const cancelMutation = useMutation({
@@ -43,7 +43,7 @@ export default function StockTransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['stockTransfers'] });
       toast.success("Transfer cancelled");
     },
-    onError: (err: any) => toast.error(err.response?.data?.message || "Failed to cancel transfer")
+    onError: (err: unknown) => toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to cancel transfer")
   });
 
   const transfers = data?.content || [];

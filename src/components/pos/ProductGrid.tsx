@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Package, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Product } from '@/types/inventory';
@@ -48,7 +49,7 @@ export function ProductGrid({ products, isLoading, searchTerm, onProductClick, s
             <CardContent className="p-0">
               <div className="aspect-square bg-gray-950 relative overflow-hidden flex items-center justify-center">
                 {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} className="object-cover w-full h-full" />
+                  <Image src={product.imageUrl} fill className="object-cover" alt={product.name} />
                 ) : (
                   <Package className="text-gray-800" size={40} />
                 )}

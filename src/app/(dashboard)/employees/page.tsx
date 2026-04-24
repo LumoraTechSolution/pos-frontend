@@ -27,8 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { useAuthStore } from "@/stores/authStore";
-import { useRouter } from "next/navigation";
-import { UserSquare2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -150,7 +149,7 @@ function CreateUserModal({
 
           {error && (
             <p className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
-              {(error as any)?.response?.data?.message ?? "Failed to create user."}
+              {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to create user."}
             </p>
           )}
         </div>
@@ -265,7 +264,7 @@ function EditUserModal({
 
           {error && (
             <p className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
-              {(error as any)?.response?.data?.message ?? "Failed to update user."}
+              {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update user."}
             </p>
           )}
         </div>

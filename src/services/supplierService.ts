@@ -68,4 +68,9 @@ export const supplierService = {
     const response = await api.delete<{ data: null }>(`/suppliers/${id}`);
     return response.data.data;
   },
+
+  toggleStatus: async (id: string) => {
+    const response = await api.patch<{ data: Supplier }>(`/suppliers/${id}/status`);
+    return response.data.data;
+  },
 };

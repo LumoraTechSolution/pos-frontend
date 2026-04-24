@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService, ProductFilters } from "@/services/inventoryService";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
+import type { Page } from "@/types/common";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, X, Upload, Download, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -81,21 +82,85 @@ export default function ProductsPage() {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success("Product deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete product");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to delete product");
     }
   });
 
+  // Per-row pending state so each row shows its own spinner and can't be spam-clicked.
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  // Track reason for the current mutation so we can skip the undo toast when
+  // this toggle was itself triggered by an undo click (avoids nested undos).
+  const isUndoRef = useRef(false);
+
   const toggleStatusMutation = useMutation({
     mutationFn: (id: string) => inventoryService.toggleStatus(id),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', data.id] });
-      toast.success(`${data.name} is now ${data.isActive ? 'Active' : 'Inactive'}`);
+    onMutate: async (id) => {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+
+      // Cancel in-flight refetches so they don't overwrite the optimistic value.
+      await queryClient.cancelQueries({ queryKey: ['products'] });
+
+      // Snapshot every cached products query so we can roll back on error.
+      const snapshots = queryClient.getQueriesData<Page<Product>>({ queryKey: ['products'] });
+
+      // Optimistically flip isActive across every cached page/filter variant.
+      queryClient.setQueriesData<Page<Product>>({ queryKey: ['products'] }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          content: old.content.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)),
+        };
+      });
+
+      const wasUndo = isUndoRef.current;
+      isUndoRef.current = false;
+      return { snapshots, wasUndo };
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update status");
-    }
+    onError: (error: unknown, _id, context) => {
+      // Roll back every snapshot we took.
+      context?.snapshots.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          'Failed to update status'
+      );
+    },
+    onSuccess: (updated, _id, context) => {
+      queryClient.setQueryData(['product', updated.id], updated);
+
+      if (context?.wasUndo) return; // Silent success for undo — the user already knows.
+
+      if (!updated.isActive) {
+        // Deactivation is the risky action (hides product from POS).
+        // Offer a one-tap undo instead of a modal confirmation.
+        toast.success(`${updated.name} deactivated`, {
+          description: "It's hidden from the POS terminal until reactivated.",
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              isUndoRef.current = true;
+              toggleStatusMutation.mutate(updated.id);
+            },
+          },
+        });
+      } else {
+        toast.success(`${updated.name} is now active`);
+      }
+    },
+    onSettled: (_data, _err, id) => {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
   });
 
   const handleEdit = (product: Product) => {
@@ -145,7 +210,7 @@ export default function ProductsPage() {
           toast.info(`Existing product found: ${product.name}. Opening editor.`);
         }
         router.push(`/inventory/products/${product.id}`);
-      } catch (err: any) {
+      } catch {
         // Check quota before redirecting to creation form
         if (isLimitReached) {
           toast.error("Product limit reached. Cannot onboard new barcode.", {
@@ -296,8 +361,8 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <ProductTable 
-        data={productsData?.content || []} 
+      <ProductTable
+        data={productsData?.content || []}
         isLoading={isLoading}
         totalPages={productsData?.totalPages || 1}
         currentPage={page}
@@ -306,6 +371,7 @@ export default function ProductsPage() {
         onDelete={handleDelete}
         onManageInventory={handleManageInventory}
         onToggleStatus={handleToggleStatus}
+        togglingIds={togglingIds}
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}

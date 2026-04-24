@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService, Branch } from '@/services/branchService';
 import { taxService } from '@/services/taxService';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
 import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
 import { Customer } from '@/services/customerService';
+import { performLogout } from '@/lib/performLogout';
 
 // POS Components
 import { POSHeader } from '@/components/pos/POSHeader';
@@ -36,8 +37,9 @@ export default function TerminalPage() {
   const [showSummary, setShowSummary] = useState(false);
 
   // Auth & Navigation
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Data Fetching
   const { data: branchesData } = useQuery({
@@ -108,8 +110,8 @@ export default function TerminalPage() {
         const product = await inventoryService.lookupByCode(barcode, true);
         addToCart(product);
         toast.success(`Scanned: ${product.name}`);
-      } catch (err: any) {
-        const message = err.response?.data?.message || `Barcode not found: ${barcode}`;
+      } catch (err: unknown) {
+        const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || `Barcode not found: ${barcode}`;
         toast.error(message);
       }
     }
@@ -149,8 +151,8 @@ export default function TerminalPage() {
       receiptPrinterService.processHardwareCheckoutActions(receiptData);
       clearCart();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to process sale");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to process sale");
     }
   });
 
@@ -170,8 +172,8 @@ export default function TerminalPage() {
     });
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await performLogout();
     router.push('/login');
   };
 

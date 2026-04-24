@@ -1,38 +1,68 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Public routes that don't require authentication
 const PUBLIC_ROUTES = [
-  '/', 
+  '/',
   '/login',
-  '/system-admin/login',
+  '/super-admin/login',
   '/forgot-password'
 ];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Check for auth token cookie
-  const authToken = request.cookies.get('auth-token');
-
+  const isSuperAdminRoute = pathname.startsWith('/super-admin');
+  // Super-admin pages are gated by a separate cookie so super-admin and
+  // tenant-user sessions can coexist and don't invalidate each other.
+  const authToken = isSuperAdminRoute
+    ? request.cookies.get('sa-auth-token')
+    : request.cookies.get('auth-token');
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
 
-  // If trying to access protected route without token, redirect to login
+  // Generate a unique per-request nonce for script-src.
+  // Next.js reads x-nonce from request headers and adds it to its own inline scripts.
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+  // Allow unsafe-eval in development only (needed by Next.js HMR / React refresh).
+  const scriptSrc = process.env.NODE_ENV === 'development'
+    ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`
+    : `script-src 'self' 'nonce-${nonce}'`;
+
+  const cspHeader = [
+    "default-src 'self'",
+    scriptSrc,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    `connect-src 'self' ${apiUrl}`,
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+  ].join('; ');
+
+  // Pass nonce to Next.js so it stamps its own inline hydration scripts.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  let response: NextResponse;
+
   if (!isPublicRoute && !authToken) {
     const url = request.nextUrl.clone();
-    // Default to main login. Or could distinguish if system-admin based on path
-    url.pathname = pathname.startsWith('/system-admin') ? '/system-admin/login' : '/login';
+    url.pathname = pathname.startsWith('/super-admin') ? '/super-admin/login' : '/login';
     url.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // If trying to access login while already authenticated, redirect to app
-  if (isPublicRoute && authToken && (pathname === '/login' || pathname === '/system-admin/login')) {
+    response = NextResponse.redirect(url);
+  } else if (isPublicRoute && authToken && (pathname === '/login' || pathname === '/super-admin/login')) {
     const url = request.nextUrl.clone();
-    url.pathname = pathname === '/system-admin/login' ? '/system-admin/dashboard' : '/overview';
-    return NextResponse.redirect(url);
+    url.pathname = pathname === '/super-admin/login' ? '/super-admin' : '/overview';
+    response = NextResponse.redirect(url);
+  } else {
+    response = NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  return NextResponse.next();
+  response.headers.set('Content-Security-Policy', cspHeader);
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
+
+  return response;
 }
 
 export const config = {

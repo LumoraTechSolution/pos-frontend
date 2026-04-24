@@ -5,6 +5,7 @@ import {
   TenantSummaryResponse,
   TenantDetailResponse,
   TenantConfigurationRequest,
+  CreateTenantRequest,
 } from '@/types/superAdmin';
 
 export const superAdminTenantService = {
@@ -39,7 +40,7 @@ export const superAdminTenantService = {
   /**
    * Provision a new Tenant
    */
-  createTenant: async (data: any): Promise<TenantSummaryResponse> => {
+  createTenant: async (data: CreateTenantRequest): Promise<TenantSummaryResponse> => {
     const response = await superAdminApi.post<ApiResponse<TenantSummaryResponse>>('/tenants', data);
     return response.data.data;
   },

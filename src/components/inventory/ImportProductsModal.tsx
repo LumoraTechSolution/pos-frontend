@@ -10,10 +10,12 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Upload, FileDown, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { inventoryService } from "@/services/inventoryService";
 import { toast } from "sonner";
+
+interface ImportError { rowNumber: number; message: string }
+interface ImportResult { successCount: number; failureCount: number; errors: ImportError[] }
 
 interface ImportProductsModalProps {
   isOpen: boolean;
@@ -24,7 +26,7 @@ interface ImportProductsModalProps {
 export default function ImportProductsModal({ isOpen, onClose, onSuccess }: ImportProductsModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -46,8 +48,8 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
       toast.success(`Successfully imported ${count} products`);
       onSuccess();
       setTimeout(onClose, 2000);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to upload file");
+    } catch (error: unknown) {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to upload file");
     } finally {
       setIsUploading(false);
     }
@@ -110,7 +112,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
                 <span>Import Errors ({result.failureCount})</span>
               </div>
               <div className="max-h-[150px] overflow-y-auto space-y-1">
-                {result.errors.map((err: any, idx: number) => (
+                {result.errors.map((err: ImportError, idx: number) => (
                   <p key={idx} className="text-xs text-red-300">
                     Row {err.rowNumber}: {err.message}
                   </p>

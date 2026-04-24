@@ -46,17 +46,17 @@ export default function BrandForm({
   const mutation = useMutation({
     mutationFn: (data: BrandFormValues) => {
       if (initialData) {
-        return inventoryService.updateBrand(initialData.id, data as any);
+        return inventoryService.updateBrand(initialData.id, data);
       }
-      return inventoryService.createBrand(data as any);
+      return inventoryService.createBrand(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
       toast.success(initialData ? "Brand updated" : "Brand created");
       onSuccess();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to save brand");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save brand");
     }
   });
 

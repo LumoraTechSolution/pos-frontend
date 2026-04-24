@@ -53,13 +53,11 @@ export default function SuperAdminTenantsPage() {
   };
 
   const handleToggleStatus = async (tenantId: string, currentActive: boolean) => {
-    console.log(`Attempting status toggle for tenant ${tenantId}. Current active: ${currentActive}`);
     if (!confirm(`Are you sure you want to ${currentActive ? 'suspend' : 'activate'} this tenant?`)) return;
-    
+
     try {
       setLoading(true);
       await superAdminTenantService.toggleTenantStatus(tenantId, currentActive ? 'suspend' : 'activate');
-      console.log('Status update successful, reloading tenants...');
       await loadTenants(); // Reload the data
     } catch (err) {
       console.error('Failed to update tenant status', err);

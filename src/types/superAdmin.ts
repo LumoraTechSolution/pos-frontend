@@ -99,6 +99,19 @@ export interface TenantDetailResponse {
 }
 
 // ──────────────────────────────────────────────
+// Tenant Provisioning Payload
+// ──────────────────────────────────────────────
+export interface CreateTenantRequest {
+  name: string;
+  domain: string;
+  planTier: PlanTier;
+  adminEmail: string;
+  adminFirstName: string;
+  adminLastName: string;
+  adminPassword: string;
+}
+
+// ──────────────────────────────────────────────
 // Tenant Configuration Update Payload
 // ──────────────────────────────────────────────
 export interface TenantConfigurationRequest {

@@ -1,4 +1,3 @@
-import { UUID } from 'crypto';
 
 export interface User {
   id: string;
@@ -32,4 +31,5 @@ export interface PinLoginRequest {
 
 export interface RefreshTokenRequest {
   refreshToken: string;
+  tenantId: string;
 }

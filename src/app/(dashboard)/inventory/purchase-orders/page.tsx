@@ -22,7 +22,7 @@ import { ReceivePOModal } from "./ReceivePOModal";
 import { CURRENCY } from '@/lib/utils';
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-400 border-gray-500/20", icon: FileText },
   ORDERED: { label: "Ordered", color: "bg-blue-500/10 text-blue-400 border-blue-500/20", icon: Clock },
   PARTIAL: { label: "Partial", color: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20", icon: CheckCircle2 },
@@ -57,8 +57,8 @@ export default function PurchaseOrdersPage() {
         toast.success("Purchase order status updated");
         queryClient.invalidateQueries({ queryKey: ["purchase-orders"] });
     },
-    onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Failed to update status");
+    onError: (error: unknown) => {
+        toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update status");
     }
   });
 

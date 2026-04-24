@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/authStore';
+import { performLogout } from '@/lib/performLogout';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
@@ -13,6 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -38,9 +40,9 @@ api.interceptors.request.use(
 
 // Mutex and queue for concurrent token refreshes
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: any) => void }> = [];
+let failedQueue: Array<{ resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -75,28 +77,32 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const { refreshToken, setAuth, logout, user } = useAuthStore.getState();
+      const { refreshToken, setAuth, user } = useAuthStore.getState();
 
       if (!refreshToken || !user) {
         isRefreshing = false;
-        logout();
+        await performLogout();
         if (typeof window !== 'undefined') window.location.href = '/login';
         return Promise.reject(error);
       }
 
       try {
         // Use clean axios to prevent infinite loops if refresh fails
-        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, { refreshToken });
+        const response = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+          refreshToken,
+          tenantId: user.tenantId,
+        });
         const data = response.data.data;
 
-        setAuth(data.user, data.token, data.refreshToken);
-        processQueue(null, data.token);
+        // Backend returns `accessToken`, not `token`.
+        setAuth(data.user, data.accessToken, data.refreshToken);
+        processQueue(null, data.accessToken);
 
-        originalRequest.headers.Authorization = `Bearer ${data.token}`;
+        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        logout();
+        await performLogout();
         if (typeof window !== 'undefined') window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

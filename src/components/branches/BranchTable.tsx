@@ -10,7 +10,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Edit2, BadgeInfo, MapPin, Phone } from "lucide-react";
+import { Edit2, MapPin, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface BranchTableProps {

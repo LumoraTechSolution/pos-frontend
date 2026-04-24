@@ -49,7 +49,7 @@ export const inventoryService = {
     api.delete<ApiResponse<void>>(`/brands/${id}`).then(res => res.data.data),
 
   // --- Products ---
-  getProducts: (page = 0, size = 10, filters?: Record<string, any>) => {
+  getProducts: (page = 0, size = 10, filters?: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {

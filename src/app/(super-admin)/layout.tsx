@@ -13,7 +13,7 @@ export default function SuperAdminLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, logout } = useSuperAdminStore();
+  const { logout } = useSuperAdminStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -93,8 +93,9 @@ export default function SuperAdminLayout({
           >
             Audit Logs
           </Link>
-          <button 
-            onClick={() => {
+          <button
+            onClick={async () => {
+              await fetch('/api/super-admin-logout', { method: 'POST' }).catch(() => {});
               logout();
               router.push('/super-admin/login');
             }}

@@ -23,7 +23,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { inventoryAdjustmentService, AdjustmentType } from "@/services/inventoryAdjustmentService";
+import { inventoryAdjustmentService } from "@/services/inventoryAdjustmentService";
 import { branchService, Branch } from "@/services/branchService";
 import { Product } from "@/types/inventory";
 import { toast } from "sonner";
@@ -109,8 +109,8 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
       adjForm.reset();
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Adjustment failed");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Adjustment failed");
     }
   });
 
@@ -128,8 +128,8 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
       transferForm.reset();
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Transfer failed");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Transfer failed");
     }
   });
 
@@ -382,7 +382,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
                           {log.branchName} • {format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}
                         </div>
                         {log.reason && (
-                          <p className="text-xs text-gray-400 mt-1 italic">"{log.reason}"</p>
+                          <p className="text-xs text-gray-400 mt-1 italic">&quot;{log.reason}&quot;</p>
                         )}
                       </div>
                     </div>

@@ -38,8 +38,9 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
       toast.success("Stock transfer created successfully");
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create transfer");
+    onError: (error: unknown) => {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Failed to create transfer");
     }
   });
 

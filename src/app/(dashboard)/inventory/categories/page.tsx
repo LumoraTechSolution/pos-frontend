@@ -18,7 +18,7 @@ import { Category } from "@/types/inventory";
 export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
     if (!sortKey || !sortDirection) return categories;
 
     return [...categories].sort((a, b) => {
-      let valA: any, valB: any;
+      let valA: string | number, valB: string | number;
       if (sortKey === 'name') {
         valA = a.name.toLowerCase();
         valB = b.name.toLowerCase();
@@ -61,8 +61,8 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success("Category deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete category");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to delete category");
     }
   });
 
@@ -72,7 +72,7 @@ export default function CategoriesPage() {
     }
   };
 
-  const handleEdit = (category: any) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setIsFormOpen(true);
   };

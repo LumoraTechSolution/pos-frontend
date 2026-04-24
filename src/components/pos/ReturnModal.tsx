@@ -69,7 +69,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
 
   const totalReturnAmt = Object.entries(quantities).reduce((sum, [itemId, qty]) => {
     if (!sale) return sum;
-    const item = sale.items.find((si: any) => si.id === itemId);
+    const item = sale.items.find((si: { id: string; totalAmount: number; quantity: number }) => si.id === itemId);
     if (!item) return sum;
     const unitPrice = item.totalAmount / item.quantity;
     return sum + (unitPrice * qty);
@@ -79,9 +79,9 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
     if (!sale) return;
 
     const items: ReturnRequest['items'] = Object.entries(quantities)
-      .filter(([_, qty]) => qty > 0)
+      .filter(([, qty]) => qty > 0)
       .map(([itemId, qty]) => {
-        const saleItem = sale.items.find((si: any) => si.id === itemId);
+        const saleItem = sale.items.find((si: { id: string; productId: string }) => si.id === itemId);
         return {
           saleItemId: itemId,
           productId: saleItem!.productId,

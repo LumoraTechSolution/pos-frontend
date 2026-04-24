@@ -51,25 +51,33 @@ export default function CategoryForm({
       name: initialData?.name || "",
       slug: initialData?.slug || "",
       description: initialData?.description || "",
-      parentId: (initialData?.parentId as any) || null,
-      taxRateId: (initialData?.taxRateId as any) || null,
+      parentId: initialData?.parentId ?? null,
+      taxRateId: initialData?.taxRateId ?? null,
     },
   });
 
   const mutation = useMutation({
     mutationFn: (data: CategoryFormValues) => {
       if (initialData) {
-        return inventoryService.updateCategory(initialData.id, data as any);
+        return inventoryService.updateCategory(initialData.id, {
+          ...data,
+          parentId: data.parentId ?? undefined,
+          taxRateId: data.taxRateId ?? undefined,
+        });
       }
-      return inventoryService.createCategory(data as any);
+      return inventoryService.createCategory({
+        ...data,
+        parentId: data.parentId ?? undefined,
+        taxRateId: data.taxRateId ?? undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success(initialData ? "Category updated" : "Category created");
       onSuccess();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to save category");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save category");
     }
   });
 

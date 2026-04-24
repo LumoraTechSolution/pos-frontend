@@ -33,7 +33,6 @@ import {
   Star,
   Loader2,
   Info,
-  X,
   AlertTriangle,
   Lock,
 } from "lucide-react";
@@ -66,9 +65,9 @@ export default function SettingsPage() {
       toast.success("Tax rate created successfully");
       closeModal();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(
-        error.response?.data?.message || "Failed to create tax rate"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to create tax rate"
       );
     },
   });
@@ -81,9 +80,9 @@ export default function SettingsPage() {
       toast.success("Tax rate updated successfully");
       closeModal();
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(
-        error.response?.data?.message || "Failed to update tax rate"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update tax rate"
       );
     },
   });
@@ -95,9 +94,9 @@ export default function SettingsPage() {
       toast.success("Tax rate deleted");
       setDeleteConfirm(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast.error(
-        error.response?.data?.message || "Failed to delete tax rate"
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to delete tax rate"
       );
     },
   });
@@ -503,7 +502,7 @@ export default function SettingsPage() {
                   Default Rate
                 </label>
                 <p className="text-xs text-gray-400">
-                  Applied when a product's category has no specific tax rate.
+                  Applied when a product&apos;s category has no specific tax rate.
                 </p>
               </div>
               <input
@@ -520,7 +519,7 @@ export default function SettingsPage() {
                   Active
                 </label>
                 <p className="text-xs text-gray-400">
-                  Inactive tax rates won't be applied to any sales.
+                  Inactive tax rates won&apos;t be applied to any sales.
                 </p>
               </div>
               <input

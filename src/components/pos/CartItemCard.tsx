@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Trash2, Plus, Minus, Package } from 'lucide-react';
 import { CartItem } from '@/hooks/useCart';
 import { CURRENCY } from '@/lib/utils';
@@ -13,11 +14,13 @@ interface CartItemCardProps {
 export function CartItemCard({ item, onUpdateQuantity, onRemove }: CartItemCardProps) {
   return (
     <div className="bg-gray-900 border border-gray-800/50 rounded-xl p-3 flex gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
-      <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center shrink-0">
+      <div className="w-12 h-12 bg-gray-950 rounded-lg relative overflow-hidden shrink-0">
         {item.imageUrl ? (
-          <img src={item.imageUrl} className="w-full h-full object-cover rounded-lg" alt={item.name} />
+          <Image src={item.imageUrl} fill className="object-cover rounded-lg" alt={item.name} />
         ) : (
-          <Package size={20} className="text-gray-700" />
+          <div className="w-full h-full flex items-center justify-center">
+            <Package size={20} className="text-gray-700" />
+          </div>
         )}
       </div>
       <div className="flex-1 min-w-0">

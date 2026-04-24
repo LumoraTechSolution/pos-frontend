@@ -11,6 +11,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 const superAdminApi = axios.create({
   baseURL: `${API_BASE_URL}/api/v1/super-admin`,
   timeout: 15000,
+  // Required so the browser accepts the `sa-auth-token` Set-Cookie from the
+  // backend login response (cross-origin cookies are dropped otherwise).
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },

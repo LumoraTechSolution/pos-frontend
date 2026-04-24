@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supplierService } from "@/services/supplierService";
+import { supplierService, Supplier, PagedSuppliers } from "@/services/supplierService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -13,37 +14,89 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, Edit2, ShieldAlert, Loader2 } from "lucide-react";
+import { Search, Plus, Edit2, Loader2 } from "lucide-react";
 import { SupplierModal } from "./SupplierModal";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function SuppliersPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
-  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const isUndoRef = useRef(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["suppliers", page, searchTerm],
     queryFn: () => supplierService.getSuppliers(page, 10, { search: searchTerm }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => supplierService.deleteSupplier(id),
-    onSuccess: () => {
-      toast.success("Supplier deactivated successfully");
-      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+  const toggleStatusMutation = useMutation({
+    mutationFn: (id: string) => supplierService.toggleStatus(id),
+    onMutate: async (id) => {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+
+      await queryClient.cancelQueries({ queryKey: ["suppliers"] });
+
+      const snapshots = queryClient.getQueriesData<PagedSuppliers>({ queryKey: ["suppliers"] });
+
+      queryClient.setQueriesData<PagedSuppliers>({ queryKey: ["suppliers"] }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          content: old.content.map((s) => (s.id === id ? { ...s, isActive: !s.isActive } : s)),
+        };
+      });
+
+      const wasUndo = isUndoRef.current;
+      isUndoRef.current = false;
+      return { snapshots, wasUndo };
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to deactivate supplier");
+    onError: (error: unknown, _id, context) => {
+      context?.snapshots.forEach(([key, previous]) => {
+        queryClient.setQueryData(key, previous);
+      });
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          "Failed to update status"
+      );
+    },
+    onSuccess: (updated, _id, context) => {
+      if (context?.wasUndo) return;
+
+      if (!updated.isActive) {
+        toast.success(`${updated.name} deactivated`, {
+          description: "It won't appear when creating new purchase orders.",
+          action: {
+            label: "Undo",
+            onClick: () => {
+              isUndoRef.current = true;
+              toggleStatusMutation.mutate(updated.id);
+            },
+          },
+        });
+      } else {
+        toast.success(`${updated.name} reactivated`);
+      }
+    },
+    onSettled: (_data, _err, id) => {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
     },
   });
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to deactivate this supplier?")) {
-      deleteMutation.mutate(id);
-    }
+  const handleToggleStatus = (supplier: Supplier) => {
+    toggleStatusMutation.mutate(supplier.id);
   };
 
   return (
@@ -104,10 +157,26 @@ export default function SuppliersPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                data?.content.map((supplier) => (
-                  <TableRow key={supplier.id} className="border-gray-800 group hover:bg-white/5 transition-colors">
-                    <TableCell className="font-medium text-gray-200">
-                      {supplier.name}
+                data?.content.map((supplier) => {
+                  const isToggling = togglingIds.has(supplier.id);
+                  return (
+                  <TableRow
+                    key={supplier.id}
+                    className={cn(
+                      "border-gray-800 group hover:bg-white/5 transition-colors",
+                      !supplier.isActive && "bg-gray-950/60"
+                    )}
+                  >
+                    <TableCell className="font-medium">
+                      <span
+                        className={cn(
+                          supplier.isActive
+                            ? "text-gray-200"
+                            : "text-gray-400 line-through decoration-gray-600"
+                        )}
+                      >
+                        {supplier.name}
+                      </span>
                     </TableCell>
                     <TableCell className="text-gray-400">
                       {supplier.contactPerson || "-"}
@@ -119,42 +188,56 @@ export default function SuppliersPage() {
                       {supplier.phone || "-"}
                     </TableCell>
                     <TableCell className="py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          (supplier.isActive ?? (supplier as any).active)
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : "bg-red-500/10 text-red-400 border border-red-500/20"
-                        }`}
+                      <button
+                        type="button"
+                        disabled={isToggling}
+                        onClick={() => handleToggleStatus(supplier)}
+                        aria-label={`${supplier.isActive ? "Deactivate" : "Activate"} ${supplier.name}`}
+                        aria-busy={isToggling}
+                        title={
+                          supplier.isActive
+                            ? "Active — available when creating POs. Click to deactivate."
+                            : "Inactive — hidden from PO creation. Click to reactivate."
+                        }
+                        className="flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-wait"
                       >
-                        {(supplier.isActive ?? (supplier as any).active) ? "Active" : "Inactive"}
-                      </span>
+                        <Switch
+                          checked={supplier.isActive}
+                          disabled={isToggling}
+                          className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-gray-700 border-gray-600 pointer-events-none"
+                          tabIndex={-1}
+                        />
+                        <span
+                          className={cn(
+                            "text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border",
+                            supplier.isActive
+                              ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/30"
+                              : "text-gray-400 bg-gray-800 border-gray-700"
+                          )}
+                        >
+                          {isToggling && <Loader2 size={11} className="animate-spin" />}
+                          {supplier.isActive ? "Active" : "Inactive"}
+                        </span>
+                      </button>
                     </TableCell>
                     <TableCell className="py-4 text-right pr-6">
                       <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-400 hover:text-primary hover:bg-gray-800"
-                        onClick={() => {
-                          setSelectedSupplier(supplier);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-gray-400 hover:text-red-400 hover:bg-gray-800"
-                        onClick={() => handleDelete(supplier.id)}
-                        disabled={!(supplier.isActive ?? (supplier as any).active)}
-                      >
-                        <ShieldAlert className="h-4 w-4" />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-400 hover:text-primary hover:bg-gray-800"
+                          onClick={() => {
+                            setSelectedSupplier(supplier);
+                            setIsModalOpen(true);
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

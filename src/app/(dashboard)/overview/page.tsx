@@ -1,23 +1,18 @@
 "use client";
 
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardService } from "@/services/dashboardService";
 import {
   DashboardData,
-  DailySalesTrend,
-  TopProduct,
   PaymentMethodBreakdown,
-  LowStockAlert,
-  RecentTransaction,
 } from "@/types/dashboard";
 import {
   TrendingUp,
-  TrendingDown,
   DollarSign,
   ShoppingCart,
   BarChart3,
   Package,
-  AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
   CreditCard,
@@ -29,8 +24,6 @@ import { LowStockWidget } from "@/components/dashboard/LowStockWidget";
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -68,7 +61,7 @@ const PAYMENT_COLORS: Record<string, string> = {
   CREDIT: "#ef4444",
 };
 
-const PAYMENT_ICONS: Record<string, any> = {
+const PAYMENT_ICONS: Record<string, React.ElementType> = {
   CASH: Banknote,
   CARD: CreditCard,
   ONLINE: Wallet,
@@ -87,7 +80,7 @@ function KPICard({
   title: string;
   value: string;
   change: { pct: string; positive: boolean };
-  icon: any;
+  icon: React.ElementType;
   gradient: string;
 }) {
   return (
@@ -119,12 +112,12 @@ function KPICard({
 // ————————————————————————————————————————
 // Custom Tooltip for Charts
 // ————————————————————————————————————————
-function ChartTooltip({ active, payload, label }: any) {
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 shadow-lg">
       <div className="text-xs text-gray-400 mb-1">{label}</div>
-      {payload.map((p: any, i: number) => (
+      {payload.map((p, i: number) => (
         <div key={i} className="text-sm font-medium" style={{ color: p.color }}>
           {p.name}: {p.name === "revenue" || p.name === "Revenue" ? formatCurrency(p.value) : p.value}
         </div>

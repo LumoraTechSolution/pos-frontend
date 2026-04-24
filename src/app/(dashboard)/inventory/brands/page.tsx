@@ -18,7 +18,7 @@ import { Brand } from "@/types/inventory";
 export default function BrandsPage() {
   const queryClient = useQueryClient();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingBrand, setEditingBrand] = useState<any>(null);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export default function BrandsPage() {
     if (!sortKey || !sortDirection) return brands;
 
     return [...brands].sort((a, b) => {
-      let valA: any, valB: any;
+      let valA: string | number, valB: string | number;
       if (sortKey === 'name') {
         valA = a.name.toLowerCase();
         valB = b.name.toLowerCase();
@@ -61,8 +61,8 @@ export default function BrandsPage() {
       queryClient.invalidateQueries({ queryKey: ['brands'] });
       toast.success("Brand deleted");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete brand");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to delete brand");
     }
   });
 
@@ -72,7 +72,7 @@ export default function BrandsPage() {
     }
   };
 
-  const handleEdit = (brand: any) => {
+  const handleEdit = (brand: Brand) => {
     setEditingBrand(brand);
     setIsFormOpen(true);
   };

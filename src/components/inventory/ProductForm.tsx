@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,7 +13,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { branchService } from "@/services/branchService";
 import { toast } from "sonner";
-import { Product, ProductRequest } from "@/types/inventory";
+import { Product, ProductRequest, Category, Brand } from "@/types/inventory";
+import { Branch } from "@/services/branchService";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Sparkles, PencilLine } from "lucide-react";
@@ -143,8 +145,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       toast.success(initialData ? "Product updated" : "Product created");
       router.push("/inventory/products");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to save product");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save product");
     }
   });
 
@@ -186,7 +188,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           {...field} 
                           ref={(e) => {
                             field.ref(e);
-                            // @ts-ignore
+                            // @ts-expect-error — ref callback type mismatch between RHF and HTMLElement
                             nameInputRef.current = e;
                           }}
                         />
@@ -296,7 +298,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 {!initialData && branches && branches.length > 1 ? (
                   <div className="space-y-4">
                     <label className="text-sm font-semibold text-gray-400">Initial Stock per Branch</label>
-                    {branches.map((branch: any) => (
+                    {branches.map((branch: Branch) => (
                       <FormField
                         key={branch.id}
                         control={form.control}
@@ -376,7 +378,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Category</option>
-                          {categories?.map((c: any) => (
+                          {categories?.map((c: Category) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
@@ -398,7 +400,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Brand</option>
-                          {brands?.map((b: any) => (
+                          {brands?.map((b: Brand) => (
                             <option key={b.id} value={b.id}>{b.name}</option>
                           ))}
                         </select>
@@ -417,7 +419,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               <CardContent className="space-y-4">
                 <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative group overflow-hidden">
                   {form.watch("imageUrl") ? (
-                    <img src={form.watch("imageUrl")} alt="Preview" className="w-full h-full object-cover" />
+                    <Image src={form.watch("imageUrl")!} fill className="object-cover" alt="Preview" />
                   ) : (
                     <div className="text-center text-gray-600">
                       <div className="text-2xl mb-1">🖼️</div>

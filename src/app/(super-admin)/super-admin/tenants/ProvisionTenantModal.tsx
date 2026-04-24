@@ -45,8 +45,8 @@ export default function ProvisionTenantModal({ isOpen, onClose, onSuccess }: Pro
       // Reset form on success
       setName(''); setDomain(''); setPlanTier('SMALL_BUSINESS');
       setAdminEmail(''); setAdminFirstName(''); setAdminLastName(''); setAdminPassword('');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to provision tenant.');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to provision tenant.');
     } finally {
       setLoading(false);
     }

@@ -38,7 +38,7 @@ export default function TenantDetailPage() {
       setError(null);
       const data = await superAdminTenantService.getTenantDetail(tenantId);
       setTenant(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch tenant:', err);
       setError(err?.response?.data?.message || 'Failed to load tenant details.');
     } finally {
@@ -58,7 +58,7 @@ export default function TenantDetailPage() {
       setTenant(updated);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert(err?.response?.data?.message || 'Failed to save configuration.');
     } finally {
       setSaving(false);

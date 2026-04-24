@@ -30,8 +30,8 @@ export default function BranchesPage() {
       toast.success("Branch created successfully");
       closeModal();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create branch");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to create branch");
     }
   });
 
@@ -43,8 +43,8 @@ export default function BranchesPage() {
       toast.success("Branch updated successfully");
       closeModal();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to update branch");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to update branch");
     }
   });
 

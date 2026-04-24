@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Building2 } from "lucide-react";
 
@@ -35,7 +34,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
         email: supplier.email || "",
         phone: supplier.phone || "",
         address: supplier.address || "",
-        isActive: supplier.isActive ?? (supplier as any).active ?? true,
+        isActive: supplier.isActive ?? true,
       });
     } else {
       setFormData({
@@ -57,8 +56,8 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
       toast.success(supplier ? "Supplier updated successfully" : "Supplier created successfully");
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Something went wrong");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Something went wrong");
     },
   });
 
@@ -128,17 +127,6 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               className="bg-gray-950 border-gray-800 focus-visible:ring-primary min-h-[80px]"
-            />
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-gray-950 border border-gray-800 rounded-md">
-            <Label htmlFor="isActive" className="text-sm font-medium text-gray-300">
-              Active Status
-            </Label>
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
             />
           </div>
 

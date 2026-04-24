@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { purchaseOrderService, PurchaseOrderRequest, PurchaseOrderItemRequest } from "@/services/purchaseOrderService";
+import { purchaseOrderService, PurchaseOrderRequest } from "@/services/purchaseOrderService";
 import { supplierService } from "@/services/supplierService";
 import { branchService } from "@/services/branchService";
 import { inventoryService } from "@/services/inventoryService";
@@ -8,11 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Truck, Plus, Trash2 } from "lucide-react";
+import { Truck, Trash2 } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { CURRENCY } from '@/lib/utils';
 
@@ -58,7 +57,7 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
     enabled: isOpen,
   });
 
-  const suppliers = suppliersData?.content || [];
+  const suppliers = (suppliersData?.content || []).filter(s => s.isActive);
   const products = productsData?.content || [];
 
   // Reset form when opened Let's rely on standard resets.
@@ -110,8 +109,8 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
       toast.success("Purchase order created successfully and saved as DRAFT");
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create purchase order");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to create purchase order");
     },
   });
 

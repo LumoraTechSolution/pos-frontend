@@ -60,8 +60,8 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
       toast.success("Products received into branch stock successfully!");
       onClose();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to receive products");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to receive products");
     },
   });
 

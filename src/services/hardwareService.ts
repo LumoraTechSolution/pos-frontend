@@ -55,12 +55,12 @@ export const hardwareService = {
     if (!config.cashDrawerKick) return;
 
     if (config.printerMode === 'browser_print') {
-        console.log("💳 Cash Drawer Kick Simulated [Browser Print Mode]");
+        console.warn("💳 Cash Drawer Kick Simulated [Browser Print Mode]");
         return;
     }
-    
+
     // In a real WebUSB environment, we would do:
     // navigator.usb.requestDevice(...).then(device => device.transferOut(1, this.getCashDrawerKickBuffer(config)));
-    console.log(`📡 Sending ESC/POS Kick Signal to ${config.printerTarget}`);
+    console.warn(`📡 Sending ESC/POS Kick Signal to ${config.printerTarget}`);
   }
 };

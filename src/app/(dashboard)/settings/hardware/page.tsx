@@ -60,7 +60,7 @@ export default function HardwareSettingsPage() {
               <label className="block text-sm font-medium text-gray-400 mb-2">Printing Mode</label>
               <select 
                 value={config.printerMode}
-                onChange={e => setConfig({ ...config, printerMode: e.target.value as any })}
+                onChange={e => setConfig({ ...config, printerMode: e.target.value as HardwareConfig['printerMode'] })}
                 className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
               >
                 <option value="browser_print">Standard Browser Print (Easy)</option>
@@ -74,7 +74,7 @@ export default function HardwareSettingsPage() {
                 <label className="block text-sm font-medium text-gray-400 mb-2">Paper Width</label>
                 <select 
                   value={config.paperWidth}
-                  onChange={e => setConfig({ ...config, paperWidth: e.target.value as any })}
+                  onChange={e => setConfig({ ...config, paperWidth: e.target.value as HardwareConfig['paperWidth'] })}
                   className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   <option value="58mm">58mm (Small)</option>

@@ -1,19 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { timeClockService, TimeRecord } from "@/services/timeClockService";
+import { timeClockService } from "@/services/timeClockService";
 import { Button } from "@/components/ui/button";
 import { Clock, Loader2, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatDuration, intervalToDuration } from "date-fns";
+import { intervalToDuration } from "date-fns";
 
 export function TimeClockWidget({ variant = 'sidebar' }: { variant?: 'sidebar' | 'header' }) {
   const queryClient = useQueryClient();
   const [elapsed, setElapsed] = useState<string>("");
 
   // Fetch current status
-  const { data: currentRecord, isLoading, isError } = useQuery({
+  const { data: currentRecord, isLoading } = useQuery({
     queryKey: ["time-clock-status"],
     queryFn: () => timeClockService.getStatus(),
     refetchInterval: 60000, // Refresh every minute just in case
@@ -54,8 +54,8 @@ export function TimeClockWidget({ variant = 'sidebar' }: { variant?: 'sidebar' |
       toast.success("Clocked in successfully");
       queryClient.invalidateQueries({ queryKey: ["time-clock-status"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to clock in");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to clock in");
     }
   });
 
@@ -66,8 +66,8 @@ export function TimeClockWidget({ variant = 'sidebar' }: { variant?: 'sidebar' |
       toast.success(`Clocked out. Total duration: ${data.durationMinutes}m`);
       queryClient.invalidateQueries({ queryKey: ["time-clock-status"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to clock out");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to clock out");
     }
   });
 

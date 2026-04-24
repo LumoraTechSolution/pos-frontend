@@ -51,8 +51,8 @@ export default function CustomersPage() {
       setShowCreate(false);
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to register customer');
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to register customer');
     }
   });
 
@@ -63,8 +63,8 @@ export default function CustomersPage() {
       setEditingCustomer(null);
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update customer');
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to update customer');
     }
   });
 
@@ -74,8 +74,8 @@ export default function CustomersPage() {
       toast.success('Customer deleted');
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete customer');
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to delete customer');
     }
   });
 

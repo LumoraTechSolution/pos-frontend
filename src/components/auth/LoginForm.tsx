@@ -80,8 +80,17 @@ export function LoginForm() {
       } else {
         router.push('/terminal');
       }
-    } catch (error: any) {
-      const msg = error.message || error.response?.data?.message || "Login failed. Please check your credentials.";
+    } catch (error: unknown) {
+      // Prefer the backend's message (e.g. "Too many login attempts...",
+      // "Invalid credentials") over axios's generic "Request failed with status X".
+      const err = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Login failed. Please check your credentials.';
       toast.error(msg);
     } finally {
       setIsLoading(false);

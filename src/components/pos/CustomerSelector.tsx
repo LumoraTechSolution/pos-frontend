@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Search, Plus, X, UserPlus, Phone, Star } from 'lucide-react';
+import { Search, X, UserPlus, Phone, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { customerService, Customer } from '@/services/customerService';
-import { toast } from 'sonner';
 
 interface CustomerSelectorProps {
   selectedCustomer: Customer | null;

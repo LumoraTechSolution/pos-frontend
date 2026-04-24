@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { ShieldCheck, Search, Activity, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, Activity, ChevronRight, ChevronLeft } from 'lucide-react';
 import { superAdminAuditService, SuperAdminAuditResponse, PagedAuditResponse } from '@/services/superAdminAuditService';
 import { format } from 'date-fns';
 
@@ -45,7 +45,7 @@ export default function AuditLogPage() {
       const data = await superAdminAuditService.getGlobalAuditLogs(pageNumber, size, searchTerm, startIso, endIso);
       setLogs(data.content);
       setPageData(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch audit logs:', err);
       setError(err?.response?.data?.message || 'Failed to load audit logs.');
     } finally {

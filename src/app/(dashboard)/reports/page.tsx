@@ -3,14 +3,14 @@
 import { useState, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { reportService } from "@/services/reportService";
-import { returnService, ReturnResponse } from "@/services/returnService";
+import { returnService, ReturnResponse, ReturnItemRequest } from "@/services/returnService";
 import {
   SalesReportRecord,
-  SalesReportItemRecord,
   InventoryValuationReport,
   EmployeePerformanceRecord,
   TopCustomerRecord,
   TaxSummaryReport,
+  TaxLineItem,
   ProfitabilityReport,
   ProductProfitRecord,
 } from "@/types/report";
@@ -60,7 +60,7 @@ export default function ReportsPage() {
   // Action states
   const [activeTab, setActiveTab] = useState("sales");
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
-  const [exchangeData, setExchangeData] = useState<{ saleId: string; returnItems: SalesReportItemRecord[]; returnCredit: number } | null>(null);
+  const [exchangeData, setExchangeData] = useState<{ saleId: string; returnItems: ReturnItemRequest[]; returnCredit: number } | null>(null);
 
   // Pagination states
   const [salesPage, setSalesPage] = useState(0);
@@ -147,10 +147,10 @@ export default function ReportsPage() {
   // ─── Universal Export (CSV) ─────────────────────────────────────────────
   const exportData = () => {
     let headers: string[] = [];
-    let dataRows: any[] = [];
-    let filename = `report-${activeTab}-${format(new Date(), "yyyyMMdd")}.csv`;
+    let dataRows: unknown[][] = [];
+    const filename = `report-${activeTab}-${format(new Date(), "yyyyMMdd")}.csv`;
 
-    const escape = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
     if (activeTab === "sales" && salesData?.content) {
       headers = ["Invoice #", "Date", "Customer", "Cashier", "Payment", "Status", "Total", "Tax", "Net"];
@@ -962,7 +962,7 @@ export default function ReportsPage() {
                     ) : !taxData?.breakdown?.length ? (
                       <TableRow><TableCell colSpan={4} className="text-center py-10 text-muted-foreground">No tax data for this period.</TableCell></TableRow>
                     ) : (
-                      taxData.breakdown.map((row: any) => (
+                      taxData.breakdown.map((row: TaxLineItem) => (
                         <TableRow key={row.paymentMethod} className="hover:bg-gray-800/50">
                           <TableCell className="font-medium">{row.paymentMethod}</TableCell>
                           <TableCell className="text-center">
@@ -1106,14 +1106,14 @@ export default function ReportsPage() {
         <ReturnModal 
           saleId={returnSaleId} 
           onClose={() => setReturnSaleId(null)} 
-          onExchange={(saleId, items, credit) => setExchangeData({ saleId, returnItems: items as any, returnCredit: credit })}
+          onExchange={(saleId, items, credit) => setExchangeData({ saleId, returnItems: items, returnCredit: credit })}
         />
       )}
 
       {exchangeData && (
         <ExchangeModal
           saleId={exchangeData.saleId}
-          returnItems={exchangeData.returnItems as any}
+          returnItems={exchangeData.returnItems}
           returnCredit={exchangeData.returnCredit}
           onClose={() => setExchangeData(null)}
         />

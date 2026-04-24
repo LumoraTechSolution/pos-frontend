@@ -22,6 +22,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { TimeClockWidget } from '@/components/employee/TimeClockWidget';
 import AuthGuard from '@/components/providers/AuthGuard';
+import { performLogout } from '@/lib/performLogout';
 
 export default function DashboardLayout({
   children,
@@ -30,10 +31,10 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, hasFeature } = useAuthStore();
+  const { user, hasFeature } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await performLogout();
     router.push('/login');
   };
 
