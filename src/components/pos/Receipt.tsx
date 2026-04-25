@@ -2,93 +2,146 @@
 
 import React, { forwardRef } from 'react';
 import { SaleResponse } from '@/services/salesService';
-import { CURRENCY } from '@/lib/utils';
+import { format } from 'date-fns';
 
 interface ReceiptProps {
   sale: SaleResponse | null;
+  tenant?: {
+    name: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    phone?: string;
+  };
+  branch?: { name: string } | null;
+  /** Whether to show the Branch line — generally only in multi-branch setups. */
+  showBranch?: boolean;
+  tendered?: number;
+  change?: number;
+  /** e.g. "VAT 15%" — rendered inside the Tax line parentheses when provided. */
+  taxLabel?: string;
 }
 
-export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(({ sale }, ref) => {
+const ITEM_NAME_MAX = 18; // thermal width constraint
+
+export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt(
+  { sale, tenant, branch, showBranch = false, tendered, change, taxLabel },
+  ref,
+) {
   if (!sale) return null;
 
+  const created = new Date(sale.createdAt);
+  const storeName = tenant?.name || 'STORE';
+  const firstName = sale.cashierName?.split(' ')[0] ?? sale.cashierName ?? 'Staff';
+  const isCash = sale.paymentMethod === 'CASH';
+
+  // Currency-agnostic number formatting — two decimals, aligns right via tabular-nums.
+  const fmt = (n: number) => n.toFixed(2);
+
   return (
-    <div ref={ref} className="p-4 bg-white text-black font-mono text-[12px] w-[80mm]">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-bold uppercase">Lumora POS</h1>
-        <p>123 Business Avenue</p>
-        <p>Colombo, Sri Lanka</p>
-        <p>Tel: +94 11 234 5678</p>
+    <div
+      ref={ref}
+      className="p-3 bg-white text-black font-mono text-[12px] leading-[1.3] w-[80mm] tabular-nums"
+    >
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="text-center">
+        <h1 className="font-bold uppercase text-[16px] tracking-wide">{storeName}</h1>
+        {tenant?.addressLine1 && <p>{tenant.addressLine1}</p>}
+        {tenant?.addressLine2 && <p>{tenant.addressLine2}</p>}
+        {tenant?.phone && <p>Phone: {tenant.phone}</p>}
       </div>
 
-      <div className="border-t border-b border-black py-2 mb-2">
-        <p className="flex justify-between">
-          <span>Date:</span>
-          <span>{new Date(sale.createdAt).toLocaleString()}</span>
-        </p>
-        <p className="flex justify-between">
-          <span>Invoice #:</span>
-          <span>{sale.invoiceNumber}</span>
-        </p>
-        <p className="flex justify-between">
-          <span>Method:</span>
-          <span>{sale.paymentMethod}</span>
-        </p>
+      <div className="border-t border-dashed border-black my-2" />
+
+      {/* ── Meta ───────────────────────────────────────────────────────── */}
+      <div>
+        <p>Invoice No: {sale.invoiceNumber}</p>
+        <p>Date: {format(created, 'dd-MM-yyyy')}</p>
+        <p>Time: {format(created, 'HH:mm')}</p>
+        <p>Cashier: {firstName}</p>
+        {showBranch && branch?.name && <p>Branch: {branch.name}</p>}
+        {sale.customerName && <p>Customer: {sale.customerName}</p>}
       </div>
 
-      <div className="mb-4">
-        <p className="font-bold border-b border-black pb-1 mb-1">Items</p>
-        {sale.items.map((item, index) => (
-          <div key={index} className="mb-1">
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <span className="truncate">{item.productName}</span>
-              <span className="text-right">{CURRENCY.symbol} {(item.unitPrice * item.quantity).toFixed(2)}</span>
-            </div>
-            <div className="text-[10px] text-gray-600">
-              {item.quantity} x {CURRENCY.symbol} {item.unitPrice.toFixed(2)}
-            </div>
+      <div className="border-t border-dashed border-black my-2" />
+
+      {/* ── Items ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-[1fr_28px_52px_56px] gap-1 font-semibold">
+        <span>Item</span>
+        <span className="text-right">Qty</span>
+        <span className="text-right">Price</span>
+        <span className="text-right">Total</span>
+      </div>
+
+      <div className="border-t border-dashed border-black my-1" />
+
+      {sale.items.map((item, idx) => {
+        const name =
+          item.productName.length > ITEM_NAME_MAX
+            ? item.productName.slice(0, ITEM_NAME_MAX - 1) + '…'
+            : item.productName;
+        const lineTotal = item.unitPrice * item.quantity;
+        return (
+          <div key={idx} className="grid grid-cols-[1fr_28px_52px_56px] gap-1">
+            <span className="truncate">{name}</span>
+            <span className="text-right">{item.quantity}</span>
+            <span className="text-right">{fmt(item.unitPrice)}</span>
+            <span className="text-right">{fmt(lineTotal)}</span>
           </div>
-        ))}
-      </div>
+        );
+      })}
 
-      <div className="border-t border-black pt-2 space-y-1">
+      <div className="border-t border-dashed border-black my-2" />
+
+      {/* ── Summary ────────────────────────────────────────────────────── */}
+      <div>
         <p className="flex justify-between">
           <span>Subtotal:</span>
-          <span>{CURRENCY.symbol} {sale.totalAmount.toFixed(2)}</span>
-        </p>
-        <p className="flex justify-between">
-          <span>Tax (10%):</span>
-          <span>{CURRENCY.symbol} {sale.taxAmount.toFixed(2)}</span>
+          <span>{fmt(sale.totalAmount)}</span>
         </p>
         {sale.discountAmount > 0 && (
           <p className="flex justify-between">
             <span>Discount:</span>
-            <span>-{CURRENCY.symbol} {sale.discountAmount.toFixed(2)}</span>
+            <span>{fmt(sale.discountAmount)}</span>
           </p>
         )}
-        <p className="flex justify-between font-bold text-base border-t border-black pt-1">
-          <span>TOTAL:</span>
-          <span>{CURRENCY.symbol} {sale.netAmount.toFixed(2)}</span>
+        <p className="flex justify-between">
+          <span>Tax{taxLabel ? ` (${taxLabel})` : ''}:</span>
+          <span>{fmt(sale.taxAmount)}</span>
         </p>
       </div>
 
-      {sale.customerName && (
-        <div className="border-t border-black mt-4 pt-2 text-center space-y-1">
-          <p className="font-bold">Customer: {sale.customerName}</p>
-          {sale.earnedPoints !== undefined && sale.earnedPoints > 0 && (
-            <p>Points Earned: {sale.earnedPoints}</p>
-          )}
-          {sale.loyaltyBalance !== undefined && (
-            <p>Points Balance: {sale.loyaltyBalance}</p>
-          )}
+      <div className="border-t border-dashed border-black my-2" />
+
+      <p className="flex justify-between font-bold text-[15px]">
+        <span>TOTAL:</span>
+        <span>{fmt(sale.netAmount)}</span>
+      </p>
+
+      {isCash ? (
+        <div className="mt-1">
+          <p className="flex justify-between">
+            <span>Cash:</span>
+            <span>{fmt(tendered ?? sale.netAmount)}</span>
+          </p>
+          <p className="flex justify-between">
+            <span>Change:</span>
+            <span>{fmt(change ?? 0)}</span>
+          </p>
         </div>
+      ) : (
+        <p className="flex justify-between mt-1">
+          <span>Paid:</span>
+          <span>{sale.paymentMethod}</span>
+        </p>
       )}
 
-      <div className="text-center mt-6">
-        <p className="font-bold">Thank you for your purchase!</p>
-        <p className="text-[10px]">Please keep your receipt for any returns.</p>
-        <div className="mt-4 opacity-50">
-          * * * END OF RECEIPT * * *
-        </div>
+      <div className="border-t border-dashed border-black my-2" />
+
+      {/* ── Footer ─────────────────────────────────────────────────────── */}
+      <div className="text-center">
+        <p className="font-bold">Thank You For Shopping!</p>
+        <p>Return within 7 days with receipt.</p>
+        <p className="mt-2 text-[10px]">Powered by Lumora Tech</p>
       </div>
     </div>
   );

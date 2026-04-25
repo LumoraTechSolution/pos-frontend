@@ -37,7 +37,7 @@ export function POSHeader({
             <Package className="text-white" size={18} />
           </div>
           <h1 className="text-xl font-bold tracking-tight">
-            Lumora<span className="text-primary">POS</span>
+            Store<span className="text-primary">X</span>
           </h1>
         </div>
 
@@ -91,7 +91,7 @@ export function POSHeader({
       <div className="flex items-center gap-4">
         {userRole !== 'ADMIN' && (
           <FeatureGuard feature="TIME_CLOCK">
-            <TimeClockWidget variant="header" />
+            <TimeClockWidget variant="header" shiftMode="cash-drawer" />
           </FeatureGuard>
         )}
         

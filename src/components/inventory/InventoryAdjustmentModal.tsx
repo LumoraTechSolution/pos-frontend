@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -57,13 +57,20 @@ const transferSchema = z.object({
   path: ["destinationBranchId"]
 });
 
+type AdjustmentType = 'STOCK_IN' | 'STOCK_OUT' | 'RECONCILIATION' | 'DAMAGE' | 'RETURN';
+
 interface InventoryAdjustmentModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Pre-fill the branch selector. Used when opening from a checkout-time
+   *  "Fix stock" action so the manager doesn't have to re-pick the branch. */
+  defaultBranchId?: string;
+  /** Pre-fill the adjustment type (defaults to RECONCILIATION). */
+  defaultType?: AdjustmentType;
 }
 
-export default function InventoryAdjustmentModal({ product, isOpen, onClose }: InventoryAdjustmentModalProps) {
+export default function InventoryAdjustmentModal({ product, isOpen, onClose, defaultBranchId, defaultType }: InventoryAdjustmentModalProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("adjust");
 
@@ -81,11 +88,25 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose }: I
   const adjForm = useForm<z.infer<typeof adjustmentSchema>>({
     resolver: zodResolver(adjustmentSchema),
     defaultValues: {
-      type: 'RECONCILIATION',
+      type: defaultType ?? 'RECONCILIATION',
+      branchId: defaultBranchId,
       quantity: 0,
       reason: "",
     }
   });
+
+  // Re-apply pre-fill defaults each time the modal opens for a new product /
+  // branch context (e.g. checkout "Fix stock" action targeting a specific row).
+  useEffect(() => {
+    if (isOpen) {
+      adjForm.reset({
+        type: defaultType ?? 'RECONCILIATION',
+        branchId: defaultBranchId,
+        quantity: 0,
+        reason: "",
+      });
+    }
+  }, [isOpen, defaultBranchId, defaultType, adjForm]);
 
   const transferForm = useForm<z.infer<typeof transferSchema>>({
     resolver: zodResolver(transferSchema),

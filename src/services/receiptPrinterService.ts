@@ -4,18 +4,26 @@ import { format } from 'date-fns';
 export interface ReceiptItem {
   name: string;
   quantity: number;
-  price: number; // Single item price
-  total: number;
+  price: number; // unit price
+  total: number; // line total (qty * price)
 }
 
 export interface ReceiptData {
   tenantName: string;
+  tenantAddressLine1?: string;
+  tenantAddressLine2?: string;
+  tenantPhone?: string;
   branchName: string;
+  /** Hide the Branch line when the tenant only has one branch. */
+  showBranch?: boolean;
   cashierName: string;
   transactionId: string;
+  createdAt?: Date;
   items: ReceiptItem[];
   subtotal: number;
   tax: number;
+  /** e.g. "VAT 15%" — rendered inside the Tax line parentheses when provided. */
+  taxLabel?: string;
   discount: number;
   total: number;
   paymentMethod: string;
@@ -23,14 +31,24 @@ export interface ReceiptData {
   change: number;
 }
 
+const ITEM_NAME_MAX = 18;
+
+const escape = (s: string) =>
+  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const truncate = (s: string, max = ITEM_NAME_MAX) =>
+  s.length > max ? s.slice(0, max - 1) + '…' : s;
+
+const money = (n: number) => (Number.isFinite(n) ? n : 0).toFixed(2);
+
 /**
  * Enterprise ESC/POS and Thermal Browser Printing Engine.
  */
 export const receiptPrinterService = {
-  
+
   /**
    * Generates a thermal-friendly HTML receipt and opens the browser's print dialog.
-   * This handles standard EPSON/BIXOLON 80mm & 58mm CSS dimensions automatically.
+   * Handles 80mm & 58mm widths per hardware config.
    */
   printBrowserReceipt(data: ReceiptData) {
     const config = hardwareService.getConfig();
@@ -42,11 +60,24 @@ export const receiptPrinterService = {
       return;
     }
 
+    const created = data.createdAt ?? new Date();
+    const firstName = data.cashierName?.split(' ')[0] ?? 'Staff';
+    const isCash = data.paymentMethod?.toUpperCase() === 'CASH';
+
+    const itemRows = data.items.map(item => `
+      <tr>
+        <td class="col-item">${escape(truncate(item.name))}</td>
+        <td class="col-num">${item.quantity}</td>
+        <td class="col-num">${money(item.price)}</td>
+        <td class="col-num">${money(item.total)}</td>
+      </tr>
+    `).join('');
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Receipt - ${data.transactionId}</title>
+          <title>Receipt - ${escape(data.transactionId)}</title>
           <style>
             @page { margin: 0; }
             body {
@@ -55,105 +86,94 @@ export const receiptPrinterService = {
               margin: 0;
               padding: 10px;
               font-size: 12px;
+              line-height: 1.3;
               color: black;
+              font-variant-numeric: tabular-nums;
             }
-            .text-center { text-align: center; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
+            .center { text-align: center; }
+            .right { text-align: right; }
+            .bold { font-weight: bold; }
             .uppercase { text-transform: uppercase; }
-            .dashes { border-bottom: 1px dashed black; margin: 8px 0; }
-            .flex-between { display: flex; justify-content: space-between; }
+            .store-name { font-size: 16px; letter-spacing: 1px; }
+            .sep { border-top: 1px dashed black; margin: 8px 0; }
+            .row { display: flex; justify-content: space-between; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { text-align: left; padding: 2px 0; }
-            .td-qty { width: 15%; }
-            .td-price { text-align: right; width: 25%; }
-            .total-section { font-size: 14px; margin-top: 10px; }
-            .footer { margin-top: 20px; font-size: 10px; }
+            th, td { padding: 1px 0; }
+            th { text-align: left; }
+            .col-item { text-align: left; }
+            .col-num { text-align: right; white-space: nowrap; }
+            th.col-num { text-align: right; }
+            .total-row { font-size: 15px; font-weight: bold; }
+            .footer { margin-top: 6px; font-size: 11px; }
+            .small { font-size: 10px; }
           </style>
         </head>
         <body>
-          <div class="text-center font-bold uppercase" style="font-size: 16px;">
-            ${data.tenantName}
-          </div>
-          <div class="text-center">${data.branchName}</div>
-          <div class="dashes"></div>
-          
-          <div class="flex-between">
-            <span>Date: ${format(new Date(), 'dd/MM/yyyy')}</span>
-            <span>Time: ${format(new Date(), 'HH:mm')}</span>
-          </div>
-          <div class="flex-between">
-            <span>Cashier: ${data.cashierName.split(' ')[0]}</span>
-            <span>TXN: ${data.transactionId.substring(0, 8)}</span>
-          </div>
-          
-          <div class="dashes"></div>
-          
+          <!-- Header -->
+          <div class="center bold uppercase store-name">${escape(data.tenantName)}</div>
+          ${data.tenantAddressLine1 ? `<div class="center">${escape(data.tenantAddressLine1)}</div>` : ''}
+          ${data.tenantAddressLine2 ? `<div class="center">${escape(data.tenantAddressLine2)}</div>` : ''}
+          ${data.tenantPhone ? `<div class="center">Phone: ${escape(data.tenantPhone)}</div>` : ''}
+
+          <div class="sep"></div>
+
+          <!-- Meta -->
+          <div>Invoice No: ${escape(data.transactionId)}</div>
+          <div>Date: ${format(created, 'dd-MM-yyyy')}</div>
+          <div>Time: ${format(created, 'HH:mm')}</div>
+          <div>Cashier: ${escape(firstName)}</div>
+          ${data.showBranch && data.branchName ? `<div>Branch: ${escape(data.branchName)}</div>` : ''}
+
+          <div class="sep"></div>
+
+          <!-- Items -->
           <table>
             <thead>
-              <tr>
-                <th>Item</th>
-                <th class="td-qty">Qty</th>
-                <th class="td-price">Total</th>
+              <tr class="bold">
+                <th class="col-item">Item</th>
+                <th class="col-num">Qty</th>
+                <th class="col-num">Price</th>
+                <th class="col-num">Total</th>
               </tr>
             </thead>
             <tbody>
-              ${data.items.map(item => `
-                <tr>
-                  <td>${item.name.substring(0, 15)}</td>
-                  <td class="td-qty">${item.quantity}</td>
-                  <td class="td-price">${item.total.toFixed(2)}</td>
-                </tr>
-              `).join('')}
+              ${itemRows}
             </tbody>
           </table>
 
-          <div class="dashes"></div>
+          <div class="sep"></div>
 
-          <div class="flex-between">
-            <span>Subtotal:</span>
-            <span>LKR ${data.subtotal.toFixed(2)}</span>
-          </div>
-          ${data.tax > 0 ? `
-            <div class="flex-between">
-              <span>Tax (Included):</span>
-              <span>LKR ${data.tax.toFixed(2)}</span>
-            </div>
-          ` : ''}
-          ${data.discount > 0 ? `
-            <div class="flex-between">
-              <span>Discount:</span>
-              <span>-LKR ${data.discount.toFixed(2)}</span>
-            </div>
-          ` : ''}
-          
-          <div class="flex-between font-bold total-section">
-            <span style="font-size: 16px;">TOTAL:</span>
-            <span style="font-size: 16px;">LKR ${data.total.toFixed(2)}</span>
+          <!-- Summary -->
+          <div class="row"><span>Subtotal:</span><span>${money(data.subtotal)}</span></div>
+          ${data.discount > 0 ? `<div class="row"><span>Discount:</span><span>${money(data.discount)}</span></div>` : ''}
+          <div class="row">
+            <span>Tax${data.taxLabel ? ` (${escape(data.taxLabel)})` : ''}:</span>
+            <span>${money(data.tax)}</span>
           </div>
 
-          <div class="dashes"></div>
-          <div class="flex-between">
-            <span>Paid By:</span>
-            <span>${data.paymentMethod}</span>
-          </div>
-          <div class="flex-between">
-            <span>Tendered:</span>
-            <span>LKR ${data.tendered.toFixed(2)}</span>
-          </div>
-          <div class="flex-between font-bold">
-            <span>Change:</span>
-            <span>LKR ${data.change.toFixed(2)}</span>
+          <div class="sep"></div>
+
+          <div class="row total-row">
+            <span>TOTAL:</span>
+            <span>${money(data.total)}</span>
           </div>
 
-          <div class="dashes"></div>
-          
-          <div class="footer text-center">
-            <p>Thank you for shopping with us!</p>
-            <p>Please keep this receipt for your records.</p>
-            <p>Powered by Lumora POS</p>
+          ${isCash ? `
+            <div class="row"><span>Cash:</span><span>${money(data.tendered)}</span></div>
+            <div class="row"><span>Change:</span><span>${money(data.change)}</span></div>
+          ` : `
+            <div class="row"><span>Paid:</span><span>${escape(data.paymentMethod)}</span></div>
+          `}
+
+          <div class="sep"></div>
+
+          <!-- Footer -->
+          <div class="footer center">
+            <div class="bold">Thank You For Shopping!</div>
+            <div>Return within 7 days with receipt.</div>
+            <div class="small" style="margin-top:6px;">Powered by Lumora Tech</div>
           </div>
-          
+
           <script>
             window.onload = function() {
               window.print();
@@ -169,22 +189,20 @@ export const receiptPrinterService = {
   },
 
   /**
-   * Final checkout trigger that handles both drawer kicks and printing combined.
+   * Final checkout trigger — handles drawer kick + print in one call.
    */
   async processHardwareCheckoutActions(data: ReceiptData) {
     const config = hardwareService.getConfig();
-    
-    // 1. Kick the drawer if enabled
+
     if (config.cashDrawerKick) {
       hardwareService.kickCashDrawer();
     }
 
-    // 2. Print receipt based on mode
     if (config.printerMode === 'browser_print') {
       this.printBrowserReceipt(data);
     } else {
       console.warn(`Printer mode ${config.printerMode} is currently falling back to browser print in development.`);
       this.printBrowserReceipt(data);
     }
-  }
+  },
 };

@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { purchaseOrderService, PurchaseOrder, POStatus } from "@/services/purchaseOrderService";
+import { supplierService } from "@/services/supplierService";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -13,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, ArrowRight, Loader2, FileText, CheckCircle2, Clock, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, ArrowRight, Loader2, FileText, CheckCircle2, Clock, ChevronRight, ChevronDown, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -21,6 +23,15 @@ import { CreatePOModal } from "./CreatePOModal";
 import { ReceivePOModal } from "./ReceivePOModal";
 import { CURRENCY } from '@/lib/utils';
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
+
+const STATUS_OPTIONS: { value: POStatus | 'ALL'; label: string }[] = [
+  { value: 'ALL', label: 'All statuses' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'ORDERED', label: 'Ordered' },
+  { value: 'PARTIAL', label: 'Partial' },
+  { value: 'RECEIVED', label: 'Received' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   DRAFT: { label: "Draft", color: "bg-gray-500/10 text-gray-400 border-gray-500/20", icon: FileText },
@@ -33,7 +44,12 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
 export default function PurchaseOrdersPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
-  
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<POStatus | 'ALL'>('ALL');
+  const [supplierFilter, setSupplierFilter] = useState<string>('ALL');
+  const [search, setSearch] = useState<string>('');
+
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [receiveModalPO, setReceiveModalPO] = useState<PurchaseOrder | null>(null);
@@ -45,10 +61,28 @@ export default function PurchaseOrdersPage() {
     setExpandedPOs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["purchase-orders", page],
-    queryFn: () => purchaseOrderService.getPurchaseOrders(page, 10),
+  const { data: suppliersData } = useQuery({
+    queryKey: ["suppliers-for-po-filter"],
+    queryFn: () => supplierService.getSuppliers(0, 200),
   });
+  const supplierOptions = suppliersData?.content ?? [];
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["purchase-orders", page, statusFilter, supplierFilter, search],
+    queryFn: () => purchaseOrderService.getPurchaseOrders(page, 10, {
+      status: statusFilter === 'ALL' ? undefined : statusFilter,
+      supplierId: supplierFilter === 'ALL' ? undefined : supplierFilter,
+      search: search || undefined,
+    }),
+  });
+
+  const hasActiveFilters = statusFilter !== 'ALL' || supplierFilter !== 'ALL' || search.trim() !== '';
+  const resetFilters = () => {
+    setStatusFilter('ALL');
+    setSupplierFilter('ALL');
+    setSearch('');
+    setPage(0);
+  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string, status: POStatus }) => 
@@ -99,7 +133,68 @@ export default function PurchaseOrdersPage() {
         </Button>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-4">
+        {/* Filters */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder="Search PO number..."
+              value={search}
+              onChange={(e) => { setPage(0); setSearch(e.target.value); }}
+              className="pl-9 bg-gray-950 border-gray-800"
+            />
+          </div>
+
+          <div className="w-[170px]">
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => { setPage(0); setStatusFilter(v as POStatus | 'ALL'); }}
+            >
+              <SelectTrigger className="bg-gray-950 border-gray-800">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-[220px]">
+            <Select
+              value={supplierFilter}
+              onValueChange={(v) => { setPage(0); setSupplierFilter(v); }}
+            >
+              <SelectTrigger className="bg-gray-950 border-gray-800">
+                <SelectValue placeholder="Supplier" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                <SelectItem value="ALL">All suppliers</SelectItem>
+                {supplierOptions.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetFilters}
+              className="text-gray-400 hover:text-white gap-1"
+            >
+              <X className="h-4 w-4" /> Clear
+            </Button>
+          )}
+
+          <span className="ml-auto text-xs text-gray-500">
+            {data ? `${data.totalElements} result${data.totalElements === 1 ? '' : 's'}` : ''}
+          </span>
+        </div>
+
         <div className="rounded-md border border-gray-800 overflow-hidden">
           <Table>
             <TableHeader className="bg-gray-950/50">
@@ -117,13 +212,13 @@ export default function PurchaseOrdersPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-gray-500" />
                   </TableCell>
                 </TableRow>
               ) : data?.content.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                  <TableCell colSpan={8} className="h-24 text-center text-gray-500">
                     No purchase orders found.
                   </TableCell>
                 </TableRow>

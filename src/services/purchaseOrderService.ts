@@ -66,7 +66,12 @@ export const purchaseOrderService = {
   getPurchaseOrders: async (
     page = 0,
     size = 10,
-    options?: { sort?: string }
+    options?: {
+      sort?: string;
+      status?: POStatus;
+      supplierId?: string;
+      search?: string;
+    }
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -74,6 +79,9 @@ export const purchaseOrderService = {
     });
 
     if (options?.sort) params.append('sort', options.sort);
+    if (options?.status) params.append('status', options.status);
+    if (options?.supplierId) params.append('supplierId', options.supplierId);
+    if (options?.search && options.search.trim()) params.append('search', options.search.trim());
 
     const response = await api.get<{ data: PagedPurchaseOrders }>(`/purchase-orders?${params.toString()}`);
     return response.data.data;

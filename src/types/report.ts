@@ -98,3 +98,55 @@ export interface ProfitabilityReport {
   overallMarginPct: number;
   products: import("./common").Page<ProductProfitRecord>;
 }
+
+export interface SoldItemDetail {
+  productId: string;
+  productName: string;
+  sku: string | null;
+  unitsSold: number;
+  revenue: number;
+  cogs: number;
+  grossProfit: number;
+  marginPct: number;
+}
+
+export interface SoldItemsBySupplierRecord {
+  supplierId: string | null;
+  supplierName: string;
+  supplierActive: boolean;
+  productCount: number;
+  totalUnitsSold: number;
+  totalRevenue: number;
+  totalCogs: number;
+  grossProfit: number;
+  marginPct: number;
+  items: SoldItemDetail[];
+}
+
+export interface SoldItemsBySupplierReport {
+  totalRevenue: number;
+  totalCogs: number;
+  totalProfit: number;
+  overallMarginPct: number;
+  totalUnitsSold: number;
+  supplierCount: number;
+  suppliers: SoldItemsBySupplierRecord[];
+}
+
+export interface StockVarianceRecord {
+  productId: string;
+  productName: string;
+  sku: string | null;
+  reconciledUnits: number;
+  damagedUnits: number;
+  stockOutUnits: number;
+  totalLost: number;
+  costImpact: number;
+}
+
+export interface StockVarianceReport {
+  totalUnitsLost: number;
+  estimatedCostLoss: number;
+  productsAffected: number;
+  products: StockVarianceRecord[];
+}

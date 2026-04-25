@@ -2,21 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { timeClockService } from "@/services/timeClockService";
+import { cashSessionService } from "@/services/cashSessionService";
 import { Button } from "@/components/ui/button";
 import { Clock, Loader2, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { intervalToDuration } from "date-fns";
+import { EndShiftModal } from "@/components/pos/EndShiftModal";
 
-export function TimeClockWidget({ variant = 'sidebar' }: { variant?: 'sidebar' | 'header' }) {
+interface TimeClockWidgetProps {
+  variant?: 'sidebar' | 'header';
+  /**
+   * 'simple' uses the legacy clock-in/out flow (time record only).
+   * 'cash-drawer' wires the button to the cash session lifecycle — Clock Out opens
+   * the End Shift modal to reconcile the drawer. The Clock In button is hidden in
+   * this mode because the page-level gate owns Start Shift.
+   */
+  shiftMode?: 'simple' | 'cash-drawer';
+}
+
+export function TimeClockWidget({ variant = 'sidebar', shiftMode = 'simple' }: TimeClockWidgetProps) {
   const queryClient = useQueryClient();
   const [elapsed, setElapsed] = useState<string>("");
+  const [endShiftOpen, setEndShiftOpen] = useState(false);
 
   // Fetch current status
   const { data: currentRecord, isLoading } = useQuery({
     queryKey: ["time-clock-status"],
     queryFn: () => timeClockService.getStatus(),
     refetchInterval: 60000, // Refresh every minute just in case
+  });
+
+  // In cash-drawer mode, mirror the active cash session so the widget reflects
+  // reality if the session was opened from the page-level gate.
+  const { data: activeSession } = useQuery({
+    queryKey: ["cash-session-active"],
+    queryFn: () => cashSessionService.getActive(),
+    enabled: shiftMode === 'cash-drawer',
+    refetchInterval: 60000,
   });
 
   // Calculate ongoing elapsed time locally every second if clocked in
@@ -80,84 +103,128 @@ export function TimeClockWidget({ variant = 'sidebar' }: { variant?: 'sidebar' |
   }
 
   const isClockedIn = !!currentRecord;
+  const isCashDrawerMode = shiftMode === 'cash-drawer';
+  const hasOpenSession = !!activeSession;
 
-  if (variant === 'header') {
-    return (
-      <div className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-colors ${isClockedIn ? 'bg-emerald-950/30 border-emerald-900/50' : 'bg-gray-950 border-gray-800'}`}>
-        <div className="flex items-center gap-2">
-          <Clock size={16} className={isClockedIn ? "text-emerald-400" : "text-gray-500"} />
-          {isClockedIn && (
-            <span className="text-xs font-mono font-medium text-emerald-400 w-[60px] text-center">
-              {elapsed}
-            </span>
-          )}
-        </div>
-        <div className="w-px h-4 bg-gray-800 mx-1" />
-        {isClockedIn ? (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 px-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-400/10"
-            onClick={() => clockOutMutation.mutate()}
-            disabled={clockOutMutation.isPending}
-          >
-            {clockOutMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Clock Out'}
-          </Button>
-        ) : (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-7 px-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10"
-            onClick={() => clockInMutation.mutate()}
-            disabled={clockInMutation.isPending}
-          >
-            {clockInMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Clock In'}
-          </Button>
-        )}
+  const handleClockInClick = () => {
+    if (isCashDrawerMode) {
+      // In cash-drawer mode the page-level gate owns start-shift; nothing to do here.
+      return;
+    }
+    clockInMutation.mutate();
+  };
+
+  const handleClockOutClick = () => {
+    if (isCashDrawerMode && hasOpenSession) {
+      setEndShiftOpen(true);
+    } else {
+      clockOutMutation.mutate();
+    }
+  };
+
+  // In cash-drawer mode without an open session, don't render a Clock In button —
+  // the terminal page shows the Start Shift gate instead. Render a compact placeholder.
+  if (isCashDrawerMode && !hasOpenSession) {
+    return variant === 'header' ? (
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border bg-gray-950 border-gray-800">
+        <Clock size={16} className="text-gray-500" />
+        <span className="text-xs text-gray-500">Shift not started</span>
+      </div>
+    ) : (
+      <div className="flex items-center gap-2 p-3 bg-gray-900/50 border border-gray-800 rounded-xl">
+        <Clock size={16} className="text-gray-400" />
+        <span className="text-sm text-gray-400">Shift not started</span>
       </div>
     );
   }
 
-  return (
-    <div className={`flex flex-col gap-2 p-3 ${isClockedIn ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-gray-900/50 border-gray-800'} border rounded-xl transition-colors`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock size={16} className={isClockedIn ? "text-emerald-400" : "text-gray-400"} />
-          <span className="text-sm font-medium text-gray-200">
-            {isClockedIn ? "On the clock" : "Off the clock"}
-          </span>
+  if (variant === 'header') {
+    return (
+      <>
+        <div className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-colors ${isClockedIn ? 'bg-emerald-950/30 border-emerald-900/50' : 'bg-gray-950 border-gray-800'}`}>
+          <div className="flex items-center gap-2">
+            <Clock size={16} className={isClockedIn ? "text-emerald-400" : "text-gray-500"} />
+            {isClockedIn && (
+              <span className="text-xs font-mono font-medium text-emerald-400 w-[60px] text-center">
+                {elapsed}
+              </span>
+            )}
+          </div>
+          <div className="w-px h-4 bg-gray-800 mx-1" />
+          {isClockedIn ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-400/10"
+              onClick={handleClockOutClick}
+              disabled={clockOutMutation.isPending}
+            >
+              {clockOutMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : (isCashDrawerMode ? 'End Shift' : 'Clock Out')}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10"
+              onClick={handleClockInClick}
+              disabled={clockInMutation.isPending}
+            >
+              {clockInMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Clock In'}
+            </Button>
+          )}
         </div>
-        
-        {isClockedIn && (
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-900/50">
-            {elapsed}
-          </span>
+        {isCashDrawerMode && (
+          <EndShiftModal open={endShiftOpen} onClose={() => setEndShiftOpen(false)} />
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className={`flex flex-col gap-2 p-3 ${isClockedIn ? 'bg-emerald-950/20 border-emerald-900/40' : 'bg-gray-900/50 border-gray-800'} border rounded-xl transition-colors`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock size={16} className={isClockedIn ? "text-emerald-400" : "text-gray-400"} />
+            <span className="text-sm font-medium text-gray-200">
+              {isClockedIn ? "On the clock" : "Off the clock"}
+            </span>
+          </div>
+
+          {isClockedIn && (
+            <span className="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-900/50">
+              {elapsed}
+            </span>
+          )}
+        </div>
+
+        {isClockedIn ? (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="w-full bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30"
+            onClick={handleClockOutClick}
+            disabled={clockOutMutation.isPending}
+          >
+            {clockOutMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="mr-2 h-4 w-4" />}
+            {isCashDrawerMode ? 'End Shift' : 'Clock Out'}
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30"
+            onClick={handleClockInClick}
+            disabled={clockInMutation.isPending}
+          >
+            {clockInMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            Clock In
+          </Button>
         )}
       </div>
-
-      {isClockedIn ? (
-        <Button 
-          variant="destructive" 
-          size="sm" 
-          className="w-full bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/30"
-          onClick={() => clockOutMutation.mutate()}
-          disabled={clockOutMutation.isPending}
-        >
-          {clockOutMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="mr-2 h-4 w-4" />}
-          Clock Out
-        </Button>
-      ) : (
-        <Button 
-          variant="default" 
-          size="sm" 
-          className="w-full bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/40 border border-emerald-600/30"
-          onClick={() => clockInMutation.mutate()}
-          disabled={clockInMutation.isPending}
-        >
-          {clockInMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
-          Clock In
-        </Button>
+      {isCashDrawerMode && (
+        <EndShiftModal open={endShiftOpen} onClose={() => setEndShiftOpen(false)} />
       )}
-    </div>
+    </>
   );
 }

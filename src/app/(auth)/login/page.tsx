@@ -14,8 +14,8 @@ export default function LoginPage() {
           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground mb-4">
             <Store className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Lumora POS</h1>
-          <p className="text-muted-foreground">Log in to manage your store</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">StoreX </h1>
+          <p className="text-muted-foreground">powerd by Lumora Tech</p>
         </div>
 
         <Card className="border-none shadow-xl">

@@ -13,6 +13,9 @@ import {
   TaxLineItem,
   ProfitabilityReport,
   ProductProfitRecord,
+  SoldItemsBySupplierReport,
+  SoldItemsBySupplierRecord,
+  StockVarianceReport,
 } from "@/types/report";
 import { Page } from "@/types/common";
 import { format } from "date-fns";
@@ -29,6 +32,8 @@ import {
   BarChart3,
   Star,
   Percent,
+  Truck,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,9 +78,11 @@ export default function ReportsPage() {
   // Expanded rows state
   const [expandedSales, setExpandedSales] = useState<Record<string, boolean>>({});
   const [expandedReturns, setExpandedReturns] = useState<Record<string, boolean>>({});
+  const [expandedSuppliers, setExpandedSuppliers] = useState<Record<string, boolean>>({});
 
   const toggleSaleExpanded = (id: string) => setExpandedSales(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleReturnExpanded = (id: string) => setExpandedReturns(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleSupplierExpanded = (id: string) => setExpandedSuppliers(prev => ({ ...prev, [id]: !prev[id] }));
 
   const [dateRange, setDateRange] = useState({
     start: format(new Date(new Date().setDate(new Date().getDate() - 7)), "yyyy-MM-dd'T'00:00:00"),
@@ -117,6 +124,18 @@ export default function ReportsPage() {
     queryFn: () => reportService.getProfitabilityReport(dateRange.start, dateRange.end, profitPage, pageSize),
   });
 
+  const { data: supplierSalesData, isLoading: supplierSalesLoading } = useQuery<SoldItemsBySupplierReport>({
+    queryKey: ["reports", "sold-by-supplier", dateRange],
+    queryFn: () => reportService.getSoldItemsBySupplier(dateRange.start, dateRange.end),
+    enabled: activeTab === "supplier-sales",
+  });
+
+  const { data: stockVarianceData, isLoading: stockVarianceLoading } = useQuery<StockVarianceReport>({
+    queryKey: ["reports", "stock-variance", dateRange],
+    queryFn: () => reportService.getStockVariance(dateRange.start, dateRange.end),
+    enabled: activeTab === "stock-variance",
+  });
+
   const approveReturnMutation = useMutation({
     mutationFn: ({ id, approve }: { id: string; approve: boolean }) => returnService.approveReturn(id, approve),
     onSuccess: () => {
@@ -142,7 +161,7 @@ export default function ReportsPage() {
     }));
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(val);
+    new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
   // ─── Universal Export (CSV) ─────────────────────────────────────────────
   const exportData = () => {
@@ -193,6 +212,24 @@ export default function ReportsPage() {
       dataRows = profitData.products.content.map(p => [
         escape(p.productName), escape(p.sku), escape(p.category), escape(p.unitsSold),
         escape(p.revenue), escape(p.costOfGoodsSold), escape(p.grossProfit), escape(p.marginPct)
+      ]);
+    } else if (activeTab === "supplier-sales" && supplierSalesData?.suppliers) {
+      headers = ["Supplier", "Supplier Status", "Product", "SKU", "Units Sold", "Revenue", "COGS", "Gross Profit", "Margin %"];
+      dataRows = supplierSalesData.suppliers.flatMap(sup =>
+        sup.items.map(item => [
+          escape(sup.supplierName),
+          escape(sup.supplierId == null ? "Unassigned" : sup.supplierActive ? "Active" : "Inactive"),
+          escape(item.productName), escape(item.sku ?? ""),
+          escape(item.unitsSold), escape(item.revenue),
+          escape(item.cogs), escape(item.grossProfit), escape(item.marginPct),
+        ])
+      );
+    } else if (activeTab === "stock-variance" && stockVarianceData?.products) {
+      headers = ["Product", "SKU", "Reconciled", "Damaged", "Manual Stock-Out", "Total Lost", "Cost Impact"];
+      dataRows = stockVarianceData.products.map(p => [
+        escape(p.productName), escape(p.sku ?? ""),
+        escape(p.reconciledUnits), escape(p.damagedUnits), escape(p.stockOutUnits),
+        escape(p.totalLost), escape(p.costImpact),
       ]);
     }
 
@@ -304,38 +341,60 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="sales" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-gray-900/50 p-1 border border-gray-800">
-          <TabsTrigger value="sales" className="gap-2">
-            <TrendingUp size={16} /> Sales History
+        {/* Wrapping tab list — many tabs would otherwise force horizontal scroll on
+            small screens. Triggers shrink + drop their labels below sm so the icon
+            row stays compact on phones; the active tab keeps its label for context. */}
+        <TabsList className="flex flex-wrap h-auto gap-1 justify-start bg-gray-900/50 p-1 border border-gray-800">
+          <TabsTrigger value="sales" className="gap-2 px-2 sm:px-3">
+            <TrendingUp size={16} />
+            <span className={activeTab === 'sales' ? 'inline' : 'hidden sm:inline'}>Sales History</span>
           </TabsTrigger>
           <FeatureGuard feature="RETURNS">
-            <TabsTrigger value="returns" className="gap-2">
-              <RotateCcw size={16} /> Returns History
+            <TabsTrigger value="returns" className="gap-2 px-2 sm:px-3">
+              <RotateCcw size={16} />
+              <span className={activeTab === 'returns' ? 'inline' : 'hidden sm:inline'}>Returns History</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="INVENTORY">
-            <TabsTrigger value="inventory" className="gap-2">
-              <PieChart size={16} /> Inventory Valuation
+            <TabsTrigger value="inventory" className="gap-2 px-2 sm:px-3">
+              <PieChart size={16} />
+              <span className={activeTab === 'inventory' ? 'inline' : 'hidden sm:inline'}>Inventory Valuation</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="EMPLOYEES">
-            <TabsTrigger value="employees" className="gap-2">
-              <Users size={16} /> Employee Performance
+            <TabsTrigger value="employees" className="gap-2 px-2 sm:px-3">
+              <Users size={16} />
+              <span className={activeTab === 'employees' ? 'inline' : 'hidden sm:inline'}>Employee Performance</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="CUSTOMERS">
-            <TabsTrigger value="customers" className="gap-2">
-              <Star size={16} /> Top Customers
+            <TabsTrigger value="customers" className="gap-2 px-2 sm:px-3">
+              <Star size={16} />
+              <span className={activeTab === 'customers' ? 'inline' : 'hidden sm:inline'}>Top Customers</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="TAX_CONFIG">
-            <TabsTrigger value="tax" className="gap-2">
-              <Receipt size={16} /> Tax Summary
+            <TabsTrigger value="tax" className="gap-2 px-2 sm:px-3">
+              <Receipt size={16} />
+              <span className={activeTab === 'tax' ? 'inline' : 'hidden sm:inline'}>Tax Summary</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="ADVANCED_ANALYTICS">
-            <TabsTrigger value="profitability" className="gap-2">
-              <BarChart3 size={16} /> Profitability
+            <TabsTrigger value="profitability" className="gap-2 px-2 sm:px-3">
+              <BarChart3 size={16} />
+              <span className={activeTab === 'profitability' ? 'inline' : 'hidden sm:inline'}>Profitability</span>
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="INVENTORY">
+            <TabsTrigger value="supplier-sales" className="gap-2 px-2 sm:px-3">
+              <Truck size={16} />
+              <span className={activeTab === 'supplier-sales' ? 'inline' : 'hidden sm:inline'}>Supplier Sales</span>
+            </TabsTrigger>
+          </FeatureGuard>
+          <FeatureGuard feature="INVENTORY">
+            <TabsTrigger value="stock-variance" className="gap-2 px-2 sm:px-3">
+              <AlertTriangle size={16} />
+              <span className={activeTab === 'stock-variance' ? 'inline' : 'hidden sm:inline'}>Stock Variance</span>
             </TabsTrigger>
           </FeatureGuard>
         </TabsList>
@@ -801,9 +860,27 @@ export default function ReportsPage() {
         <FeatureGuard feature="EMPLOYEES">
         <TabsContent value="employees" className="space-y-6">
           <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle>Employee Performance</CardTitle>
-              <CardDescription>Cashier revenue, transaction count, and averages for the selected period.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle>Employee Performance</CardTitle>
+                <CardDescription>Cashier revenue, transaction count, and averages for the selected period.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-800 rounded-md p-1 px-3 border border-gray-700">
+                <Calendar size={16} className="text-gray-400" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.start.split('T')[0]}
+                  onChange={(e) => { setEmployeePage(0); setDateRange(prev => ({ ...prev, start: `${e.target.value}T00:00:00` })); }}
+                />
+                <ArrowRight size={14} className="text-gray-600" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.end.split('T')[0]}
+                  onChange={(e) => { setEmployeePage(0); setDateRange(prev => ({ ...prev, end: `${e.target.value}T23:59:59` })); }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border border-gray-800 bg-gray-900/40">
@@ -1041,9 +1118,27 @@ export default function ReportsPage() {
             </div>
           </div>
           <Card className="bg-gray-900/50 border-gray-800">
-            <CardHeader>
-              <CardTitle>Product Profitability Breakdown</CardTitle>
-              <CardDescription>Revenue, cost, and margin per product sold in the period.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle>Product Profitability Breakdown</CardTitle>
+                <CardDescription>Revenue, cost, and margin per product sold in the period.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-800 rounded-md p-1 px-3 border border-gray-700">
+                <Calendar size={16} className="text-gray-400" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.start.split('T')[0]}
+                  onChange={(e) => { setProfitPage(0); setDateRange(prev => ({ ...prev, start: `${e.target.value}T00:00:00` })); }}
+                />
+                <ArrowRight size={14} className="text-gray-600" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.end.split('T')[0]}
+                  onChange={(e) => { setProfitPage(0); setDateRange(prev => ({ ...prev, end: `${e.target.value}T23:59:59` })); }}
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border border-gray-800 bg-gray-900/40">
@@ -1089,12 +1184,267 @@ export default function ReportsPage() {
                   </TableBody>
                 </Table>
               </div>
-              <Pagination 
-                currentPage={profitPage} 
-                totalPages={profitData?.products?.totalPages || 0} 
+              <Pagination
+                currentPage={profitPage}
+                totalPages={profitData?.products?.totalPages || 0}
                 onPageChange={setProfitPage}
                 isLoading={profitLoading}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </FeatureGuard>
+
+        {/* ── Supplier Sales ───────────────────────────────────────────── */}
+        <FeatureGuard feature="INVENTORY">
+        <TabsContent value="supplier-sales" className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[{ label: 'Total Revenue', value: formatCurrency(supplierSalesData?.totalRevenue || 0), cls: 'text-white' },
+              { label: 'Units Sold', value: (supplierSalesData?.totalUnitsSold ?? 0).toLocaleString(), cls: 'text-gray-200' },
+              { label: 'Gross Profit', value: formatCurrency(supplierSalesData?.totalProfit || 0), cls: 'text-emerald-400' },
+              { label: 'Overall Margin', value: `${supplierSalesData?.overallMarginPct ?? 0}%`, cls: 'text-amber-400' },
+            ].map(stat => (
+              <Card key={stat.label} className="bg-gray-900/50 border-gray-800 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                <p className={`text-xl font-bold ${stat.cls}`}>{supplierSalesLoading ? '...' : stat.value}</p>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle>Sold Items by Supplier</CardTitle>
+                <CardDescription>
+                  Each product is attributed to the supplier of its most recent purchase order.
+                  Products without a PO history appear under &quot;(Unassigned)&quot;.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-800 rounded-md p-1 px-3 border border-gray-700">
+                <Calendar size={16} className="text-gray-400" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.start.split('T')[0]}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: `${e.target.value}T00:00:00` }))}
+                />
+                <ArrowRight size={14} className="text-gray-600" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.end.split('T')[0]}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: `${e.target.value}T23:59:59` }))}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-gray-800 bg-gray-900/40">
+                <Table>
+                  <TableHeader className="bg-gray-800/50">
+                    <TableRow>
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead className="text-center">Products</TableHead>
+                      <TableHead className="text-center">Units Sold</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-right">Gross Profit</TableHead>
+                      <TableHead className="text-right">Margin</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {supplierSalesLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10 animate-pulse text-muted-foreground">
+                          Loading supplier sales...
+                        </TableCell>
+                      </TableRow>
+                    ) : !supplierSalesData?.suppliers?.length ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                          No sales for the selected period.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      supplierSalesData.suppliers.map((sup: SoldItemsBySupplierRecord) => {
+                        const rowKey = sup.supplierId ?? "unassigned";
+                        const isUnassigned = sup.supplierId == null;
+                        return (
+                          <Fragment key={rowKey}>
+                            <TableRow
+                              className="hover:bg-gray-800/50 cursor-pointer"
+                              onClick={() => toggleSupplierExpanded(rowKey)}
+                            >
+                              <TableCell className="w-10 px-3">
+                                {expandedSuppliers[rowKey]
+                                  ? <ChevronDown size={16} className="text-primary" />
+                                  : <ChevronRight size={16} className="text-gray-500" />}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-medium ${isUnassigned ? 'text-gray-400 italic' : 'text-white'}`}>
+                                    {sup.supplierName}
+                                  </span>
+                                  {isUnassigned && (
+                                    <Badge variant="outline" className="border-gray-700 text-gray-500 text-[10px] uppercase tracking-wider">
+                                      No PO history
+                                    </Badge>
+                                  )}
+                                  {!isUnassigned && !sup.supplierActive && (
+                                    <Badge variant="outline" className="border-amber-800 text-amber-500 bg-amber-500/5 text-[10px] uppercase tracking-wider">
+                                      Inactive
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="outline" className="border-gray-600">{sup.productCount}</Badge>
+                              </TableCell>
+                              <TableCell className="text-center text-gray-300">{sup.totalUnitsSold.toLocaleString()}</TableCell>
+                              <TableCell className="text-right font-bold text-gray-100">{formatCurrency(sup.totalRevenue)}</TableCell>
+                              <TableCell className="text-right text-emerald-400">{formatCurrency(sup.grossProfit)}</TableCell>
+                              <TableCell className="text-right">
+                                <span className={`font-bold ${sup.marginPct >= 30 ? 'text-emerald-400' : sup.marginPct >= 15 ? 'text-amber-400' : 'text-red-400'}`}>
+                                  {sup.marginPct}%
+                                </span>
+                              </TableCell>
+                            </TableRow>
+                            {expandedSuppliers[rowKey] && (
+                              <TableRow>
+                                <TableCell colSpan={7} className="p-0 border-b border-gray-800">
+                                  <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
+                                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                                      Products sold for this supplier
+                                    </h4>
+                                    <table className="w-full text-sm">
+                                      <thead>
+                                        <tr className="text-gray-500 text-xs uppercase">
+                                          <th className="text-left pb-2 pr-4">Product</th>
+                                          <th className="text-left pb-2 pr-4">SKU</th>
+                                          <th className="text-center pb-2 pr-4">Units</th>
+                                          <th className="text-right pb-2 pr-4">Revenue</th>
+                                          <th className="text-right pb-2 pr-4">COGS</th>
+                                          <th className="text-right pb-2 pr-4">Gross Profit</th>
+                                          <th className="text-right pb-2">Margin</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {sup.items.map(item => (
+                                          <tr key={item.productId} className="border-t border-gray-800/30">
+                                            <td className="py-2 pr-4 text-gray-200 font-medium">{item.productName}</td>
+                                            <td className="py-2 pr-4 text-gray-400 font-mono text-xs">{item.sku || '—'}</td>
+                                            <td className="py-2 pr-4 text-center text-gray-300">{item.unitsSold}</td>
+                                            <td className="py-2 pr-4 text-right text-gray-200">{formatCurrency(item.revenue)}</td>
+                                            <td className="py-2 pr-4 text-right text-red-400">{formatCurrency(item.cogs)}</td>
+                                            <td className="py-2 pr-4 text-right font-semibold text-emerald-400">{formatCurrency(item.grossProfit)}</td>
+                                            <td className="py-2 text-right">
+                                              <span className={`font-bold ${item.marginPct >= 30 ? 'text-emerald-400' : item.marginPct >= 15 ? 'text-amber-400' : 'text-red-400'}`}>
+                                                {item.marginPct}%
+                                              </span>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Fragment>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </FeatureGuard>
+
+        <FeatureGuard feature="INVENTORY">
+        <TabsContent value="stock-variance" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { label: 'Total Units Lost', value: (stockVarianceData?.totalUnitsLost ?? 0).toLocaleString(), cls: 'text-red-400' },
+              { label: 'Estimated Cost Impact', value: formatCurrency(stockVarianceData?.estimatedCostLoss || 0), cls: 'text-amber-400' },
+              { label: 'Products Affected', value: (stockVarianceData?.productsAffected ?? 0).toLocaleString(), cls: 'text-gray-200' },
+            ].map(stat => (
+              <Card key={stat.label} className="bg-gray-900/50 border-gray-800 p-3">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                <p className={`text-xl font-bold ${stat.cls}`}>{stockVarianceLoading ? '...' : stat.value}</p>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle>Stock Variance &amp; Shrinkage</CardTitle>
+                <CardDescription>
+                  Unexpected outflows from manual reconciliation, damage write-offs,
+                  and manual stock-outs. Sales deductions are excluded.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 bg-gray-800 rounded-md p-1 px-3 border border-gray-700">
+                <Calendar size={16} className="text-gray-400" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.start.split('T')[0]}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: `${e.target.value}T00:00:00` }))}
+                />
+                <ArrowRight size={14} className="text-gray-600" />
+                <input
+                  type="date"
+                  className="bg-transparent border-none text-sm focus:ring-0"
+                  value={dateRange.end.split('T')[0]}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: `${e.target.value}T23:59:59` }))}
+                />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border border-gray-800 bg-gray-900/40">
+                <Table>
+                  <TableHeader className="bg-gray-800/50">
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead className="text-center">Reconciled</TableHead>
+                      <TableHead className="text-center">Damaged</TableHead>
+                      <TableHead className="text-center">Manual Stock-Out</TableHead>
+                      <TableHead className="text-center">Total Lost</TableHead>
+                      <TableHead className="text-right">Cost Impact</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stockVarianceLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10 animate-pulse text-muted-foreground">
+                          Loading stock variance...
+                        </TableCell>
+                      </TableRow>
+                    ) : !stockVarianceData?.products?.length ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                          No shrinkage events recorded for the selected period.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      stockVarianceData.products.map(p => (
+                        <TableRow key={p.productId} className="hover:bg-gray-800/50">
+                          <TableCell className="font-medium text-gray-200">{p.productName}</TableCell>
+                          <TableCell className="text-gray-400 font-mono text-xs">{p.sku || '—'}</TableCell>
+                          <TableCell className="text-center text-gray-300">{p.reconciledUnits}</TableCell>
+                          <TableCell className="text-center text-red-400">{p.damagedUnits}</TableCell>
+                          <TableCell className="text-center text-gray-300">{p.stockOutUnits}</TableCell>
+                          <TableCell className="text-center font-bold text-red-400">{p.totalLost}</TableCell>
+                          <TableCell className="text-right font-semibold text-amber-400">{formatCurrency(p.costImpact)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

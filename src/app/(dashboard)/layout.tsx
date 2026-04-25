@@ -51,7 +51,7 @@ export default function DashboardLayout({
     { label: 'Reports', href: '/reports', icon: BarChart3, requiredFeature: 'REPORTS' },
     { label: 'Branches', href: '/branches', icon: Store },
     { label: 'Hardware Settings', href: '/settings/hardware', icon: Settings },
-    { label: 'Tax Settings', href: '/settings', icon: Settings },
+    { label: 'Settings', href: '/settings', icon: Settings },
   ].filter(item => {
     // 1. SaaS Feature Flag Check (Must have feature if defined)
     if (item.requiredFeature && !hasFeature(item.requiredFeature)) {
@@ -60,7 +60,7 @@ export default function DashboardLayout({
 
     // 2. Role-based Access Check
     // Inventory Managers shouldn't see these items
-    if (['Overview', 'Employees', 'Hardware Settings', 'Tax Settings', 'Reports', 'Branches'].includes(item.label)) {
+    if (['Overview', 'Employees', 'Hardware Settings', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     
@@ -84,7 +84,7 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-gray-900">
           <Link href="/overview" className="text-xl font-bold tracking-tight">
-            Lumora<span className="text-primary">POS</span>
+            Store<span className="text-primary">X</span>
           </Link>
           {user?.planTier && (
             <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-800 text-gray-400 uppercase tracking-widest border border-gray-700">

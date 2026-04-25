@@ -42,16 +42,29 @@ function getProductTaxRate(product: Product, taxContext: TaxContext | null): num
   return 0;
 }
 
-export const useCart = (taxContext: TaxContext | null = null) => {
+/**
+ * Returns the in-stock quantity for the currently selected branch. Falls back
+ * to the global stockQuantity only when no branch is selected — at the POS
+ * the branch is always set, so this fallback only fires in tests / harnesses.
+ */
+function stockForBranch(product: Product, branchId?: string): number {
+  if (branchId && product.stockLevels) {
+    return product.stockLevels.find(sl => sl.branchId === branchId)?.quantity ?? 0;
+  }
+  return product.stockQuantity;
+}
+
+export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?: string) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = useCallback((product: Product) => {
     setItems((prevItems) => {
+      const branchStock = stockForBranch(product, selectedBranchId);
       const existingItem = prevItems.find((item) => item.id === product.id);
-      
+
       if (existingItem) {
-        if (existingItem.cartQuantity >= product.stockQuantity) {
-          toast.error(`Only ${product.stockQuantity} items available in stock`);
+        if (existingItem.cartQuantity >= branchStock) {
+          toast.error(`Only ${branchStock} in stock at this branch`);
           return prevItems;
         }
         return prevItems.map((item) =>
@@ -61,14 +74,14 @@ export const useCart = (taxContext: TaxContext | null = null) => {
         );
       }
 
-      if (product.stockQuantity <= 0) {
-        toast.error("Product out of stock");
+      if (branchStock <= 0) {
+        toast.error("Product out of stock at this branch");
         return prevItems;
       }
 
       return [...prevItems, { ...product, cartQuantity: 1 }];
     });
-  }, []);
+  }, [selectedBranchId]);
 
   const removeFromCart = useCallback((productId: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== productId));
@@ -82,15 +95,17 @@ export const useCart = (taxContext: TaxContext | null = null) => {
 
     setItems((prevItems) => {
       const item = prevItems.find(i => i.id === productId);
-      if (item && quantity > item.stockQuantity) {
-        toast.error(`Only ${item.stockQuantity} items available in stock`);
+      if (!item) return prevItems;
+      const branchStock = stockForBranch(item, selectedBranchId);
+      if (quantity > branchStock) {
+        toast.error(`Only ${branchStock} in stock at this branch`);
         return prevItems;
       }
       return prevItems.map((i) =>
         i.id === productId ? { ...i, cartQuantity: quantity } : i
       );
     });
-  }, [removeFromCart]);
+  }, [removeFromCart, selectedBranchId]);
 
   const clearCart = useCallback(() => {
     setItems([]);

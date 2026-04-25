@@ -75,11 +75,14 @@ export function LoginForm() {
       
       toast.success("Welcome back!");
       
-      if (response.user.roles.includes('ADMIN') || response.user.roles.includes('MANAGER')) {
-        router.push('/overview');
-      } else {
-        router.push('/terminal');
-      }
+      // Terminal is for people who actually ring up sales. Everyone else (including
+      // INVENTORY_MANAGER) lands on the dashboard.
+      const roles = response.user.roles || [];
+      const salesCapable = roles.includes('CASHIER')
+        && !roles.includes('ADMIN')
+        && !roles.includes('MANAGER')
+        && !roles.includes('INVENTORY_MANAGER');
+      router.push(salesCapable ? '/terminal' : '/overview');
     } catch (error: unknown) {
       // Prefer the backend's message (e.g. "Too many login attempts...",
       // "Invalid credentials") over axios's generic "Request failed with status X".

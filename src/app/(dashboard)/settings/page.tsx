@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taxService, TaxRate, TaxRateRequest } from "@/services/taxService";
+import { tenantService, TenantInfoUpdateRequest } from "@/services/tenantService";
+import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -35,6 +37,7 @@ import {
   Info,
   AlertTriangle,
   Lock,
+  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -42,6 +45,8 @@ import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+  const isAdmin = !!user?.roles?.includes("ADMIN");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRate, setEditingRate] = useState<TaxRate | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<TaxRate | null>(null);
@@ -52,6 +57,57 @@ export default function SettingsPage() {
   const [formDescription, setFormDescription] = useState("");
   const [formIsDefault, setFormIsDefault] = useState(false);
   const [formIsActive, setFormIsActive] = useState(true);
+
+  // Business info form state
+  const [bizName, setBizName] = useState("");
+  const [bizAddress1, setBizAddress1] = useState("");
+  const [bizAddress2, setBizAddress2] = useState("");
+  const [bizPhone, setBizPhone] = useState("");
+
+  const { data: tenantInfo, isLoading: tenantLoading } = useQuery({
+    queryKey: ["tenant-info"],
+    queryFn: () => tenantService.getInfo(),
+  });
+
+  useEffect(() => {
+    if (tenantInfo) {
+      setBizName(tenantInfo.name ?? "");
+      setBizAddress1(tenantInfo.addressLine1 ?? "");
+      setBizAddress2(tenantInfo.addressLine2 ?? "");
+      setBizPhone(tenantInfo.phone ?? "");
+    }
+  }, [tenantInfo]);
+
+  const updateTenantMutation = useMutation({
+    mutationFn: (data: TenantInfoUpdateRequest) => tenantService.updateInfo(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-info"] });
+      toast.success("Business info saved");
+    },
+    onError: (error: unknown) => {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          "Failed to save business info"
+      );
+    },
+  });
+
+  const handleSaveBusinessInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateTenantMutation.mutate({
+      name: bizName.trim(),
+      addressLine1: bizAddress1.trim() || null,
+      addressLine2: bizAddress2.trim() || null,
+      phone: bizPhone.trim() || null,
+    });
+  };
+
+  const bizDirty =
+    !!tenantInfo &&
+    (bizName.trim() !== (tenantInfo.name ?? "") ||
+      bizAddress1.trim() !== (tenantInfo.addressLine1 ?? "") ||
+      bizAddress2.trim() !== (tenantInfo.addressLine2 ?? "") ||
+      bizPhone.trim() !== (tenantInfo.phone ?? ""));
 
   const { data: taxRates, isLoading } = useQuery({
     queryKey: ["tax-rates"],
@@ -164,8 +220,115 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* Business Info Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Building2 className="text-primary" size={20} />
+          <h2 className="text-xl font-semibold text-white">Business Info</h2>
+          {!isAdmin && (
+            <Badge variant="outline" className="bg-gray-800 text-gray-400 border-gray-700 ml-2">
+              Read-only
+            </Badge>
+          )}
+        </div>
+
+        <Card className="bg-gray-950 border-gray-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-semibold text-gray-300">
+              Receipt header details
+            </CardTitle>
+            <CardDescription>
+              Store name, address, and phone shown at the top of every printed receipt.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {tenantLoading ? (
+              <div className="flex items-center gap-2 text-gray-500 py-4">
+                <Loader2 className="animate-spin" size={18} /> Loading business info...
+              </div>
+            ) : (
+              <form onSubmit={handleSaveBusinessInfo} className="space-y-4 max-w-2xl">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">
+                    Store Name <span className="text-red-400">*</span>
+                  </label>
+                  <Input
+                    value={bizName}
+                    onChange={(e) => setBizName(e.target.value)}
+                    placeholder="e.g. Lumora Grocery"
+                    className="bg-gray-900 border-gray-800"
+                    maxLength={255}
+                    required
+                    disabled={!isAdmin}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">
+                      Address Line 1
+                    </label>
+                    <Input
+                      value={bizAddress1}
+                      onChange={(e) => setBizAddress1(e.target.value)}
+                      placeholder="123 Business Avenue"
+                      className="bg-gray-900 border-gray-800"
+                      maxLength={255}
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">
+                      Address Line 2
+                    </label>
+                    <Input
+                      value={bizAddress2}
+                      onChange={(e) => setBizAddress2(e.target.value)}
+                      placeholder="Colombo 05, Sri Lanka"
+                      className="bg-gray-900 border-gray-800"
+                      maxLength={255}
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Phone</label>
+                  <Input
+                    value={bizPhone}
+                    onChange={(e) => setBizPhone(e.target.value)}
+                    placeholder="011-2345678"
+                    className="bg-gray-900 border-gray-800 max-w-xs"
+                    maxLength={50}
+                    disabled={!isAdmin}
+                  />
+                  <p className="text-[11px] text-gray-500">
+                    Displayed on receipts as &ldquo;Phone: {bizPhone || "011-2345678"}&rdquo;
+                  </p>
+                </div>
+
+                {isAdmin && (
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      type="submit"
+                      disabled={!bizDirty || !bizName.trim() || updateTenantMutation.isPending}
+                      className="bg-primary hover:bg-primary/90 min-w-[140px]"
+                    >
+                      {updateTenantMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Save Changes
+                    </Button>
+                  </div>
+                )}
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Tax Configuration Section */}
-      <FeatureGuard 
+      <FeatureGuard
         feature="TAX_CONFIG"
         fallback={
           <div className="space-y-4">

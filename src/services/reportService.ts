@@ -7,6 +7,8 @@ import {
   TopCustomerRecord,
   TaxSummaryReport,
   ProfitabilityReport,
+  SoldItemsBySupplierReport,
+  StockVarianceReport,
 } from "@/types/report";
 
 /**
@@ -50,6 +52,20 @@ export const reportService = {
     api
       .get<ApiResponse<ProfitabilityReport>>("/reports/profitability", {
         params: { start, end, page, size },
+      })
+      .then((res) => res.data.data),
+
+  getSoldItemsBySupplier: (start: string, end: string) =>
+    api
+      .get<ApiResponse<SoldItemsBySupplierReport>>("/reports/sold-items-by-supplier", {
+        params: { start, end },
+      })
+      .then((res) => res.data.data),
+
+  getStockVariance: (start: string, end: string) =>
+    api
+      .get<ApiResponse<StockVarianceReport>>("/reports/stock-variance", {
+        params: { start, end },
       })
       .then((res) => res.data.data),
 };

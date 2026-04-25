@@ -5,9 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService, Branch } from '@/services/branchService';
 import { taxService } from '@/services/taxService';
+import { cashSessionService } from '@/services/cashSessionService';
+import { tenantService } from '@/services/tenantService';
 import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
 import { useCart, TaxContext } from '@/hooks/useCart';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -25,6 +27,9 @@ import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
 import { CustomerSelector } from '@/components/pos/CustomerSelector';
 import { Receipt } from '@/components/pos/Receipt';
 import { ShiftSummary } from '@/components/pos/ShiftSummary';
+import { StartShiftModal } from '@/components/pos/StartShiftModal';
+import InventoryAdjustmentModal from '@/components/inventory/InventoryAdjustmentModal';
+import { Product } from '@/types/inventory';
 
 export default function TerminalPage() {
   // State
@@ -35,11 +40,34 @@ export default function TerminalPage() {
   const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
   const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  // Drives the "Fix stock" recovery action on checkout-time OOS errors.
+  const [stockFixProduct, setStockFixProduct] = useState<Product | null>(null);
 
   // Auth & Navigation
   const { user } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Role gate — INVENTORY_MANAGER (or anyone without a sales-capable role) has no
+  // business at the POS terminal. Bounce them to the dashboard.
+  useEffect(() => {
+    if (!user) return;
+    const roles = user.roles || [];
+    const canSell =
+      roles.includes('ADMIN') ||
+      roles.includes('MANAGER') ||
+      roles.includes('CASHIER');
+    if (!canSell) {
+      router.replace('/overview');
+    }
+  }, [user, router]);
+
+  // Cash session gate — terminal is unusable without an open drawer.
+  const { data: activeSession, isLoading: sessionLoading } = useQuery({
+    queryKey: ['cash-session-active'],
+    queryFn: () => cashSessionService.getActive(),
+    enabled: !!user && (user.roles || []).some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER'),
+  });
 
   // Data Fetching
   const { data: branchesData } = useQuery({
@@ -48,6 +76,13 @@ export default function TerminalPage() {
   });
 
   const branches = (branchesData || []).filter(b => b.isActive);
+
+  // Fetch business info for the receipt header (name / address / phone).
+  const { data: tenantInfo } = useQuery({
+    queryKey: ['tenant-info'],
+    queryFn: () => tenantService.getInfo(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Fetch tax rates and categories for dynamic tax calculation
   const { data: activeTaxRates } = useQuery({
@@ -77,8 +112,18 @@ export default function TerminalPage() {
     }
   }, [branches, selectedBranch]);
 
-  // Cart — now with dynamic tax context
-  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, taxLabel, total, itemCount } = useCart(taxContext);
+  // Cart — branch-aware so add/update reads the right stockLevels row.
+  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, taxLabel, total, itemCount } = useCart(taxContext, selectedBranch?.id);
+
+  // Per-product cart quantities — fed to ProductGrid so it can show "at limit"
+  // when a tile's cart count equals the branch stock.
+  const cartQuantities = useMemo(
+    () => items.reduce<Record<string, number>>((acc, item) => {
+      acc[item.id] = item.cartQuantity;
+      return acc;
+    }, {}),
+    [items]
+  );
 
   // Data Fetching
   const { data: productsData, isLoading } = useQuery({
@@ -129,10 +174,15 @@ export default function TerminalPage() {
       
       // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
       const receiptData: ReceiptData = {
-        tenantName: "Lumora POS", // Fallback if missing
+        tenantName: tenantInfo?.name || "StoreX",
+        tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
+        tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
+        tenantPhone: tenantInfo?.phone ?? undefined,
         branchName: selectedBranch?.name || "Main Branch",
+        showBranch: branches.length > 1,
         cashierName: `${user?.firstName} ${user?.lastName}`,
         transactionId: data.invoiceNumber,
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
         items: items.map(item => ({
           name: item.name,
           quantity: item.cartQuantity,
@@ -141,10 +191,11 @@ export default function TerminalPage() {
         })),
         subtotal: subtotal,
         tax: taxAmount,
+        taxLabel: taxLabel,
         discount: 0,
         total: total,
         paymentMethod: paymentMethod,
-        tendered: total, // Assuming exact change for now
+        tendered: total, // exact-change assumption until a tender input lands
         change: 0
       };
       
@@ -152,7 +203,30 @@ export default function TerminalPage() {
       clearCart();
     },
     onError: (error: unknown) => {
-      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to process sale");
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || "Failed to process sale";
+
+      // Insufficient-stock errors get a recovery shortcut for managers/admins so
+      // they can reconcile branch stock without leaving the terminal.
+      const isStockError = /insufficient stock for product:\s*(.+?)(?:\s+in the selected branch)?$/i.exec(message);
+      const roles = user?.roles || [];
+      const canFixStock = roles.includes('ADMIN') || roles.includes('MANAGER');
+
+      if (isStockError && canFixStock) {
+        const productName = isStockError[1].trim();
+        const cartProduct = items.find(i => i.name === productName);
+        if (cartProduct) {
+          toast.error(message, {
+            action: {
+              label: 'Fix stock',
+              onClick: () => setStockFixProduct(cartProduct),
+            },
+          });
+          return;
+        }
+      }
+
+      toast.error(message);
     }
   });
 
@@ -194,6 +268,25 @@ export default function TerminalPage() {
   };
 
   // Render
+  if (sessionLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!activeSession) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
+        <StartShiftModal
+          open
+          onCancel={() => router.push('/overview')}
+        />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="h-screen flex bg-black overflow-hidden font-sans print:hidden">
@@ -215,6 +308,7 @@ export default function TerminalPage() {
           searchTerm={search}
           onProductClick={addToCart}
           selectedBranchId={selectedBranch?.id}
+          cartQuantities={cartQuantities}
         />
       </div>
 
@@ -276,10 +370,35 @@ export default function TerminalPage() {
 
       </div>
 
+      {/* Stock Fix modal — opened from the checkout error toast's action */}
+      {stockFixProduct && (
+        <InventoryAdjustmentModal
+          product={stockFixProduct}
+          isOpen={!!stockFixProduct}
+          onClose={() => {
+            setStockFixProduct(null);
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+          }}
+          defaultBranchId={selectedBranch?.id}
+          defaultType="RECONCILIATION"
+        />
+      )}
+
       {/* Hidden Receipt for Printing */}
       {lastSale && (
         <div className="hidden print:block print:absolute print:left-0 print:top-0 print:w-full print:bg-white print:text-black z-[9999]">
-          <Receipt sale={lastSale} />
+          <Receipt
+            sale={lastSale}
+            tenant={{
+              name: tenantInfo?.name || 'StoreX',
+              addressLine1: tenantInfo?.addressLine1 ?? undefined,
+              addressLine2: tenantInfo?.addressLine2 ?? undefined,
+              phone: tenantInfo?.phone ?? undefined,
+            }}
+            branch={selectedBranch}
+            showBranch={branches.length > 1}
+            taxLabel={taxLabel}
+          />
         </div>
       )}
     </>
