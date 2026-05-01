@@ -1,15 +1,9 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { User } from '@/types/auth';
+import { bindSentryUser, clearSentryUser } from '@/lib/sentry';
 
-export interface User {
-  id: string;
-  tenantId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  roles: string[];
-  permissions: string[];
-}
+export type { User };
 
 interface AuthState {
   user: User | null;
@@ -22,6 +16,7 @@ interface AuthState {
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
+  hasFeature: (feature: string) => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -34,10 +29,12 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (user: User, token: string, refreshToken: string) => {
         set({ user, token, refreshToken, isAuthenticated: true });
+        bindSentryUser(user);
       },
 
       logout: () => {
         set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        clearSentryUser();
       },
 
       hasPermission: (permission: string) => {
@@ -49,12 +46,24 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
         return state.user?.roles?.includes(role) ?? false;
       },
+
+      hasFeature: (feature: string) => {
+        const state = get();
+        return state.user?.featuresEnabled?.includes(feature) ?? false;
+      },
     }),
     {
       name: 'lumora-pos-auth',
+      // sessionStorage: survives page reload within the same tab,
+      // but clears automatically when the browser session ends.
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined' ? sessionStorage : localStorage
+      ),
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
+        // token is intentionally omitted — access tokens are memory-only to reduce XSS exposure.
+        // refreshToken is kept so the silent-refresh flow works across page reloads within the
+        // same browser session (sessionStorage is cleared when the tab/window is closed).
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),

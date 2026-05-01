@@ -2,9 +2,19 @@ import api from "./api";
 import { 
   Category, CategoryRequest, 
   Brand, BrandRequest, 
-  Product, ProductRequest 
+  Product, ProductRequest,
+  LowStockResponse
 } from "@/types/inventory";
 import { ApiResponse, Page } from "@/types/common";
+
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  brandId?: string;
+  isActive?: boolean;
+  sort?: string;
+  [key: string]: string | number | boolean | undefined;
+}
 
 export const inventoryService = {
   // --- Categories ---
@@ -40,11 +50,28 @@ export const inventoryService = {
     api.delete<ApiResponse<void>>(`/brands/${id}`).then(res => res.data.data),
 
   // --- Products ---
-  getProducts: (page = 0, size = 10) => 
-    api.get<ApiResponse<Page<Product>>>(`/products?page=${page}&size=${size}`).then(res => res.data.data),
+  getProducts: (page = 0, size = 10, filters?: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== '') {
+          params.append(key, typeof value === 'boolean' ? value.toString() : String(value));
+        }
+      });
+    }
+    return api.get<ApiResponse<Page<Product>>>(`/products?${params.toString()}`).then(res => res.data.data);
+  },
   
+  /** Fast barcode/SKU lookup for POS terminal scanning */
+  lookupByCode: (code: string, onlyActive = false) =>
+    api.get<ApiResponse<Product>>(`/products/lookup?code=${encodeURIComponent(code)}&onlyActive=${onlyActive}`)
+      .then(res => res.data.data),
+
   getProduct: (id: string) => 
     api.get<ApiResponse<Product>>(`/products/${id}`).then(res => res.data.data),
+  
+  toggleStatus: (id: string) =>
+    api.patch<ApiResponse<Product>>(`/products/${id}/status`).then(res => res.data.data),
   
   createProduct: (data: ProductRequest) => 
     api.post<ApiResponse<Product>>("/products", data).then(res => res.data.data),
@@ -57,4 +84,37 @@ export const inventoryService = {
   
   deleteProduct: (id: string) => 
     api.delete<ApiResponse<void>>(`/products/${id}`).then(res => res.data.data),
+
+  getLowStockAlerts: (branchId?: string, page = 0, size = 10) => {
+    const params = new URLSearchParams();
+    params.set('page', page.toString());
+    params.set('size', size.toString());
+    if (branchId) params.set('branchId', branchId);
+    
+    return api.get<ApiResponse<Page<LowStockResponse>>>(`/products/low-stock?${params.toString()}`)
+      .then(res => res.data.data);
+  },
+
+  // --- Bulk Operations ---
+  importProducts: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post("/products/import", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }).then(res => res.data);
+  },
+
+  exportProducts: () => {
+    return api.get("/products/export", { responseType: 'blob' }).then(res => {
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `products_export_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  },
 };

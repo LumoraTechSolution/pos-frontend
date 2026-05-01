@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -7,6 +9,20 @@ import { PinPad } from "@/components/auth/PinPad";
 import { Store } from "lucide-react";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.altKey && e.key === "F12") {
+        e.preventDefault();
+        router.push("/super-admin/login");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [router]);
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-[450px] space-y-8">
@@ -14,8 +30,8 @@ export default function LoginPage() {
           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground mb-4">
             <Store className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Lumora POS</h1>
-          <p className="text-muted-foreground">Log in to manage your store</p>
+          <h1 className="text-3xl font-bold tracking-tight text-white">StoreX </h1>
+          <p className="text-muted-foreground">powerd by Lumora Tech</p>
         </div>
 
         <Card className="border-none shadow-xl">

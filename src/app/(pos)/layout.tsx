@@ -1,11 +1,15 @@
+import AuthGuard from '@/components/providers/AuthGuard';
+
 export default function PosLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {children}
-    </div>
+    <AuthGuard>
+      <div className="h-screen w-full bg-black text-white selection:bg-primary/30">
+        {children}
+      </div>
+    </AuthGuard>
   );
 }

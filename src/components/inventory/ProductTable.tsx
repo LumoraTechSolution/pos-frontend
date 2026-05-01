@@ -1,13 +1,15 @@
 "use client";
 
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import Image from "next/image";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, MoreHorizontal, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle, LayoutList, Loader2 } from "lucide-react";
 import { Product } from "@/types/inventory";
-import { formatCurrency } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge"; // Need to create this basic UI component
+import { formatCurrency, cn } from "@/lib/utils";
+import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
+import { Switch } from "@/components/ui/switch";
 
 interface ProductTableProps {
   data: Product[];
@@ -17,16 +19,28 @@ interface ProductTableProps {
   onPageChange: (page: number) => void;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  onManageInventory?: (product: Product) => void;
+  sortKey: string | null;
+  sortDirection: SortDirection;
+  onSort: (key: string, direction: SortDirection) => void;
+  onToggleStatus?: (product: Product) => void;
+  togglingIds?: Set<string>;
 }
 
-export default function ProductTable({ 
-  data, 
-  isLoading, 
-  totalPages, 
-  currentPage, 
+export default function ProductTable({
+  data,
+  isLoading,
+  totalPages,
+  currentPage,
   onPageChange,
   onEdit,
-  onDelete
+  onDelete,
+  onManageInventory,
+  sortKey,
+  sortDirection,
+  onSort,
+  onToggleStatus,
+  togglingIds,
 }: ProductTableProps) {
   if (isLoading) {
     return <div className="py-20 text-center text-gray-400">Loading products...</div>;
@@ -38,30 +52,75 @@ export default function ProductTable({
         <Table>
           <TableHeader>
             <TableRow className="border-gray-800 hover:bg-transparent bg-gray-800/20">
-              <TableHead className="text-gray-400 font-semibold py-4">Product</TableHead>
+              <SortableHeader
+                label="Product"
+                sortKey="name"
+                currentSort={sortKey}
+                currentDirection={sortDirection}
+                onSort={onSort}
+                className="py-4"
+              />
               <TableHead className="text-gray-400 font-semibold">SKU</TableHead>
               <TableHead className="text-gray-400 font-semibold">Category</TableHead>
-              <TableHead className="text-gray-400 font-semibold text-right">Price</TableHead>
-              <TableHead className="text-gray-400 font-semibold text-center">Stock</TableHead>
+              <SortableHeader
+                label="Price"
+                sortKey="basePrice"
+                currentSort={sortKey}
+                currentDirection={sortDirection}
+                onSort={onSort}
+                className="text-right"
+              />
+              <SortableHeader
+                label="Stock"
+                sortKey="stockQuantity"
+                currentSort={sortKey}
+                currentDirection={sortDirection}
+                onSort={onSort}
+                className="text-center"
+              />
               <TableHead className="text-gray-400 font-semibold">Status</TableHead>
               <TableHead className="text-gray-400 font-semibold text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.map((product) => (
-              <TableRow key={product.id} className="border-gray-800 hover:bg-gray-800/40 transition-colors">
+            {data.map((product) => {
+              const isToggling = togglingIds?.has(product.id) ?? false;
+              return (
+              <TableRow
+                key={product.id}
+                className={cn(
+                  'border-gray-800 hover:bg-gray-800/40 transition-colors group',
+                  !product.isActive && 'bg-gray-950/60'
+                )}
+              >
                 <TableCell className="py-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-gray-600 font-bold overflow-hidden border border-gray-700">
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded bg-gray-800 relative overflow-hidden flex items-center justify-center text-gray-600 font-bold border border-gray-700',
+                        !product.isActive && 'grayscale'
+                      )}
+                    >
                       {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                        <Image src={product.imageUrl} fill className="object-cover" alt={product.name} />
                       ) : (
                         product.name.charAt(0).toUpperCase()
                       )}
                     </div>
                     <div>
-                      <div className="font-medium text-white">{product.name}</div>
-                      <div className="text-xs text-gray-400">{product.brandName || 'No Brand'}</div>
+                      <div
+                        className={cn(
+                          'font-medium',
+                          product.isActive ? 'text-white' : 'text-gray-400 line-through decoration-gray-600'
+                        )}
+                      >
+                        {product.name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {product.isActive
+                          ? product.brandName || 'No Brand'
+                          : 'Hidden from POS'}
+                      </div>
                     </div>
                   </div>
                 </TableCell>
@@ -84,18 +143,65 @@ export default function ProductTable({
                         <AlertTriangle size={10} /> LOW
                       </span>
                     )}
+                    
+                    {/* Branch Breakdown */}
+                    {product.stockLevels && product.stockLevels.length > 1 && (
+                      <div className="mt-1 pt-1 border-t border-gray-800 w-full hidden group-hover:block transition-all duration-200">
+                        {product.stockLevels.map((sl) => (
+                           <div key={sl.id} className="text-[10px] text-gray-500 flex justify-between gap-2 px-2">
+                             <span>{sl.branchName}:</span>
+                             <span className="font-mono">{sl.quantity}</span>
+                           </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {product.isActive ? (
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                  ) : (
-                    <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-2"></span>
-                  )}
-                  <span className="text-xs text-gray-400">{product.isActive ? 'Active' : 'Inactive'}</span>
+                  <button
+                    type="button"
+                    disabled={isToggling || !onToggleStatus}
+                    onClick={() => onToggleStatus?.(product)}
+                    aria-label={`${product.isActive ? 'Deactivate' : 'Activate'} ${product.name}`}
+                    aria-busy={isToggling}
+                    title={
+                      product.isActive
+                        ? 'Active — visible in POS. Click to deactivate.'
+                        : 'Inactive — hidden from POS. Click to activate.'
+                    }
+                    className="flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-wait"
+                  >
+                    <Switch
+                      checked={product.isActive}
+                      disabled={isToggling}
+                      onCheckedChange={() => onToggleStatus?.(product)}
+                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-gray-700 border-gray-600 pointer-events-none"
+                      tabIndex={-1}
+                    />
+                    <span
+                      className={cn(
+                        'text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border',
+                        product.isActive
+                          ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+                          : 'text-gray-400 bg-gray-800 border-gray-700'
+                      )}
+                    >
+                      {isToggling && <Loader2 size={11} className="animate-spin" />}
+                      {product.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </button>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-primary hover:text-indigo-300 hover:bg-primary/10"
+                      onClick={() => onManageInventory?.(product)}
+                      title="Adjust Inventory"
+                    >
+                      <LayoutList size={14} />
+                    </Button>
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -104,9 +210,9 @@ export default function ProductTable({
                     >
                       <Pencil size={14} />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-400/10"
                       onClick={() => onDelete?.(product)}
                     >
@@ -115,7 +221,8 @@ export default function ProductTable({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
             {data.length === 0 && (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center text-gray-500">
@@ -127,7 +234,7 @@ export default function ProductTable({
         </Table>
       </div>
 
-      {/* Basic Pagination Header */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 py-4">
           <Button 

@@ -43,8 +43,8 @@ export function PinPad() {
       setAuth(response.user, response.accessToken, response.refreshToken);
       toast.success("Login successful!");
       router.push('/terminal');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid PIN");
+    } catch (error: unknown) {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid PIN");
       setPin(""); 
     } finally {
       setIsLoading(false);

@@ -4,6 +4,8 @@ export interface Category {
   slug?: string;
   description?: string;
   parentId?: string;
+  taxRateId?: string;
+  taxRateName?: string;
   createdAt: string;
 }
 
@@ -13,6 +15,14 @@ export interface Brand {
   description?: string;
   website?: string;
   createdAt: string;
+}
+
+export interface StockLevel {
+  id: string;
+  productId: string;
+  branchId: string;
+  branchName: string;
+  quantity: number;
 }
 
 export interface Product {
@@ -31,6 +41,9 @@ export interface Product {
   categoryName?: string;
   brandId?: string;
   brandName?: string;
+  primarySupplierId?: string;
+  primarySupplierName?: string;
+  stockLevels?: StockLevel[];
   createdAt: string;
   updatedAt: string;
 }
@@ -47,7 +60,19 @@ export interface ProductRequest {
   imageUrl?: string;
   categoryId?: string;
   brandId?: string;
+  primarySupplierId?: string;
   isActive: boolean;
+  branchStockLevels?: { branchId: string; quantity: number }[];
+}
+
+export interface LowStockResponse {
+  productId: string;
+  productName: string;
+  productSku: string;
+  branchId: string;
+  branchName: string;
+  currentQuantity: number;
+  threshold: number;
 }
 
 export interface CategoryRequest {
@@ -55,6 +80,7 @@ export interface CategoryRequest {
   slug?: string;
   description?: string;
   parentId?: string;
+  taxRateId?: string;
 }
 
 export interface BrandRequest {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import Image from "next/image";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
@@ -10,12 +11,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
+import { branchService } from "@/services/branchService";
+import { supplierService, Supplier } from "@/services/supplierService";
 import { toast } from "sonner";
-import { Product, ProductRequest } from "@/types/inventory";
-import { useRouter } from "next/navigation";
+import { Product, ProductRequest, Category, Brand } from "@/types/inventory";
+import { Branch } from "@/services/branchService";
+import { useRouter, useSearchParams } from "next/navigation";
+import { QK } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, PencilLine } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import InventoryAdjustmentModal from "./InventoryAdjustmentModal";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -28,8 +35,10 @@ const productSchema = z.object({
   lowStockThreshold: z.coerce.number().int().min(0),
   categoryId: z.string().uuid().optional().nullable(),
   brandId: z.string().uuid().optional().nullable(),
+  primarySupplierId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().default(true),
   imageUrl: z.string().url().or(z.literal("")).optional(),
+  branchStockLevels: z.record(z.string().uuid(), z.coerce.number().int().min(0)).optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -41,6 +50,7 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [isAdjModalOpen, setIsAdjModalOpen] = useState(false);
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -52,8 +62,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     queryFn: inventoryService.getBrands
   });
 
+  const { data: suppliersPage } = useQuery({
+    queryKey: ['suppliers-all'],
+    queryFn: () => supplierService.getSuppliers(0, 500),
+  });
+  const suppliers = suppliersPage?.content?.filter((s: Supplier) => s.isActive) ?? [];
+
+  const { data: branches } = useQuery({
+    queryKey: QK.branches,
+    queryFn: branchService.getAllBranches
+  });
+
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       name: initialData?.name || "",
       sku: initialData?.sku || "",
@@ -65,10 +86,50 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       lowStockThreshold: initialData?.lowStockThreshold || 5,
       categoryId: initialData?.categoryId || null,
       brandId: initialData?.brandId || null,
+      primarySupplierId: initialData?.primarySupplierId || null,
       isActive: initialData?.isActive ?? true,
       imageUrl: initialData?.imageUrl || "",
+      branchStockLevels: {},
     },
   });
+
+  const searchParams = useSearchParams();
+  const barcodeFromUrl = searchParams.get("barcode");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name || "",
+        sku: initialData.sku || "",
+        barcode: initialData.barcode || "",
+        description: initialData.description || "",
+        basePrice: initialData.basePrice || 0,
+        costPrice: initialData.costPrice || 0,
+        stockQuantity: initialData.stockQuantity || 0,
+        lowStockThreshold: initialData.lowStockThreshold || 5,
+        categoryId: initialData.categoryId || null,
+        brandId: initialData.brandId || null,
+        primarySupplierId: initialData.primarySupplierId || null,
+        isActive: initialData.isActive ?? true,
+        imageUrl: initialData.imageUrl || "",
+        branchStockLevels: {},
+      });
+    }
+  }, [initialData, form]);
+
+  useEffect(() => {
+    if (barcodeFromUrl && !initialData) {
+      form.setValue("barcode", barcodeFromUrl);
+      toast.info(`Barcode ${barcodeFromUrl} auto-filled from scanner.`);
+      
+      // Small delay to ensure the field is focused after mount
+      const timer = setTimeout(() => {
+        nameInputRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [barcodeFromUrl, initialData, form]);
 
   const mutation = useMutation({
     mutationFn: (data: ProductFormValues) => {
@@ -76,9 +137,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         ...data,
         categoryId: data.categoryId || undefined,
         brandId: data.brandId || undefined,
+        primarySupplierId: data.primarySupplierId || undefined,
         costPrice: data.costPrice || undefined,
         sku: data.sku || undefined,
-        barcode: data.barcode || undefined
+        barcode: data.barcode || undefined,
+        branchStockLevels: data.branchStockLevels ? Object.entries(data.branchStockLevels).map(([branchId, quantity]) => ({
+          branchId,
+          quantity
+        })) : undefined
       };
       
       if (initialData) {
@@ -86,13 +152,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       }
       return inventoryService.createProduct(payload);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (updated) => {
+      if (initialData) {
+        queryClient.setQueryData(['product', initialData.id], updated);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ['products'],
+        refetchType: 'all',
+      });
       toast.success(initialData ? "Product updated" : "Product created");
       router.push("/inventory/products");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to save product");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save product");
     }
   });
 
@@ -128,7 +200,16 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter product name" className="bg-gray-950 border-gray-800" {...field} />
+                        <Input 
+                          placeholder="Enter product name" 
+                          className="bg-gray-950 border-gray-800" 
+                          {...field} 
+                          ref={(e) => {
+                            field.ref(e);
+                            // @ts-expect-error — ref callback type mismatch between RHF and HTMLElement
+                            nameInputRef.current = e;
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -142,7 +223,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="Provide details about the product..."
                           {...field}
                         />
@@ -206,8 +287,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>Barcode</FormLabel>
                         <FormControl>
-                          <Input placeholder="UPC / EAN" className="bg-gray-950 border-gray-800" {...field} />
-                        </FormControl>
+                        <div className="relative">
+                          <Input 
+                            placeholder="UPC / EAN" 
+                            className={`bg-gray-950 border-gray-800 ${barcodeFromUrl && !initialData ? 'border-primary/50 text-primary' : ''}`} 
+                            {...field} 
+                          />
+                          {barcodeFromUrl && !initialData && (
+                            <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 text-primary" size={16} />
+                          )}
+                        </div>
+                      </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -223,19 +313,55 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <CardTitle className="text-lg">Inventory</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="stockQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>In Stock</FormLabel>
-                      <FormControl>
-                        <Input type="number" className="bg-gray-950 border-gray-800" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!initialData && branches && branches.length > 1 ? (
+                  <div className="space-y-4">
+                    <label className="text-sm font-semibold text-gray-400">Initial Stock per Branch</label>
+                    {branches.map((branch: Branch) => (
+                      <FormField
+                        key={branch.id}
+                        control={form.control}
+                        name={`branchStockLevels.${branch.id}`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center justify-between gap-4 space-y-0">
+                            <FormLabel className="text-xs text-gray-400 w-1/2">{branch.name}</FormLabel>
+                            <FormControl className="w-1/2">
+                              <Input type="number" className="bg-gray-950 border-gray-800 h-8" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="stockQuantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{initialData ? 'Total Stock (Read-only)' : 'Initial Stock'}</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl className="flex-1">
+                            <Input type="number" className="bg-gray-950 border-gray-800" {...field} disabled={!!initialData} />
+                          </FormControl>
+                          {initialData && (
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="icon" 
+                              className="shrink-0 border-gray-800 hover:bg-gray-800"
+                              onClick={() => setIsAdjModalOpen(true)}
+                              title="Adjust Inventory"
+                            >
+                              <PencilLine size={16} className="text-primary" />
+                            </Button>
+                          )}
+                        </div>
+                        {initialData && <p className="text-[10px] text-gray-500">Stock can be managed via the Adjustment tool.</p>}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="lowStockThreshold"
@@ -270,7 +396,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Category</option>
-                          {categories?.data?.map((c: any) => (
+                          {categories?.map((c: Category) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
@@ -286,14 +412,36 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Brand</FormLabel>
                       <FormControl>
-                        <select 
+                        <select
                           className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
                           value={field.value || ""}
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
                           <option value="">Select Brand</option>
-                          {brands?.data?.map((b: any) => (
+                          {brands?.map((b: Brand) => (
                             <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="primarySupplierId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Supplier</FormLabel>
+                      <FormControl>
+                        <select
+                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        >
+                          <option value="">No preferred supplier</option>
+                          {suppliers.map((s: Supplier) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </select>
                       </FormControl>
@@ -311,7 +459,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               <CardContent className="space-y-4">
                 <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative group overflow-hidden">
                   {form.watch("imageUrl") ? (
-                    <img src={form.watch("imageUrl")} alt="Preview" className="w-full h-full object-cover" />
+                    <Image src={form.watch("imageUrl")!} fill className="object-cover" alt="Preview" />
                   ) : (
                     <div className="text-center text-gray-600">
                       <div className="text-2xl mb-1">🖼️</div>
@@ -345,6 +493,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             <Save size={18} /> {mutation.isPending ? 'Saving...' : (initialData ? 'Update Product' : 'Save Product')}
           </Button>
         </div>
+
+        {initialData && (
+          <InventoryAdjustmentModal
+            product={initialData}
+            isOpen={isAdjModalOpen}
+            onClose={() => setIsAdjModalOpen(false)}
+          />
+        )}
       </form>
     </Form>
   );

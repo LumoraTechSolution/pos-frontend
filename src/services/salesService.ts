@@ -1,0 +1,69 @@
+import api from "./api";
+import { ApiResponse } from "@/types/common";
+
+export interface SaleItemRequest {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  discountAmount: number;
+}
+
+export interface SaleRequest {
+  customerId?: string;
+  branchId?: string;
+  paymentMethod: 'CASH' | 'CARD' | 'ONLINE' | 'SPLIT' | 'CREDIT';
+  /** Cash amount tendered. Required for SPLIT; backend auto-fills netAmount for
+   *  pure CASH sales when omitted; ignored for CARD/ONLINE. */
+  cashTendered?: number;
+  items: SaleItemRequest[];
+}
+
+export interface SaleItemResponse {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+}
+
+export interface SaleResponse {
+  id: string;
+  invoiceNumber: string;
+  totalAmount: number;
+  taxAmount: number;
+  discountAmount: number;
+  netAmount: number;
+  paymentStatus: string;
+  paymentMethod: string;
+  createdAt: string;
+  cashierName?: string;
+  customerId?: string;
+  customerName?: string;
+  earnedPoints?: number;
+  loyaltyBalance?: number;
+  items: SaleItemResponse[];
+}
+
+export interface SalesSummaryResponse {
+  totalOrders: number;
+  totalGrossSales: number;
+  totalTax: number;
+  totalDiscounts: number;
+  totalNetSales: number;
+  salesByPaymentMethod: Record<string, number>;
+}
+
+export const salesService = {
+  createSale: (data: SaleRequest) => 
+    api.post<ApiResponse<SaleResponse>>("/sales", data).then(res => res.data.data),
+  
+  getSale: (id: string) => 
+    api.get<ApiResponse<SaleResponse>>(`/sales/${id}`).then(res => res.data.data),
+
+  getSalesByCustomer: (customerId: string, page: number = 0, size: number = 10) =>
+    api.get<ApiResponse<{ content: SaleResponse[]; totalElements: number; totalPages: number }>>(`/sales/customer/${customerId}?page=${page}&size=${size}&sort=createdAt,desc`).then(res => res.data.data),
+
+  getDailySummary: () =>
+    api.get<ApiResponse<SalesSummaryResponse>>("/sales/summary/daily").then(res => res.data.data),
+};

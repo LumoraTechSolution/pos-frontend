@@ -1,85 +1,483 @@
 'use client';
 
-/**
- * POS Terminal page — placeholder for Step 7 (POS UI implementation).
- * Will contain: product grid, cart panel, payment screen, quick actions.
- */
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { inventoryService } from '@/services/inventoryService';
+import { branchService, Branch } from '@/services/branchService';
+import { taxService } from '@/services/taxService';
+import { cashSessionService } from '@/services/cashSessionService';
+import { tenantService } from '@/services/tenantService';
+import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
+import { useCart, TaxContext } from '@/hooks/useCart';
+import { ShoppingCart, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { usePosHotkeys, HOTKEY_LEGEND } from '@/hooks/usePosHotkeys';
+import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
+import { Customer } from '@/services/customerService';
+import { performLogout } from '@/lib/performLogout';
+import { QK } from '@/lib/queryKeys';
+
+// POS Components
+import { POSHeader } from '@/components/pos/POSHeader';
+import { ProductSearch } from '@/components/pos/ProductSearch';
+import { ProductGrid } from '@/components/pos/ProductGrid';
+import { CartItemCard } from '@/components/pos/CartItemCard';
+import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
+import { CustomerSelector } from '@/components/pos/CustomerSelector';
+import { Receipt } from '@/components/pos/Receipt';
+import { ShiftSummary } from '@/components/pos/ShiftSummary';
+import { StartShiftModal } from '@/components/pos/StartShiftModal';
+import InventoryAdjustmentModal from '@/components/inventory/InventoryAdjustmentModal';
+import { Product } from '@/types/inventory';
+
 export default function TerminalPage() {
+  // State
+  const [search, setSearch] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE' | 'SPLIT'>('CASH');
+  const [cashTendered, setCashTendered] = useState(0);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+  const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
+  const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  // Drives the "Fix stock" recovery action on checkout-time OOS errors.
+  const [stockFixProduct, setStockFixProduct] = useState<Product | null>(null);
+
+  // Auth & Navigation
+  const { user } = useAuthStore();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  // Role gate — INVENTORY_MANAGER (or anyone without a sales-capable role) has no
+  // business at the POS terminal. Bounce them to the dashboard.
+  useEffect(() => {
+    if (!user) return;
+    const roles = user.roles || [];
+    const canSell =
+      roles.includes('ADMIN') ||
+      roles.includes('MANAGER') ||
+      roles.includes('CASHIER');
+    if (!canSell) {
+      router.replace('/overview');
+    }
+  }, [user, router]);
+
+  // Cash session gate — terminal is unusable without an open drawer.
+  const { data: activeSession, isLoading: sessionLoading } = useQuery({
+    queryKey: QK.cashSessionActive,
+    queryFn: () => cashSessionService.getActive(),
+    enabled: !!user && (user.roles || []).some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER'),
+  });
+
+  // Data Fetching
+  const { data: branchesData } = useQuery({
+    queryKey: QK.branches,
+    queryFn: () => branchService.getAllBranches(),
+  });
+
+  const branches = (branchesData || []).filter(b => b.isActive);
+
+  // Fetch business info for the receipt header (name / address / phone).
+  const { data: tenantInfo } = useQuery({
+    queryKey: QK.tenantInfo,
+    queryFn: () => tenantService.getInfo(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch tax rates and categories for dynamic tax calculation
+  const { data: activeTaxRates } = useQuery({
+    queryKey: QK.taxRatesActive,
+    queryFn: () => taxService.getActiveTaxRates(),
+  });
+
+  const { data: categories } = useQuery({
+    queryKey: QK.categories,
+    queryFn: () => inventoryService.getCategories(),
+  });
+
+  // Build the tax context for per-item tax resolution
+  const taxContext: TaxContext | null = useMemo(() => {
+    if (!activeTaxRates) return null;
+    return {
+      taxRates: activeTaxRates,
+      categories: categories || [],
+    };
+  }, [activeTaxRates, categories]);
+
+  // Since we are using TanStack Query v5, handle side effects in useEffect
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranch) {
+      const defaultBranch = branches.find(b => b.isDefault) || branches[0];
+      setSelectedBranch(defaultBranch);
+    }
+  }, [branches, selectedBranch]);
+
+  // Cart — branch-aware so add/update reads the right stockLevels row.
+  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, taxLabel, total, itemCount } = useCart(taxContext, selectedBranch?.id);
+
+  // Per-product cart quantities — fed to ProductGrid so it can show "at limit"
+  // when a tile's cart count equals the branch stock.
+  const cartQuantities = useMemo(
+    () => items.reduce<Record<string, number>>((acc, item) => {
+      acc[item.id] = item.cartQuantity;
+      return acc;
+    }, {}),
+    [items]
+  );
+
+  // Data Fetching
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ['products', search, 'active', selectedBranch?.id], // Branch-aware key
+    queryFn: () => inventoryService.getProducts(0, 50, { isActive: true, search }),
+  });
+
+  const products = productsData?.content || [];
+  const filteredProducts = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.sku?.toLowerCase().includes(search.toLowerCase()) ||
+    p.barcode?.includes(search)
+  );
+
+  // Duplicate scan protection — prevents double-fire within 500ms
+  const lastScanRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
+
+  // Global Barcode Scanner — Server-Side Lookup
+  useBarcodeScanner({
+    onScan: async (barcode) => {
+      // Guard: ignore duplicate scans within 500ms (scanner double-fire)
+      const now = Date.now();
+      if (lastScanRef.current.code === barcode && now - lastScanRef.current.time < 500) {
+        return;
+      }
+      lastScanRef.current = { code: barcode, time: now };
+
+      try {
+        const product = await inventoryService.lookupByCode(barcode, true);
+        addToCart(product);
+        toast.success(`Scanned: ${product.name}`);
+      } catch (err: unknown) {
+        const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || `Barcode not found: ${barcode}`;
+        toast.error(message);
+      }
+    }
+  });
+
+  // Checkout Mutation
+  const checkoutMutation = useMutation({
+    mutationFn: (data: SaleRequest) => salesService.createSale(data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.success(`Sale Processed: ${data.invoiceNumber}`);
+      setLastSale(data);
+      setSelectedCustomer(null);
+      setCashTendered(0);
+      clearCart(); // Also clear the cart on success
+      
+      // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
+      const receiptData: ReceiptData = {
+        tenantName: tenantInfo?.name || "StoreX",
+        tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
+        tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
+        tenantPhone: tenantInfo?.phone ?? undefined,
+        branchName: selectedBranch?.name || "Main Branch",
+        showBranch: branches.length > 1,
+        cashierName: `${user?.firstName} ${user?.lastName}`,
+        transactionId: data.invoiceNumber,
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        items: items.map(item => ({
+          name: item.name,
+          quantity: item.cartQuantity,
+          price: item.basePrice,
+          total: item.basePrice * item.cartQuantity
+        })),
+        subtotal: subtotal,
+        tax: taxAmount,
+        taxLabel: taxLabel,
+        discount: 0,
+        total: total,
+        paymentMethod: paymentMethod,
+        tendered: cashTendered > 0 ? cashTendered : total,
+        change: cashTendered > total ? cashTendered - total : 0,
+        receiptFooter: tenantInfo?.receiptFooter ?? undefined,
+      };
+      
+      receiptPrinterService.processHardwareCheckoutActions(receiptData);
+      clearCart();
+    },
+    onError: (error: unknown) => {
+      const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
+        || "Failed to process sale";
+
+      // Insufficient-stock errors get a recovery shortcut for managers/admins so
+      // they can reconcile branch stock without leaving the terminal.
+      const isStockError = /insufficient stock for product:\s*(.+?)(?:\s+in the selected branch)?$/i.exec(message);
+      const roles = user?.roles || [];
+      const canFixStock = roles.includes('ADMIN') || roles.includes('MANAGER');
+
+      if (isStockError && canFixStock) {
+        const productName = isStockError[1].trim();
+        const cartProduct = items.find(i => i.name === productName);
+        if (cartProduct) {
+          toast.error(message, {
+            action: {
+              label: 'Fix stock',
+              onClick: () => setStockFixProduct(cartProduct),
+            },
+          });
+          return;
+        }
+      }
+
+      toast.error(message);
+    }
+  });
+
+  // Handlers
+  const handleCheckout = () => {
+    if (items.length === 0) return;
+    checkoutMutation.mutate({
+      customerId: selectedCustomer?.id,
+      branchId: selectedBranch?.id,
+      paymentMethod,
+      cashTendered: (paymentMethod === 'CASH' || paymentMethod === 'SPLIT') && cashTendered > 0
+        ? cashTendered
+        : undefined,
+      items: items.map(item => ({
+        productId: item.id,
+        quantity: item.cartQuantity,
+        unitPrice: item.basePrice,
+        discountAmount: 0
+      }))
+    });
+  };
+
+  const handleLogout = async () => {
+    await performLogout();
+    router.push('/login');
+  };
+
+  const handleFetchSummary = async () => {
+    try {
+      const data = await salesService.getDailySummary();
+      setSummary(data);
+      setShowSummary(true);
+    } catch {
+      toast.error("Failed to load shift summary");
+    }
+  };
+
+  const handleDiscard = () => {
+    if (items.length > 0 && confirm('Discard current sale?')) {
+      clearCart();
+    }
+  };
+
+  // F4 — cycle through CASH → CARD → ONLINE → SPLIT → CASH.
+  const cyclePaymentMethod = () => {
+    setPaymentMethod((prev) => {
+      const next = prev === 'CASH' ? 'CARD' : prev === 'CARD' ? 'ONLINE' : prev === 'ONLINE' ? 'SPLIT' : 'CASH';
+      setCashTendered(0);
+      return next;
+    });
+  };
+
+  // F12 — re-print the most recent completed sale. Builds the same ReceiptData
+  // payload the success path uses so the printer service path stays one branch.
+  const handlePrintLastReceipt = () => {
+    if (!lastSale) {
+      toast.info('No recent sale to reprint');
+      return;
+    }
+    const receiptData: ReceiptData = {
+      tenantName: tenantInfo?.name || 'StoreX',
+      tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
+      tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
+      tenantPhone: tenantInfo?.phone ?? undefined,
+      branchName: selectedBranch?.name || 'Main Branch',
+      showBranch: branches.length > 1,
+      cashierName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+      transactionId: lastSale.invoiceNumber,
+      createdAt: lastSale.createdAt ? new Date(lastSale.createdAt) : new Date(),
+      items: (lastSale.items ?? []).map((it) => ({
+        name: it.productName,
+        quantity: Number(it.quantity),
+        price: Number(it.unitPrice),
+        total: Number(it.totalAmount),
+      })),
+      subtotal: Number(lastSale.totalAmount),
+      tax: Number(lastSale.taxAmount),
+      taxLabel,
+      discount: Number(lastSale.discountAmount),
+      total: Number(lastSale.netAmount),
+      paymentMethod: lastSale.paymentMethod as 'CASH' | 'CARD' | 'ONLINE',
+      tendered: Number(lastSale.netAmount),
+      change: 0,
+      receiptFooter: tenantInfo?.receiptFooter ?? undefined,
+    };
+    receiptPrinterService.processHardwareCheckoutActions(receiptData);
+  };
+
+  usePosHotkeys({
+    onCyclePaymentMethod: cyclePaymentMethod,
+    onCheckout: handleCheckout,
+    onPrintLastReceipt: handlePrintLastReceipt,
+    // Disable while a blocking modal is in front of the terminal so F4/F9 don't
+    // fire under the user's nose while they're filling Stock Fix or Shift forms.
+    disabled: !!stockFixProduct || showSummary,
+  });
+
+  // Render
+  if (sessionLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!activeSession) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-black">
+        <StartShiftModal
+          open
+          onCancel={() => router.push('/overview')}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen flex">
-      {/* Left Side — Product Grid */}
-      <div className="flex-1 flex flex-col">
-        {/* Header Bar */}
-        <div className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6">
-          <h1 className="text-xl font-bold">
-            Lumora<span className="text-indigo-400"> POS</span>
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400">
-              Terminal #1
+    <>
+      <div className="h-screen flex bg-black overflow-hidden font-sans print:hidden">
+      {/* Left Side — Products */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <POSHeader
+          userName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
+          userRole={user?.roles?.[0] ?? ''}
+          branches={branches}
+          selectedBranch={selectedBranch}
+          onBranchChange={setSelectedBranch}
+          onShiftSummary={handleFetchSummary}
+          onLogout={handleLogout}
+        />
+        <ProductSearch search={search} onSearchChange={setSearch} />
+        <ProductGrid
+          products={filteredProducts}
+          isLoading={isLoading}
+          searchTerm={search}
+          onProductClick={addToCart}
+          selectedBranchId={selectedBranch?.id}
+          cartQuantities={cartQuantities}
+        />
+
+        {/* Hotkey legend — slim bottom strip so cashiers learn the bindings without
+            having to open a help dialog. Mirror order with usePosHotkeys. */}
+        <div className="border-t border-gray-800 bg-gray-950/60 px-4 py-2 flex items-center gap-4 text-[11px] text-gray-500 print:hidden">
+          {HOTKEY_LEGEND.map((h) => (
+            <div key={h.key} className="flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-300 font-mono text-[10px]">
+                {h.key}
+              </kbd>
+              <span>{h.label}</span>
             </div>
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="p-4">
-          <input
-            type="text"
-            placeholder="Search products by name, SKU, or scan barcode..."
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          />
-        </div>
-
-        {/* Product Grid Placeholder */}
-        <div className="flex-1 p-4 pt-0 overflow-auto">
-          <div className="grid grid-cols-4 gap-3">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col items-center justify-center gap-2 hover:border-indigo-500/50 hover:bg-gray-800 transition-all cursor-pointer active:scale-95"
-              >
-                <div className="w-12 h-12 rounded-lg bg-gray-800 animate-pulse" />
-                <div className="h-3 w-20 rounded bg-gray-800 animate-pulse" />
-                <div className="h-3 w-14 rounded bg-gray-700 animate-pulse" />
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
 
-      {/* Right Side — Cart Panel */}
-      <div className="w-96 bg-gray-900 border-l border-gray-800 flex flex-col">
+      {/* Right Side — Cart */}
+      <div className="w-[400px] bg-gray-900/40 backdrop-blur-xl border-l border-gray-800 flex flex-col shadow-2xl">
         {/* Cart Header */}
         <div className="h-16 border-b border-gray-800 flex items-center px-6">
-          <h2 className="font-semibold text-lg">Current Sale</h2>
-          <span className="ml-auto text-sm text-gray-500">0 items</span>
+          <ShoppingCart className="text-primary mr-2" size={20} />
+          <h2 className="font-bold text-lg text-white">Current Sale</h2>
+          <div className="ml-auto bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold">
+            {itemCount} ITEMS
+          </div>
+        </div>
+
+        {/* Customer Selector */}
+        <div className="px-4 py-3 border-b border-gray-800/50">
+          <CustomerSelector selectedCustomer={selectedCustomer} onSelect={setSelectedCustomer} />
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 flex items-center justify-center text-gray-600">
-          <p className="text-sm">No items in cart</p>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+          {items.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-600 italic gap-2">
+              <ShoppingCart size={40} className="opacity-10" />
+              <p className="text-sm">Cart is empty</p>
+            </div>
+          ) : (
+            items.map((item) => (
+              <CartItemCard
+                key={item.id}
+                item={item}
+                onUpdateQuantity={updateQuantity}
+                onRemove={removeFromCart}
+              />
+            ))
+          )}
         </div>
 
-        {/* Cart Footer */}
-        <div className="border-t border-gray-800 p-4 space-y-3">
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Subtotal</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-sm text-gray-400">
-            <span>Tax</span>
-            <span>$0.00</span>
-          </div>
-          <div className="flex justify-between text-lg font-bold">
-            <span>Total</span>
-            <span className="text-indigo-400">$0.00</span>
-          </div>
-          <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-lg shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40 active:scale-[0.98]">
-            Pay Now
-          </button>
-        </div>
+        {/* Checkout */}
+        <CheckoutPanel
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={(m) => { setPaymentMethod(m); setCashTendered(0); }}
+          cashTendered={cashTendered}
+          onCashTenderedChange={setCashTendered}
+          subtotal={subtotal}
+          taxAmount={taxAmount}
+          taxLabel={taxLabel}
+          total={total}
+          itemCount={itemCount}
+          isProcessing={checkoutMutation.isPending}
+          onCheckout={handleCheckout}
+          onHoldSale={() => {}}
+          onDiscard={handleDiscard}
+        />
       </div>
-    </div>
+
+      {/* Shift Summary Modal */}
+      {showSummary && (
+        <ShiftSummary summary={summary} session={activeSession} onClose={() => setShowSummary(false)} />
+      )}
+
+      </div>
+
+      {/* Stock Fix modal — opened from the checkout error toast's action */}
+      {stockFixProduct && (
+        <InventoryAdjustmentModal
+          product={stockFixProduct}
+          isOpen={!!stockFixProduct}
+          onClose={() => {
+            setStockFixProduct(null);
+            queryClient.invalidateQueries({ queryKey: ['products'] });
+          }}
+          defaultBranchId={selectedBranch?.id}
+          defaultType="RECONCILIATION"
+        />
+      )}
+
+      {/* Hidden Receipt for Printing */}
+      {lastSale && (
+        <div className="hidden print:block print:absolute print:left-0 print:top-0 print:w-full print:bg-white print:text-black z-[9999]">
+          <Receipt
+            sale={lastSale}
+            tenant={{
+              name: tenantInfo?.name || 'StoreX',
+              addressLine1: tenantInfo?.addressLine1 ?? undefined,
+              addressLine2: tenantInfo?.addressLine2 ?? undefined,
+              phone: tenantInfo?.phone ?? undefined,
+            }}
+            branch={selectedBranch}
+            showBranch={branches.length > 1}
+            taxLabel={taxLabel}
+          />
+        </div>
+      )}
+    </>
   );
 }

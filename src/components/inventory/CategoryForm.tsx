@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
+import { taxService } from "@/services/taxService";
+import { QK } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import { Category } from "@/types/inventory";
 
@@ -18,6 +20,7 @@ const categorySchema = z.object({
   slug: z.string().optional(),
   description: z.string().optional(),
   parentId: z.string().uuid().optional().nullable(),
+  taxRateId: z.string().uuid().optional().nullable(),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -37,30 +40,45 @@ export default function CategoryForm({
 }: CategoryFormProps) {
   const queryClient = useQueryClient();
 
+  // Fetch active tax rates for the dropdown
+  const { data: taxRates = [] } = useQuery({
+    queryKey: QK.taxRatesActive,
+    queryFn: taxService.getActiveTaxRates,
+  });
+
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: initialData?.name || "",
       slug: initialData?.slug || "",
       description: initialData?.description || "",
-      parentId: (initialData?.parentId as any) || null,
+      parentId: initialData?.parentId ?? null,
+      taxRateId: initialData?.taxRateId ?? null,
     },
   });
 
   const mutation = useMutation({
     mutationFn: (data: CategoryFormValues) => {
       if (initialData) {
-        return inventoryService.updateCategory(initialData.id, data as any);
+        return inventoryService.updateCategory(initialData.id, {
+          ...data,
+          parentId: data.parentId ?? undefined,
+          taxRateId: data.taxRateId ?? undefined,
+        });
       }
-      return inventoryService.createCategory(data as any);
+      return inventoryService.createCategory({
+        ...data,
+        parentId: data.parentId ?? undefined,
+        taxRateId: data.taxRateId ?? undefined,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: QK.categories });
       toast.success(initialData ? "Category updated" : "Category created");
       onSuccess();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to save category");
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save category");
     }
   });
 
@@ -113,33 +131,60 @@ export default function CategoryForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="parentId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Parent Category</FormLabel>
-              <FormControl>
-                <select 
-                  className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value || null)}
-                >
-                  <option value="">None (Top Level)</option>
-                  {categories
-                    .filter(c => c.id !== initialData?.id)
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="parentId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Parent Category</FormLabel>
+                <FormControl>
+                  <select 
+                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value || null)}
+                  >
+                    <option value="">None (Top Level)</option>
+                    {categories
+                      .filter(c => c.id !== initialData?.id)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="taxRateId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tax Rate</FormLabel>
+                <FormControl>
+                  <select 
+                    className="w-full h-10 px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    value={field.value || ""}
+                    onChange={(e) => field.onChange(e.target.value || null)}
+                  >
+                    <option value="">None (Use Default)</option>
+                    {taxRates.map((rate) => (
+                      <option key={rate.id} value={rate.id}>
+                        {rate.name} ({rate.ratePercent}%)
                       </option>
-                    ))
-                  }
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                    ))}
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="ghost" onClick={onCancel}>
