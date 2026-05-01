@@ -44,7 +44,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
       const response = await inventoryService.importProducts(file);
       // Backend returns the count of successfully imported products in the `data` wrapper
       const count = response.data;
-      setResult({ successCount: count, failureCount: 0 });
+      setResult({ successCount: count, failureCount: 0, errors: [] });
       toast.success(`Successfully imported ${count} products`);
       onSuccess();
       setTimeout(onClose, 2000);

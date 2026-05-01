@@ -171,7 +171,7 @@ export default function CustomerProfilePage() {
               {salesData && salesData.totalPages > 1 && (
                 <div className="p-4 border-t border-gray-800 flex items-center justify-between">
                   <p className="text-xs text-gray-500 font-medium">
-                    Showing {(salesData.number * salesData.size) + 1} to Math.min((salesData.number + 1) * salesData.size, salesData.totalElements) of {salesData.totalElements} sales
+                    Showing {(salesPage * 10) + 1} to {Math.min((salesPage + 1) * 10, salesData.totalElements)} of {salesData.totalElements} sales
                   </p>
                   <div className="flex gap-2">
                     <Button 

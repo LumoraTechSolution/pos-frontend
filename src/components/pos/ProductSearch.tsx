@@ -2,6 +2,7 @@
 
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { POS_SEARCH_INPUT_ID } from '@/hooks/usePosHotkeys';
 
 interface ProductSearchProps {
   search: string;
@@ -17,8 +18,9 @@ export function ProductSearch({ search, onSearchChange }: ProductSearchProps) {
           size={20}
         />
         <Input
+          id={POS_SEARCH_INPUT_ID}
           type="text"
-          placeholder="Search by product name, SKU, or scan barcode..."
+          placeholder="Search by product name, SKU, or scan barcode... (F2)"
           className="w-full pl-12 pr-4 py-6 bg-gray-900/50 border-gray-800 focus:border-primary/50 focus:ring-primary/20 text-lg rounded-2xl"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}

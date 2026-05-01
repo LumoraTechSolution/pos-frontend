@@ -9,6 +9,7 @@ import BranchTable from "@/components/branches/BranchTable";
 import BranchFormModal from "@/components/branches/BranchForm";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
+import { QK } from "@/lib/queryKeys";
 
 export default function BranchesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,7 +19,7 @@ export default function BranchesPage() {
 
   // Fetch branches
   const { data: branches, isLoading } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: () => branchService.getAllBranches(),
   });
 
@@ -26,7 +27,7 @@ export default function BranchesPage() {
   const createMutation = useMutation({
     mutationFn: (data: BranchRequest) => branchService.createBranch(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      queryClient.invalidateQueries({ queryKey: QK.branches });
       toast.success("Branch created successfully");
       closeModal();
     },
@@ -39,7 +40,7 @@ export default function BranchesPage() {
     mutationFn: (data: { id: string; request: BranchRequest }) => 
       branchService.updateBranch(data.id, data.request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      queryClient.invalidateQueries({ queryKey: QK.branches });
       toast.success("Branch updated successfully");
       closeModal();
     },

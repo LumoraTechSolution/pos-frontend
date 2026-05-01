@@ -13,6 +13,7 @@ export interface ProductFilters {
   brandId?: string;
   isActive?: boolean;
   sort?: string;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export const inventoryService = {

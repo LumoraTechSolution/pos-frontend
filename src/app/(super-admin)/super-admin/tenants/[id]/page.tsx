@@ -40,7 +40,8 @@ export default function TenantDetailPage() {
       setTenant(data);
     } catch (err: unknown) {
       console.error('Failed to fetch tenant:', err);
-      setError(err?.response?.data?.message || 'Failed to load tenant details.');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      setError(apiErr?.response?.data?.message || 'Failed to load tenant details.');
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,8 @@ export default function TenantDetailPage() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err: unknown) {
-      alert(err?.response?.data?.message || 'Failed to save configuration.');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      alert(apiErr?.response?.data?.message || 'Failed to save configuration.');
     } finally {
       setSaving(false);
     }

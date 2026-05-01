@@ -48,6 +48,8 @@ export default function CategoriesPage() {
       } else if (sortKey === 'createdAt') {
         valA = new Date(a.createdAt).getTime();
         valB = new Date(b.createdAt).getTime();
+      } else {
+        return 0;
       }
       if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return sortDirection === 'asc' ? 1 : -1;

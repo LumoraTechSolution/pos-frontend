@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { intervalToDuration } from "date-fns";
 import { EndShiftModal } from "@/components/pos/EndShiftModal";
+import { QK } from "@/lib/queryKeys";
 
 interface TimeClockWidgetProps {
   variant?: 'sidebar' | 'header';
@@ -36,7 +37,7 @@ export function TimeClockWidget({ variant = 'sidebar', shiftMode = 'simple' }: T
   // In cash-drawer mode, mirror the active cash session so the widget reflects
   // reality if the session was opened from the page-level gate.
   const { data: activeSession } = useQuery({
-    queryKey: ["cash-session-active"],
+    queryKey: QK.cashSessionActive,
     queryFn: () => cashSessionService.getActive(),
     enabled: shiftMode === 'cash-drawer',
     refetchInterval: 60000,

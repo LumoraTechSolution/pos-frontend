@@ -29,6 +29,7 @@ export interface ReceiptData {
   paymentMethod: string;
   tendered: number;
   change: number;
+  receiptFooter?: string;
 }
 
 const ITEM_NAME_MAX = 18;
@@ -63,6 +64,7 @@ export const receiptPrinterService = {
     const created = data.createdAt ?? new Date();
     const firstName = data.cashierName?.split(' ')[0] ?? 'Staff';
     const isCash = data.paymentMethod?.toUpperCase() === 'CASH';
+    const isSplit = data.paymentMethod?.toUpperCase() === 'SPLIT';
 
     const itemRows = data.items.map(item => `
       <tr>
@@ -161,6 +163,9 @@ export const receiptPrinterService = {
           ${isCash ? `
             <div class="row"><span>Cash:</span><span>${money(data.tendered)}</span></div>
             <div class="row"><span>Change:</span><span>${money(data.change)}</span></div>
+          ` : isSplit ? `
+            <div class="row"><span>Cash:</span><span>${money(data.tendered)}</span></div>
+            <div class="row"><span>Card:</span><span>${money(Math.max(0, data.total - data.tendered))}</span></div>
           ` : `
             <div class="row"><span>Paid:</span><span>${escape(data.paymentMethod)}</span></div>
           `}
@@ -170,7 +175,10 @@ export const receiptPrinterService = {
           <!-- Footer -->
           <div class="footer center">
             <div class="bold">Thank You For Shopping!</div>
-            <div>Return within 7 days with receipt.</div>
+            ${data.receiptFooter
+              ? `<div>${escape(data.receiptFooter)}</div>`
+              : '<div>Return within 7 days with receipt.</div>'
+            }
             <div class="small" style="margin-top:6px;">Powered by Lumora Tech</div>
           </div>
 
@@ -198,11 +206,6 @@ export const receiptPrinterService = {
       hardwareService.kickCashDrawer();
     }
 
-    if (config.printerMode === 'browser_print') {
-      this.printBrowserReceipt(data);
-    } else {
-      console.warn(`Printer mode ${config.printerMode} is currently falling back to browser print in development.`);
-      this.printBrowserReceipt(data);
-    }
+    this.printBrowserReceipt(data);
   },
 };

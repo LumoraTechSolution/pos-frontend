@@ -12,6 +12,9 @@ export interface SaleRequest {
   customerId?: string;
   branchId?: string;
   paymentMethod: 'CASH' | 'CARD' | 'ONLINE' | 'SPLIT' | 'CREDIT';
+  /** Cash amount tendered. Required for SPLIT; backend auto-fills netAmount for
+   *  pure CASH sales when omitted; ignored for CARD/ONLINE. */
+  cashTendered?: number;
   items: SaleItemRequest[];
 }
 

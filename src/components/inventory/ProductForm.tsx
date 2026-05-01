@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { branchService } from "@/services/branchService";
+import { supplierService, Supplier } from "@/services/supplierService";
 import { toast } from "sonner";
 import { Product, ProductRequest, Category, Brand } from "@/types/inventory";
 import { Branch } from "@/services/branchService";
 import { useRouter, useSearchParams } from "next/navigation";
+import { QK } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Sparkles, PencilLine } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +35,7 @@ const productSchema = z.object({
   lowStockThreshold: z.coerce.number().int().min(0),
   categoryId: z.string().uuid().optional().nullable(),
   brandId: z.string().uuid().optional().nullable(),
+  primarySupplierId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().default(true),
   imageUrl: z.string().url().or(z.literal("")).optional(),
   branchStockLevels: z.record(z.string().uuid(), z.coerce.number().int().min(0)).optional(),
@@ -59,13 +62,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     queryFn: inventoryService.getBrands
   });
 
+  const { data: suppliersPage } = useQuery({
+    queryKey: ['suppliers-all'],
+    queryFn: () => supplierService.getSuppliers(0, 500),
+  });
+  const suppliers = suppliersPage?.content?.filter((s: Supplier) => s.isActive) ?? [];
+
   const { data: branches } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: branchService.getAllBranches
   });
 
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    resolver: zodResolver(productSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       name: initialData?.name || "",
       sku: initialData?.sku || "",
@@ -77,6 +86,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       lowStockThreshold: initialData?.lowStockThreshold || 5,
       categoryId: initialData?.categoryId || null,
       brandId: initialData?.brandId || null,
+      primarySupplierId: initialData?.primarySupplierId || null,
       isActive: initialData?.isActive ?? true,
       imageUrl: initialData?.imageUrl || "",
       branchStockLevels: {},
@@ -100,6 +110,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         lowStockThreshold: initialData.lowStockThreshold || 5,
         categoryId: initialData.categoryId || null,
         brandId: initialData.brandId || null,
+        primarySupplierId: initialData.primarySupplierId || null,
         isActive: initialData.isActive ?? true,
         imageUrl: initialData.imageUrl || "",
         branchStockLevels: {},
@@ -126,6 +137,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         ...data,
         categoryId: data.categoryId || undefined,
         brandId: data.brandId || undefined,
+        primarySupplierId: data.primarySupplierId || undefined,
         costPrice: data.costPrice || undefined,
         sku: data.sku || undefined,
         barcode: data.barcode || undefined,
@@ -140,8 +152,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       }
       return inventoryService.createProduct(payload);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+    onSuccess: async (updated) => {
+      if (initialData) {
+        queryClient.setQueryData(['product', initialData.id], updated);
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ['products'],
+        refetchType: 'all',
+      });
       toast.success(initialData ? "Product updated" : "Product created");
       router.push("/inventory/products");
     },
@@ -394,7 +412,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Brand</FormLabel>
                       <FormControl>
-                        <select 
+                        <select
                           className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
                           value={field.value || ""}
                           onChange={(e) => field.onChange(e.target.value || null)}
@@ -402,6 +420,28 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           <option value="">Select Brand</option>
                           {brands?.map((b: Brand) => (
                             <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="primarySupplierId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Supplier</FormLabel>
+                      <FormControl>
+                        <select
+                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(e.target.value || null)}
+                        >
+                          <option value="">No preferred supplier</option>
+                          {suppliers.map((s: Supplier) => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </select>
                       </FormControl>

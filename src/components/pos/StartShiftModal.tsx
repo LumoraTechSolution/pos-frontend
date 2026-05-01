@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Wallet, Loader2 } from "lucide-react";
+import { QK } from "@/lib/queryKeys";
 
 interface StartShiftModalProps {
   open: boolean;
@@ -27,7 +28,7 @@ export function StartShiftModal({ open, onCancel, onStarted }: StartShiftModalPr
     mutationFn: () => cashSessionService.start(Number(openingBalance), notes || undefined),
     onSuccess: (session) => {
       toast.success("Shift started. Good luck out there.");
-      queryClient.invalidateQueries({ queryKey: ["cash-session-active"] });
+      queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
       queryClient.invalidateQueries({ queryKey: ["time-clock-status"] });
       onStarted?.(session);
     },

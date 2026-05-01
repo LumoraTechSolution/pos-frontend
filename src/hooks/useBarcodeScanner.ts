@@ -35,6 +35,11 @@ export function useBarcodeScanner({
       const target = e.target as HTMLElement;
       const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
       
+      // Some events (browser autofill, IME composition, dead keys) fire keydown
+      // with no `key` property. Bail early before any .length / equality checks
+      // touch undefined.
+      if (typeof e.key !== 'string') return;
+
       const currentTime = new Date().getTime();
 
       if (e.key === 'Enter') {

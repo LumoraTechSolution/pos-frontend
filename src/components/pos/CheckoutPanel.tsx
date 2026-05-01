@@ -1,14 +1,16 @@
 'use client';
 
-import { ShoppingCart, CreditCard, Banknote, QrCode, Loader2 } from 'lucide-react';
+import { ShoppingCart, CreditCard, Banknote, QrCode, SplitSquareHorizontal, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CURRENCY } from '@/lib/utils';
 
-type PaymentMethod = 'CASH' | 'CARD' | 'ONLINE';
+export type PaymentMethod = 'CASH' | 'CARD' | 'ONLINE' | 'SPLIT';
 
 interface CheckoutPanelProps {
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (method: PaymentMethod) => void;
+  cashTendered: number;
+  onCashTenderedChange: (amount: number) => void;
   subtotal: number;
   taxAmount: number;
   taxLabel?: string;
@@ -21,14 +23,17 @@ interface CheckoutPanelProps {
 }
 
 const PAYMENT_OPTIONS: { method: PaymentMethod; icon: typeof Banknote; label: string }[] = [
-  { method: 'CASH', icon: Banknote, label: 'Cash' },
-  { method: 'CARD', icon: CreditCard, label: 'Card' },
-  { method: 'ONLINE', icon: QrCode, label: 'Online' },
+  { method: 'CASH',   icon: Banknote,              label: 'Cash' },
+  { method: 'CARD',   icon: CreditCard,            label: 'Card' },
+  { method: 'ONLINE', icon: QrCode,                label: 'Online' },
+  { method: 'SPLIT',  icon: SplitSquareHorizontal, label: 'Split' },
 ];
 
 export function CheckoutPanel({
   paymentMethod,
   onPaymentMethodChange,
+  cashTendered,
+  onCashTenderedChange,
   subtotal,
   taxAmount,
   taxLabel = 'Tax',
@@ -39,10 +44,12 @@ export function CheckoutPanel({
   onHoldSale,
   onDiscard,
 }: CheckoutPanelProps) {
+  const cashChange = paymentMethod === 'CASH' && cashTendered > total ? cashTendered - total : 0;
+
   return (
     <div className="bg-gray-900/60 border-t border-gray-800 p-6 space-y-5">
       {/* Payment Method Selector */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {PAYMENT_OPTIONS.map(({ method, icon: Icon, label }) => (
           <button
             key={method}
@@ -58,6 +65,37 @@ export function CheckoutPanel({
           </button>
         ))}
       </div>
+
+      {/* Cash tendered input — shown for CASH (optional) and SPLIT (required) */}
+      {(paymentMethod === 'CASH' || paymentMethod === 'SPLIT') && (
+        <div className="space-y-1">
+          <label className="text-xs text-gray-500 font-medium">
+            {paymentMethod === 'SPLIT' ? 'Cash portion' : 'Cash tendered (optional)'}
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-400 text-sm">{CURRENCY.symbol}</span>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={cashTendered || ''}
+              onChange={(e) => onCashTenderedChange(parseFloat(e.target.value) || 0)}
+              placeholder={paymentMethod === 'SPLIT' ? 'Enter cash amount' : total.toFixed(2)}
+              className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-3 py-1.5 text-sm text-white outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+          {paymentMethod === 'SPLIT' && cashTendered > 0 && (
+            <p className="text-xs text-gray-500">
+              Card / other: {CURRENCY.symbol} {Math.max(0, total - cashTendered).toFixed(2)}
+            </p>
+          )}
+          {paymentMethod === 'CASH' && cashChange > 0 && (
+            <p className="text-xs text-emerald-400 font-medium">
+              Change due: {CURRENCY.symbol} {cashChange.toFixed(2)}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Totals */}
       <div className="space-y-2">

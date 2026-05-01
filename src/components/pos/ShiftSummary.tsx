@@ -2,18 +2,24 @@
 
 import React from 'react';
 import { SalesSummaryResponse } from '@/services/salesService';
+import { CashSession } from '@/services/cashSessionService';
 import { Card, CardContent } from '@/components/ui/card';
-import { Banknote, CreditCard, QrCode, ShoppingBag, X } from 'lucide-react';
+import { Banknote, CreditCard, QrCode, ShoppingBag, Wallet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CURRENCY } from '@/lib/utils';
 
 interface ShiftSummaryProps {
   summary: SalesSummaryResponse | null;
+  session?: CashSession | null;
   onClose: () => void;
 }
 
-export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) => {
+export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, session, onClose }) => {
   if (!summary) return null;
+
+  const drawerExpected = session
+    ? (session.openingBalance ?? 0) + (session.cashSalesTotal ?? 0) - (session.cashRefundsTotal ?? 0)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -81,6 +87,34 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, onClose }) 
               <span className="text-red-500/70">-{CURRENCY.symbol} {summary.totalDiscounts.toFixed(2)}</span>
             </div>
           </div>
+
+          {session && drawerExpected !== null && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                <Wallet size={13} /> Drawer
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Opening Float</span>
+                  <span className="text-gray-300">{CURRENCY.symbol} {(session.openingBalance ?? 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Cash Sales</span>
+                  <span className="text-emerald-400">+{CURRENCY.symbol} {(session.cashSalesTotal ?? 0).toFixed(2)}</span>
+                </div>
+                {(session.cashRefundsTotal ?? 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Cash Refunds</span>
+                    <span className="text-red-400">-{CURRENCY.symbol} {(session.cashRefundsTotal ?? 0).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-semibold border-t border-gray-800 pt-2">
+                  <span className="text-gray-300">Expected in Drawer</span>
+                  <span className="text-primary">{CURRENCY.symbol} {drawerExpected.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Button onClick={onClose} className="w-full h-12 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold">
             Close Summary

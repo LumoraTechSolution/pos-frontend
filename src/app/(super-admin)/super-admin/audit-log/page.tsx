@@ -47,7 +47,8 @@ export default function AuditLogPage() {
       setPageData(data);
     } catch (err: unknown) {
       console.error('Failed to fetch audit logs:', err);
-      setError(err?.response?.data?.message || 'Failed to load audit logs.');
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      setError(apiErr?.response?.data?.message || 'Failed to load audit logs.');
     } finally {
       setLoading(false);
     }

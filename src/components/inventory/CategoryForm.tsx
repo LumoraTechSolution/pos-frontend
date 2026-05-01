@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { taxService } from "@/services/taxService";
+import { QK } from "@/lib/queryKeys";
 import { toast } from "sonner";
 import { Category } from "@/types/inventory";
 
@@ -41,7 +42,7 @@ export default function CategoryForm({
 
   // Fetch active tax rates for the dropdown
   const { data: taxRates = [] } = useQuery({
-    queryKey: ['tax-rates-active'],
+    queryKey: QK.taxRatesActive,
     queryFn: taxService.getActiveTaxRates,
   });
 
@@ -72,7 +73,7 @@ export default function CategoryForm({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: QK.categories });
       toast.success(initialData ? "Category updated" : "Category created");
       onSuccess();
     },

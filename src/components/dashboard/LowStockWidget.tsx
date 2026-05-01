@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, MapPin } from 'lucide-react';
 import { inventoryService } from '@/services/inventoryService';
 import { branchService } from '@/services/branchService';
+import { QK } from '@/lib/queryKeys';
 
 export function LowStockWidget() {
   const [branchId, setBranchId] = useState<string>('');
   
   const { data: branchesData } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: () => branchService.getAllBranches()
   });
 

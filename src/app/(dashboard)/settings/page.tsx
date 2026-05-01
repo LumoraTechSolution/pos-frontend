@@ -7,7 +7,11 @@ import { tenantService, TenantInfoUpdateRequest } from "@/services/tenantService
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Receipt } from "@/components/pos/Receipt";
+import { HardwareSettings } from "@/components/settings/HardwareSettings";
+import type { SaleResponse } from "@/services/salesService";
 import {
   Table,
   TableBody,
@@ -38,10 +42,13 @@ import {
   AlertTriangle,
   Lock,
   Building2,
+  Receipt as ReceiptIcon,
+  Cpu,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
+import { QK } from "@/lib/queryKeys";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
@@ -63,9 +70,10 @@ export default function SettingsPage() {
   const [bizAddress1, setBizAddress1] = useState("");
   const [bizAddress2, setBizAddress2] = useState("");
   const [bizPhone, setBizPhone] = useState("");
+  const [bizReceiptFooter, setBizReceiptFooter] = useState("");
 
   const { data: tenantInfo, isLoading: tenantLoading } = useQuery({
-    queryKey: ["tenant-info"],
+    queryKey: QK.tenantInfo,
     queryFn: () => tenantService.getInfo(),
   });
 
@@ -75,13 +83,14 @@ export default function SettingsPage() {
       setBizAddress1(tenantInfo.addressLine1 ?? "");
       setBizAddress2(tenantInfo.addressLine2 ?? "");
       setBizPhone(tenantInfo.phone ?? "");
+      setBizReceiptFooter(tenantInfo.receiptFooter ?? "");
     }
   }, [tenantInfo]);
 
   const updateTenantMutation = useMutation({
     mutationFn: (data: TenantInfoUpdateRequest) => tenantService.updateInfo(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tenant-info"] });
+      queryClient.invalidateQueries({ queryKey: QK.tenantInfo });
       toast.success("Business info saved");
     },
     onError: (error: unknown) => {
@@ -99,6 +108,7 @@ export default function SettingsPage() {
       addressLine1: bizAddress1.trim() || null,
       addressLine2: bizAddress2.trim() || null,
       phone: bizPhone.trim() || null,
+      receiptFooter: bizReceiptFooter.trim() || null,
     });
   };
 
@@ -107,7 +117,8 @@ export default function SettingsPage() {
     (bizName.trim() !== (tenantInfo.name ?? "") ||
       bizAddress1.trim() !== (tenantInfo.addressLine1 ?? "") ||
       bizAddress2.trim() !== (tenantInfo.addressLine2 ?? "") ||
-      bizPhone.trim() !== (tenantInfo.phone ?? ""));
+      bizPhone.trim() !== (tenantInfo.phone ?? "") ||
+      bizReceiptFooter.trim() !== (tenantInfo.receiptFooter ?? ""));
 
   const { data: taxRates, isLoading } = useQuery({
     queryKey: ["tax-rates"],
@@ -220,8 +231,26 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Business Info Section */}
-      <div className="space-y-4">
+      {/* Tab layout — sections stay scoped per tab so the page stays scannable
+          even as more settings (receipt, hardware, advanced) get added. */}
+      <Tabs defaultValue="business" orientation="vertical" className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 items-start">
+        <TabsList className="flex lg:flex-col h-auto bg-gray-900/50 border border-gray-800 p-1 gap-1 w-full overflow-x-auto">
+          <TabsTrigger value="business" className="lg:w-full lg:justify-start gap-2">
+            <Building2 size={14} /> Business
+          </TabsTrigger>
+          <TabsTrigger value="tax" className="lg:w-full lg:justify-start gap-2">
+            <Percent size={14} /> Tax
+          </TabsTrigger>
+          <TabsTrigger value="receipt" className="lg:w-full lg:justify-start gap-2">
+            <ReceiptIcon size={14} /> Receipt
+          </TabsTrigger>
+          <TabsTrigger value="hardware" className="lg:w-full lg:justify-start gap-2">
+            <Cpu size={14} /> Hardware
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="space-y-6 min-w-0">
+        <TabsContent value="business" className="space-y-4 mt-0">
         <div className="flex items-center gap-2">
           <Building2 className="text-primary" size={20} />
           <h2 className="text-xl font-semibold text-white">Business Info</h2>
@@ -308,6 +337,29 @@ export default function SettingsPage() {
                 </div>
 
                 {isAdmin && (
+                  <>
+                    <div className="border-t border-gray-800 pt-4">
+                      <p className="text-sm font-semibold text-gray-300 mb-3">Branding</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">Receipt Footer</label>
+                      <textarea
+                        value={bizReceiptFooter}
+                        onChange={(e) => setBizReceiptFooter(e.target.value)}
+                        placeholder="Return within 7 days with receipt."
+                        className="w-full rounded-md bg-gray-900 border border-gray-800 text-sm text-white px-3 py-2 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                        rows={3}
+                        maxLength={500}
+                      />
+                      <p className="text-[11px] text-gray-500">
+                        Printed at the bottom of every receipt. Leave blank to use the default message.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {isAdmin && (
                   <div className="flex justify-end pt-2">
                     <Button
                       type="submit"
@@ -325,8 +377,9 @@ export default function SettingsPage() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </TabsContent>
 
+        <TabsContent value="tax" className="space-y-4 mt-0">
       {/* Tax Configuration Section */}
       <FeatureGuard
         feature="TAX_CONFIG"
@@ -587,6 +640,45 @@ export default function SettingsPage() {
           </Card>
         </div>
       </FeatureGuard>
+        </TabsContent>
+
+        <TabsContent value="receipt" className="space-y-4 mt-0">
+          <div className="flex items-center gap-2">
+            <ReceiptIcon className="text-primary" size={20} />
+            <h2 className="text-xl font-semibold text-white">Receipt</h2>
+          </div>
+          <Card className="bg-gray-950 border-gray-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold text-gray-300">Live preview</CardTitle>
+              <CardDescription>
+                Preview of a receipt printed with your current Business Info. Edits in the Business
+                tab show up here immediately — save them to apply to real sales.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReceiptPreview
+                businessName={bizName || tenantInfo?.name || "Your Store"}
+                addressLine1={bizAddress1 || tenantInfo?.addressLine1 || undefined}
+                addressLine2={bizAddress2 || tenantInfo?.addressLine2 || undefined}
+                phone={bizPhone || tenantInfo?.phone || undefined}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="hardware" className="space-y-4 mt-0">
+          <div className="flex items-center gap-2">
+            <Cpu className="text-primary" size={20} />
+            <h2 className="text-xl font-semibold text-white">Hardware</h2>
+          </div>
+          <p className="text-sm text-gray-400">
+            Connect and configure physical store peripherals such as barcode scanners,
+            thermal printers, and cash drawers.
+          </p>
+          <HardwareSettings />
+        </TabsContent>
+        </div>
+      </Tabs>
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={closeModal}>
@@ -760,6 +852,59 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * Renders the actual <Receipt> component with a stable demo sale so business-info
+ * edits are previewable before they're saved. Wrapped with a slight scale and a
+ * paper-like backdrop so it feels like a real printed receipt at-a-glance.
+ */
+interface ReceiptPreviewProps {
+  businessName: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  phone?: string;
+}
+
+function ReceiptPreview({ businessName, addressLine1, addressLine2, phone }: ReceiptPreviewProps) {
+  // Demo sale — three line items, mixed payment, fixed timestamp so the preview
+  // is stable across renders (don't re-roll on every keystroke).
+  const demoSale: SaleResponse = {
+    id: "preview",
+    invoiceNumber: "INV-PREVIEW",
+    totalAmount: 1450,
+    taxAmount: 145,
+    discountAmount: 0,
+    netAmount: 1595,
+    paymentStatus: "PAID",
+    paymentMethod: "CASH",
+    createdAt: "2026-04-25T14:30:00",
+    cashierName: "Demo Cashier",
+    items: [
+      { id: "1", productId: "p1", productName: "Coca-Cola 1L", quantity: 2, unitPrice: 250, totalAmount: 500 },
+      { id: "2", productId: "p2", productName: "Snickers Bar", quantity: 3, unitPrice: 150, totalAmount: 450 },
+      { id: "3", productId: "p3", productName: "Lay's Chips", quantity: 2, unitPrice: 250, totalAmount: 500 },
+    ],
+  };
+
+  return (
+    <div className="flex justify-center bg-gray-900/60 border border-gray-800 rounded-lg p-6">
+      <div className="shadow-2xl">
+        <Receipt
+          sale={demoSale}
+          tenant={{
+            name: businessName,
+            addressLine1,
+            addressLine2,
+            phone,
+          }}
+          tendered={1600}
+          change={5}
+          taxLabel="Tax (10%)"
+        />
+      </div>
     </div>
   );
 }

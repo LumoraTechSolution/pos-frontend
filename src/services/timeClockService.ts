@@ -44,9 +44,14 @@ export const timeClockService = {
     return response.data.data;
   },
 
-  getAllHistory: async (page = 0, size = 10) => {
+  getAllHistory: async (page = 0, size = 10, filters?: {
+    from?: string;
+    to?: string;
+    status?: string;
+    search?: string;
+  }) => {
     const response = await api.get<{ data: PagedTimeRecords }>(`/time-clock/all-history`, {
-      params: { page, size }
+      params: { page, size, ...filters }
     });
     return response.data.data;
   }

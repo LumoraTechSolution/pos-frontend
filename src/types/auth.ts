@@ -9,6 +9,9 @@ export interface User {
   permissions: string[];
   featuresEnabled: string[];
   planTier: string;
+  maxLocations: number;
+  maxUsers: number;
+  maxProducts: number;
 }
 
 export interface AuthResponse {

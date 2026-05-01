@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { branchService } from "@/services/branchService";
 import { inventoryService } from "@/services/inventoryService";
 import { stockTransferService, StockTransferRequest } from "@/services/stockTransferService";
+import { QK } from "@/lib/queryKeys";
 
 interface StockTransferModalProps {
   onClose: () => void;
@@ -22,7 +23,7 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
   });
 
   const { data: branchesData } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: () => branchService.getAllBranches()
   });
 

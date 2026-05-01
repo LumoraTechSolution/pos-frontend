@@ -9,6 +9,7 @@ import {
   ProfitabilityReport,
   SoldItemsBySupplierReport,
   StockVarianceReport,
+  CashReconciliationRecord,
 } from "@/types/report";
 
 /**
@@ -66,6 +67,13 @@ export const reportService = {
     api
       .get<ApiResponse<StockVarianceReport>>("/reports/stock-variance", {
         params: { start, end },
+      })
+      .then((res) => res.data.data),
+
+  getCashReconciliation: (start: string, end: string, page = 0, size = 20) =>
+    api
+      .get<ApiResponse<Page<CashReconciliationRecord>>>("/reports/cash-reconciliation", {
+        params: { start, end, page, size },
       })
       .then((res) => res.data.data),
 };

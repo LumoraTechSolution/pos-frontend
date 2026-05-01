@@ -6,6 +6,8 @@ export interface TenantInfo {
   addressLine1?: string | null;
   addressLine2?: string | null;
   phone?: string | null;
+  logoUrl?: string | null;
+  receiptFooter?: string | null;
 }
 
 export interface TenantInfoUpdateRequest {
@@ -13,6 +15,8 @@ export interface TenantInfoUpdateRequest {
   addressLine1?: string | null;
   addressLine2?: string | null;
   phone?: string | null;
+  logoUrl?: string | null;
+  receiptFooter?: string | null;
 }
 
 export const tenantService = {

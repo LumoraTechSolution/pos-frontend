@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { inventoryService } from "@/services/inventoryService";
 import { toast } from "sonner";
 import { Brand } from "@/types/inventory";
+import { QK } from "@/lib/queryKeys";
 
 const brandSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -51,7 +52,7 @@ export default function BrandForm({
       return inventoryService.createBrand(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['brands'] });
+      queryClient.invalidateQueries({ queryKey: QK.brands });
       toast.success(initialData ? "Brand updated" : "Brand created");
       onSuccess();
     },

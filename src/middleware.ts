@@ -30,7 +30,7 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob: ${apiUrl}`,
     "font-src 'self'",
     `connect-src 'self' ${apiUrl}`,
     "frame-ancestors 'none'",

@@ -27,7 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
 import { useAuthStore } from "@/stores/authStore";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -322,7 +322,7 @@ export default function EmployeesPage() {
         <div className="flex gap-3">
           {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
             <FeatureGuard feature="TIME_CLOCK">
-              <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 text-gray-300 gap-2 h-10 shadow-sm">
+              <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 hover:text-white text-gray-300 gap-2 h-10 shadow-sm">
                 <Clock size={16} className="text-primary" /> View Timesheets
               </Button>
             </FeatureGuard>

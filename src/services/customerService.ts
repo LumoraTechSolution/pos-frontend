@@ -1,5 +1,5 @@
 import api from './api';
-import { ApiResponse, PageResponse } from '@/types/api';
+import { ApiResponse, Page as PageResponse } from '@/types/common';
 
 export interface Customer {
   id: string;

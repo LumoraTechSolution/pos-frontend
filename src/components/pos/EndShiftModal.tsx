@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Wallet, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QK } from "@/lib/queryKeys";
 
 interface EndShiftModalProps {
   open: boolean;
@@ -27,14 +28,14 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
   const [notes, setNotes] = useState("");
 
   const { data: active, isLoading } = useQuery({
-    queryKey: ["cash-session-active"],
+    queryKey: QK.cashSessionActive,
     queryFn: () => cashSessionService.getActive(),
     enabled: open,
   });
 
   const expected = useMemo(() => {
     if (!active) return 0;
-    return (active.openingBalance ?? 0) + (active.cashSalesTotal ?? 0);
+    return (active.openingBalance ?? 0) + (active.cashSalesTotal ?? 0) - (active.cashRefundsTotal ?? 0);
   }, [active]);
 
   const varianceLive = useMemo(() => {
@@ -54,7 +55,7 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
       } else {
         toast.warning(`Shift closed. Drawer short by ${formatCurrency(Math.abs(variance))}.`);
       }
-      queryClient.invalidateQueries({ queryKey: ["cash-session-active"] });
+      queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
       queryClient.invalidateQueries({ queryKey: ["time-clock-status"] });
       onEnded?.(session);
       onClose();
@@ -109,7 +110,7 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">Cash sales</p>
                 <p className="text-base font-mono font-semibold text-emerald-400">
-                  {formatCurrency(active.cashSalesTotal)}
+                  +{formatCurrency(active.cashSalesTotal)}
                 </p>
               </div>
               <div>
@@ -119,6 +120,14 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
                 </p>
               </div>
             </div>
+            {(active.cashRefundsTotal ?? 0) > 0 && (
+              <div className="flex items-center justify-between rounded-lg bg-red-950/30 border border-red-900/30 px-3 py-2 text-sm">
+                <span className="text-gray-400">Cash refunds issued this shift</span>
+                <span className="font-mono font-semibold text-red-400">
+                  -{formatCurrency(active.cashRefundsTotal)}
+                </span>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="closingBalance">Counted cash in drawer *</Label>

@@ -14,9 +14,11 @@ import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
+import { usePosHotkeys, HOTKEY_LEGEND } from '@/hooks/usePosHotkeys';
 import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
 import { Customer } from '@/services/customerService';
 import { performLogout } from '@/lib/performLogout';
+import { QK } from '@/lib/queryKeys';
 
 // POS Components
 import { POSHeader } from '@/components/pos/POSHeader';
@@ -34,7 +36,8 @@ import { Product } from '@/types/inventory';
 export default function TerminalPage() {
   // State
   const [search, setSearch] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE' | 'SPLIT'>('CASH');
+  const [cashTendered, setCashTendered] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
@@ -64,14 +67,14 @@ export default function TerminalPage() {
 
   // Cash session gate — terminal is unusable without an open drawer.
   const { data: activeSession, isLoading: sessionLoading } = useQuery({
-    queryKey: ['cash-session-active'],
+    queryKey: QK.cashSessionActive,
     queryFn: () => cashSessionService.getActive(),
     enabled: !!user && (user.roles || []).some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER'),
   });
 
   // Data Fetching
   const { data: branchesData } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: () => branchService.getAllBranches(),
   });
 
@@ -79,19 +82,19 @@ export default function TerminalPage() {
 
   // Fetch business info for the receipt header (name / address / phone).
   const { data: tenantInfo } = useQuery({
-    queryKey: ['tenant-info'],
+    queryKey: QK.tenantInfo,
     queryFn: () => tenantService.getInfo(),
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch tax rates and categories for dynamic tax calculation
   const { data: activeTaxRates } = useQuery({
-    queryKey: ['tax-rates-active'],
+    queryKey: QK.taxRatesActive,
     queryFn: () => taxService.getActiveTaxRates(),
   });
 
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: QK.categories,
     queryFn: () => inventoryService.getCategories(),
   });
 
@@ -170,6 +173,7 @@ export default function TerminalPage() {
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
       setLastSale(data);
       setSelectedCustomer(null);
+      setCashTendered(0);
       clearCart(); // Also clear the cart on success
       
       // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
@@ -195,8 +199,9 @@ export default function TerminalPage() {
         discount: 0,
         total: total,
         paymentMethod: paymentMethod,
-        tendered: total, // exact-change assumption until a tender input lands
-        change: 0
+        tendered: cashTendered > 0 ? cashTendered : total,
+        change: cashTendered > total ? cashTendered - total : 0,
+        receiptFooter: tenantInfo?.receiptFooter ?? undefined,
       };
       
       receiptPrinterService.processHardwareCheckoutActions(receiptData);
@@ -237,6 +242,9 @@ export default function TerminalPage() {
       customerId: selectedCustomer?.id,
       branchId: selectedBranch?.id,
       paymentMethod,
+      cashTendered: (paymentMethod === 'CASH' || paymentMethod === 'SPLIT') && cashTendered > 0
+        ? cashTendered
+        : undefined,
       items: items.map(item => ({
         productId: item.id,
         quantity: item.cartQuantity,
@@ -266,6 +274,60 @@ export default function TerminalPage() {
       clearCart();
     }
   };
+
+  // F4 — cycle through CASH → CARD → ONLINE → SPLIT → CASH.
+  const cyclePaymentMethod = () => {
+    setPaymentMethod((prev) => {
+      const next = prev === 'CASH' ? 'CARD' : prev === 'CARD' ? 'ONLINE' : prev === 'ONLINE' ? 'SPLIT' : 'CASH';
+      setCashTendered(0);
+      return next;
+    });
+  };
+
+  // F12 — re-print the most recent completed sale. Builds the same ReceiptData
+  // payload the success path uses so the printer service path stays one branch.
+  const handlePrintLastReceipt = () => {
+    if (!lastSale) {
+      toast.info('No recent sale to reprint');
+      return;
+    }
+    const receiptData: ReceiptData = {
+      tenantName: tenantInfo?.name || 'StoreX',
+      tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
+      tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
+      tenantPhone: tenantInfo?.phone ?? undefined,
+      branchName: selectedBranch?.name || 'Main Branch',
+      showBranch: branches.length > 1,
+      cashierName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+      transactionId: lastSale.invoiceNumber,
+      createdAt: lastSale.createdAt ? new Date(lastSale.createdAt) : new Date(),
+      items: (lastSale.items ?? []).map((it) => ({
+        name: it.productName,
+        quantity: Number(it.quantity),
+        price: Number(it.unitPrice),
+        total: Number(it.totalAmount),
+      })),
+      subtotal: Number(lastSale.totalAmount),
+      tax: Number(lastSale.taxAmount),
+      taxLabel,
+      discount: Number(lastSale.discountAmount),
+      total: Number(lastSale.netAmount),
+      paymentMethod: lastSale.paymentMethod as 'CASH' | 'CARD' | 'ONLINE',
+      tendered: Number(lastSale.netAmount),
+      change: 0,
+      receiptFooter: tenantInfo?.receiptFooter ?? undefined,
+    };
+    receiptPrinterService.processHardwareCheckoutActions(receiptData);
+  };
+
+  usePosHotkeys({
+    onCyclePaymentMethod: cyclePaymentMethod,
+    onCheckout: handleCheckout,
+    onPrintLastReceipt: handlePrintLastReceipt,
+    // Disable while a blocking modal is in front of the terminal so F4/F9 don't
+    // fire under the user's nose while they're filling Stock Fix or Shift forms.
+    disabled: !!stockFixProduct || showSummary,
+  });
 
   // Render
   if (sessionLoading) {
@@ -310,6 +372,19 @@ export default function TerminalPage() {
           selectedBranchId={selectedBranch?.id}
           cartQuantities={cartQuantities}
         />
+
+        {/* Hotkey legend — slim bottom strip so cashiers learn the bindings without
+            having to open a help dialog. Mirror order with usePosHotkeys. */}
+        <div className="border-t border-gray-800 bg-gray-950/60 px-4 py-2 flex items-center gap-4 text-[11px] text-gray-500 print:hidden">
+          {HOTKEY_LEGEND.map((h) => (
+            <div key={h.key} className="flex items-center gap-1.5">
+              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-300 font-mono text-[10px]">
+                {h.key}
+              </kbd>
+              <span>{h.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Right Side — Cart */}
@@ -350,7 +425,9 @@ export default function TerminalPage() {
         {/* Checkout */}
         <CheckoutPanel
           paymentMethod={paymentMethod}
-          onPaymentMethodChange={setPaymentMethod}
+          onPaymentMethodChange={(m) => { setPaymentMethod(m); setCashTendered(0); }}
+          cashTendered={cashTendered}
+          onCashTenderedChange={setCashTendered}
           subtotal={subtotal}
           taxAmount={taxAmount}
           taxLabel={taxLabel}
@@ -365,7 +442,7 @@ export default function TerminalPage() {
 
       {/* Shift Summary Modal */}
       {showSummary && (
-        <ShiftSummary summary={summary} onClose={() => setShowSummary(false)} />
+        <ShiftSummary summary={summary} session={activeSession} onClose={() => setShowSummary(false)} />
       )}
 
       </div>

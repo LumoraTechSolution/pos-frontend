@@ -41,6 +41,8 @@ export interface Product {
   categoryName?: string;
   brandId?: string;
   brandName?: string;
+  primarySupplierId?: string;
+  primarySupplierName?: string;
   stockLevels?: StockLevel[];
   createdAt: string;
   updatedAt: string;
@@ -58,7 +60,9 @@ export interface ProductRequest {
   imageUrl?: string;
   categoryId?: string;
   brandId?: string;
+  primarySupplierId?: string;
   isActive: boolean;
+  branchStockLevels?: { branchId: string; quantity: number }[];
 }
 
 export interface LowStockResponse {

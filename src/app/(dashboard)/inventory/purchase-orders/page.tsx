@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { purchaseOrderService, PurchaseOrder, POStatus } from "@/services/purchaseOrderService";
 import { supplierService } from "@/services/supplierService";
@@ -43,12 +44,33 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.E
 
 export default function PurchaseOrdersPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<POStatus | 'ALL'>('ALL');
-  const [supplierFilter, setSupplierFilter] = useState<string>('ALL');
-  const [search, setSearch] = useState<string>('');
+  // Filters — initialised from URL so a reload / back-nav restores the view.
+  // The reverse direction (state → URL) is handled by the effect below.
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 0);
+  const [statusFilter, setStatusFilter] = useState<POStatus | 'ALL'>(
+    (searchParams.get('status') as POStatus | 'ALL') || 'ALL'
+  );
+  const [supplierFilter, setSupplierFilter] = useState<string>(
+    searchParams.get('supplierId') || 'ALL'
+  );
+  const [search, setSearch] = useState<string>(searchParams.get('search') || '');
+
+  // Mirror filter state into the URL so the page is bookmarkable / shareable
+  // and a reopen restores exactly what the user was looking at. We use replace
+  // (not push) to avoid spamming history on every keystroke.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (statusFilter !== 'ALL') params.set('status', statusFilter);
+    if (supplierFilter !== 'ALL') params.set('supplierId', supplierFilter);
+    if (search.trim()) params.set('search', search.trim());
+    if (page > 0) params.set('page', String(page));
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [statusFilter, supplierFilter, search, page, router, pathname]);
 
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);

@@ -19,7 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { QK } from "@/lib/queryKeys";
 
 const adjustmentSchema = z.object({
   branchId: z.string().uuid("Please select a branch"),
@@ -75,7 +76,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
   const [activeTab, setActiveTab] = useState("adjust");
 
   const { data: branches } = useQuery({
-    queryKey: ['branches'],
+    queryKey: QK.branches,
     queryFn: branchService.getAllBranches
   });
 
@@ -86,7 +87,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
   });
 
   const adjForm = useForm<z.infer<typeof adjustmentSchema>>({
-    resolver: zodResolver(adjustmentSchema),
+    resolver: zodResolver(adjustmentSchema) as Resolver<z.infer<typeof adjustmentSchema>>,
     defaultValues: {
       type: defaultType ?? 'RECONCILIATION',
       branchId: defaultBranchId,
@@ -109,7 +110,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
   }, [isOpen, defaultBranchId, defaultType, adjForm]);
 
   const transferForm = useForm<z.infer<typeof transferSchema>>({
-    resolver: zodResolver(transferSchema),
+    resolver: zodResolver(transferSchema) as Resolver<z.infer<typeof transferSchema>>,
     defaultValues: {
       quantity: 0,
       reason: "",

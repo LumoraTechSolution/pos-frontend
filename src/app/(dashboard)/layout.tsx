@@ -50,7 +50,6 @@ export default function DashboardLayout({
     { label: 'Employees', href: '/employees', icon: UserSquare2, requiredFeature: 'EMPLOYEES' },
     { label: 'Reports', href: '/reports', icon: BarChart3, requiredFeature: 'REPORTS' },
     { label: 'Branches', href: '/branches', icon: Store },
-    { label: 'Hardware Settings', href: '/settings/hardware', icon: Settings },
     { label: 'Settings', href: '/settings', icon: Settings },
   ].filter(item => {
     // 1. SaaS Feature Flag Check (Must have feature if defined)
@@ -60,7 +59,7 @@ export default function DashboardLayout({
 
     // 2. Role-based Access Check
     // Inventory Managers shouldn't see these items
-    if (['Overview', 'Employees', 'Hardware Settings', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
+    if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     

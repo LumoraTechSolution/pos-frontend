@@ -9,13 +9,21 @@ import {
   ArrowLeft,
   Search,
   Loader2,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
-
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
+import { Pagination } from "@/components/ui/pagination";
+import { DateRangePicker, DateRangeValue } from "@/components/ui/date-range-picker";
+import { useAuthStore } from "@/stores/authStore";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const todayEnd   = () => format(new Date(), "yyyy-MM-dd'T'23:59:59");
+
+const defaultDateRange = (): DateRangeValue => ({ start: "2000-01-01T00:00:00", end: todayEnd() });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 const ROLE_COLORS: Record<string, string> = {
@@ -50,21 +58,28 @@ function StatusBadge({ active }: { active: boolean }) {
 
 export default function TimesheetsPage() {
   const router = useRouter();
+  const { hasRole } = useAuthStore();
+  const canViewAll = hasRole('ADMIN') || hasRole('MANAGER');
+
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeValue>(defaultDateRange);
 
-  const { data: timesheetsData, isLoading } = useQuery({
-    queryKey: ["timesheets", page],
-    queryFn: () => timeClockService.getAllHistory(page, 50),
+  const resetPage = () => setPage(0);
+
+  const { data: timesheetsData, isLoading, isError } = useQuery({
+    queryKey: ["timesheets", page, search, statusFilter, dateRange],
+    queryFn: () => timeClockService.getAllHistory(page, 15, {
+      from: dateRange.start,
+      to: dateRange.end,
+      status: statusFilter || undefined,
+      search: search || undefined,
+    }),
+    enabled: canViewAll,
   });
 
   const records = timesheetsData?.content || [];
-  
-  // Client side filtering for visual ease
-  const filteredRecords = records.filter(r => 
-    r.userName.toLowerCase().includes(search.toLowerCase()) ||
-    r.userRole.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <FeatureGuard
@@ -76,15 +91,15 @@ export default function TimesheetsPage() {
           </div>
           <h2 className="text-2xl font-bold tracking-tight mb-2">Feature Not Available</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Employee time management and clock-in/out reports are available in 
-            the <strong>Small Business</strong> plan and above.
+            Employee time management and clock-in/out reports are available in the{" "}
+            <strong>Small Business</strong> plan and above.
           </p>
-          <Button 
-             variant="outline" 
-             className="mt-6 border-gray-700"
-             onClick={() => router.push('/employees')}
+          <Button
+            variant="outline"
+            className="mt-6 border-gray-700"
+            onClick={() => router.push('/employees')}
           >
-             Back to Employees
+            Back to Employees
           </Button>
         </div>
       }
@@ -93,28 +108,57 @@ export default function TimesheetsPage() {
         {/* ─── Header ─── */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/employees')} className="h-9 w-9 border border-gray-800 rounded-lg hover:bg-gray-900 text-gray-400">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/employees')}
+              className="h-9 w-9 border border-gray-800 rounded-lg hover:bg-gray-900 text-gray-400"
+            >
               <ArrowLeft size={18} />
             </Button>
             <div>
               <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                 <Clock className="text-primary" size={24} /> Timesheets
               </h1>
-              <p className="text-sm text-gray-500 mt-1">Review clock-in and clock-out history for all employees</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Review clock-in and clock-out history for all employees
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+        </div>
+
+        {/* ─── Filters ─── */}
+        <div className="bg-gray-950/50 rounded-2xl border border-gray-900 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <Filter size={12} /> Filters
+          </div>
+          {/* Row 1: search + status */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
               <Input
                 type="text"
                 placeholder="Search employee name..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 bg-gray-950 border-gray-800 focus-visible:ring-primary rounded-xl h-10 w-full"
+                onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+                className="pl-9 bg-gray-950 border-gray-800 focus-visible:ring-primary rounded-xl h-10 w-full"
               />
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); resetPage(); }}
+              className="h-10 min-w-[160px] rounded-xl border border-gray-800 bg-gray-950 text-gray-300 text-sm px-3 focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">On Clock</option>
+              <option value="COMPLETED">Clocked Out</option>
+            </select>
           </div>
+          {/* Row 2: date range (full width) */}
+          <DateRangePicker
+            value={dateRange}
+            onChange={(r) => { setDateRange(r); resetPage(); }}
+          />
         </div>
 
         {/* ─── Main Table ─── */}
@@ -132,21 +176,33 @@ export default function TimesheetsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {!canViewAll ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-gray-500">
+                      You need Admin or Manager access to view all timesheets.
+                    </TableCell>
+                  </TableRow>
+                ) : isLoading ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-32 text-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
                       <p className="text-sm text-gray-500 mt-2">Loading timesheets...</p>
                     </TableCell>
                   </TableRow>
-                ) : filteredRecords.length === 0 ? (
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-red-400">
+                      Failed to load timesheets. Please try again.
+                    </TableCell>
+                  </TableRow>
+                ) : records.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-32 text-center text-gray-500">
-                      No time records found matching your search.
+                      No time records found matching your filters.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecords.map((record) => (
+                  records.map((record) => (
                     <TableRow key={record.id} className="border-gray-800/50 hover:bg-gray-900/50 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -173,8 +229,8 @@ export default function TimesheetsPage() {
                         {record.clockOutTime ? format(new Date(record.clockOutTime), "MMM d, h:mm a") : '—'}
                       </TableCell>
                       <TableCell className="text-sm font-medium text-gray-300">
-                        {record.durationMinutes !== null 
-                          ? `${Math.floor(record.durationMinutes / 60)}h ${record.durationMinutes % 60}m` 
+                        {record.durationMinutes !== null
+                          ? `${Math.floor(record.durationMinutes / 60)}h ${record.durationMinutes % 60}m`
                           : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-gray-500 max-w-[200px] truncate">
@@ -188,32 +244,14 @@ export default function TimesheetsPage() {
           </div>
 
           {/* ─── Pagination Footer ─── */}
-          {!isLoading && timesheetsData && timesheetsData.totalPages > 1 && (
-            <div className="p-4 border-t border-gray-800 flex items-center justify-between text-sm text-gray-500 bg-gray-950/80">
-              <span>
-                Showing page {timesheetsData.number + 1} of {timesheetsData.totalPages} 
-                ({timesheetsData.totalElements} total entries)
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  className="h-8 bg-black border-gray-800 text-gray-300 hover:text-white"
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page >= timesheetsData.totalPages - 1}
-                  className="h-8 bg-black border-gray-800 text-gray-300 hover:text-white"
-                >
-                  Next
-                </Button>
-              </div>
+          {!isLoading && timesheetsData && (
+            <div className="p-4 border-t border-gray-800 bg-gray-950/80">
+              <Pagination
+                currentPage={page}
+                totalPages={timesheetsData.totalPages}
+                onPageChange={setPage}
+                isLoading={isLoading}
+              />
             </div>
           )}
         </div>

@@ -150,3 +150,15 @@ export interface StockVarianceReport {
   productsAffected: number;
   products: StockVarianceRecord[];
 }
+
+export interface CashReconciliationRecord {
+  sessionId: string;
+  cashierName: string;
+  openedAt: string;
+  closedAt: string;
+  openingBalance: number;
+  expectedBalance: number | null;
+  closingBalance: number | null;
+  variance: number | null;
+  notes: string | null;
+}

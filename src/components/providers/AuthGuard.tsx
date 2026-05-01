@@ -44,7 +44,11 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       const { isAuthenticated, token } = useAuthStore.getState();
 
-      if (!isAuthenticated || !token) {
+      // token is memory-only since P1 1.6 — it is always null after a page reload.
+      // Only bail out here if we have no session at all; the getMe() call below
+      // will trigger the 401 → silent-refresh flow when token is null but
+      // refreshToken is still in sessionStorage.
+      if (!isAuthenticated) {
         await performLogout();
         if (isMounted) router.replace('/login');
         return;
@@ -59,7 +63,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       // Token is locally valid — show the UI immediately and verify in background.
-      if (!isTokenExpired(token) && isMounted) {
+      if (token && !isTokenExpired(token) && isMounted) {
         setIsVerifying(false);
       }
 

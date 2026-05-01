@@ -17,6 +17,7 @@ import { SortDirection } from "@/components/ui/SortableHeader";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
+import { QK } from "@/lib/queryKeys";
 
 export default function ProductsPage() {
   const { user: currentUser } = useAuthStore();
@@ -67,12 +68,12 @@ export default function ProductsPage() {
 
   // Fetch categories and brands for filter dropdowns
   const { data: categories } = useQuery({
-    queryKey: ['categories'],
+    queryKey: QK.categories,
     queryFn: () => inventoryService.getCategories(),
   });
 
   const { data: brands } = useQuery({
-    queryKey: ['brands'],
+    queryKey: QK.brands,
     queryFn: () => inventoryService.getBrands(),
   });
 
