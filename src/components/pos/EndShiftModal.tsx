@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Wallet, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, fc, CURRENCY } from "@/lib/utils";
 import { QK } from "@/lib/queryKeys";
 
 interface EndShiftModalProps {
@@ -19,8 +19,7 @@ interface EndShiftModalProps {
   onEnded?: (session: CashSession) => void;
 }
 
-const formatCurrency = (n: number | null | undefined) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n ?? 0);
+const formatCurrency = (n: number | null | undefined) => fc(n ?? 0);
 
 export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
   const queryClient = useQueryClient();
@@ -132,7 +131,9 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
             <div className="space-y-2">
               <Label htmlFor="closingBalance">Counted cash in drawer *</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                  {CURRENCY.symbol}
+                </span>
                 <Input
                   id="closingBalance"
                   type="number"
@@ -142,7 +143,7 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
                   autoFocus
                   value={closingBalance}
                   onChange={(e) => setClosingBalance(e.target.value)}
-                  className="pl-7 bg-gray-950 border-gray-800 focus-visible:ring-primary text-lg font-mono"
+                  className="pl-10 bg-gray-950 border-gray-800 focus-visible:ring-primary text-lg font-mono"
                   placeholder="0.00"
                 />
               </div>

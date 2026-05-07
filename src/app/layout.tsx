@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import './globals.css';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from 'sonner';
@@ -12,11 +13,16 @@ export const metadata: Metadata = {
 //   manifest: '/manifest.json',
 };
 
+// Reading headers() opts the entire tree into dynamic rendering, so the
+// per-request nonce set by middleware.ts gets stamped onto Next.js's inline
+// hydration scripts. Without this the page renders statically at build time
+// with no nonce, and the runtime CSP blocks every script.
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  headers();
   return (
     <html lang="en">
       <body className={inter.className}>
