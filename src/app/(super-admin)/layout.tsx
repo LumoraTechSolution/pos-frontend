@@ -23,10 +23,16 @@ export default function SuperAdminLayout({
   useEffect(() => {
     const checkAuth = () => {
       const isLoginPage = pathname === '/super-admin/login';
-      const authenticated = useSuperAdminStore.getState().isAuthenticated;
+      const isChangePasswordPage = pathname === '/super-admin/change-password';
+      const state = useSuperAdminStore.getState();
+      const authenticated = state.isAuthenticated;
+      const mustChangePassword = state.user?.passwordChangeRequired === true;
+
       if (!authenticated && !isLoginPage) {
         router.push('/super-admin/login');
-      } else if (authenticated && isLoginPage) {
+      } else if (authenticated && mustChangePassword && !isChangePasswordPage) {
+        router.push('/super-admin/change-password');
+      } else if (authenticated && !mustChangePassword && isLoginPage) {
         router.push('/super-admin');
       }
       setMounted(true);
@@ -44,8 +50,9 @@ export default function SuperAdminLayout({
   if (!mounted) return null; // Prevent hydration errors
 
   const isLoginPage = pathname === '/super-admin/login';
+  const isChangePasswordPage = pathname === '/super-admin/change-password';
 
-  if (isLoginPage) {
+  if (isLoginPage || isChangePasswordPage) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
         {children}
@@ -95,7 +102,12 @@ export default function SuperAdminLayout({
           </Link>
           <button
             onClick={async () => {
-              await fetch('/api/super-admin-logout', { method: 'POST' }).catch(() => {});
+              const refreshToken = useSuperAdminStore.getState().refreshToken;
+              await fetch('/api/super-admin-logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(refreshToken ? { refreshToken } : {}),
+              }).catch(() => {});
               logout();
               router.push('/super-admin/login');
             }}

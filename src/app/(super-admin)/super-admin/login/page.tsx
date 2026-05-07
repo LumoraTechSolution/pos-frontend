@@ -22,8 +22,12 @@ export default function SuperAdminLoginPage() {
 
     try {
       const response = await superAdminAuthService.login({ email, password });
-      setAuth(response.superAdmin, response.accessToken);
-      router.push('/super-admin');
+      setAuth(response.superAdmin, response.accessToken, response.refreshToken);
+      if (response.passwordChangeRequired) {
+        router.push('/super-admin/change-password');
+      } else {
+        router.push('/super-admin');
+      }
     } catch (err: unknown) {
       setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Access Denied: Invalid Credentials');
     } finally {

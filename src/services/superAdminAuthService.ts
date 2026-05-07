@@ -9,9 +9,16 @@ export interface SuperAdminLoginRequest {
 
 export interface SuperAdminAuthResponse {
   accessToken: string;
+  refreshToken: string | null;
   tokenType: string;
   expiresIn: number;
+  passwordChangeRequired: boolean;
   superAdmin: SuperAdminUser;
+}
+
+export interface SuperAdminChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export const superAdminAuthService = {
@@ -19,7 +26,24 @@ export const superAdminAuthService = {
     const response = await superAdminApi.post<ApiResponse<SuperAdminAuthResponse>>('/auth/login', data);
     return response.data.data;
   },
-  
+
+  refresh: async (refreshToken: string): Promise<SuperAdminAuthResponse> => {
+    const response = await superAdminApi.post<ApiResponse<SuperAdminAuthResponse>>('/auth/refresh', { refreshToken });
+    return response.data.data;
+  },
+
+  logout: async (refreshToken: string | null): Promise<void> => {
+    try {
+      await superAdminApi.post('/auth/logout', refreshToken ? { refreshToken } : {});
+    } catch {
+      // Logout must succeed locally even if the network call fails.
+    }
+  },
+
+  changePassword: async (data: SuperAdminChangePasswordRequest): Promise<void> => {
+    await superAdminApi.post('/auth/change-password', data);
+  },
+
   ping: async (): Promise<boolean> => {
     try {
       await superAdminApi.get('/auth/ping');
@@ -27,5 +51,5 @@ export const superAdminAuthService = {
     } catch {
       return false;
     }
-  }
+  },
 };
