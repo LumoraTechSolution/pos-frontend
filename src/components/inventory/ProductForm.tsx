@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,7 +18,7 @@ import { Branch } from "@/services/branchService";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QK } from "@/lib/queryKeys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Sparkles, PencilLine } from "lucide-react";
+import { ArrowLeft, Save, Sparkles, PencilLine, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import InventoryAdjustmentModal from "./InventoryAdjustmentModal";
@@ -37,7 +36,7 @@ const productSchema = z.object({
   brandId: z.string().uuid().optional().nullable(),
   primarySupplierId: z.string().uuid().optional().nullable(),
   isActive: z.boolean().default(true),
-  imageUrl: z.string().url().or(z.literal("")).optional(),
+  imageUrl: z.string().optional(),
   branchStockLevels: z.record(z.string().uuid(), z.coerce.number().int().min(0)).optional(),
 });
 
@@ -51,6 +50,22 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isAdjModalOpen, setIsAdjModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      form.setValue("imageUrl", reader.result as string, { shouldValidate: true });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue("imageUrl", "", { shouldValidate: true });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const { data: categories } = useQuery({
     queryKey: ['categories'],
@@ -457,9 +472,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <CardTitle className="text-lg">Product Image</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative group overflow-hidden">
+                <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative overflow-hidden">
                   {form.watch("imageUrl") ? (
-                    <Image src={form.watch("imageUrl")!} fill className="object-cover" alt="Preview" />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={form.watch("imageUrl")!} className="w-full h-full object-cover" alt="Preview" />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 z-10"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
                   ) : (
                     <div className="text-center text-gray-600">
                       <div className="text-2xl mb-1">🖼️</div>
@@ -467,19 +492,22 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     </div>
                   )}
                 </div>
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Image URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://..." className="bg-gray-950 border-gray-800 text-xs" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageChange}
                 />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload size={15} />
+                  {form.watch("imageUrl") ? "Change Image" : "Upload Image"}
+                </Button>
               </CardContent>
             </Card>
           </div>
