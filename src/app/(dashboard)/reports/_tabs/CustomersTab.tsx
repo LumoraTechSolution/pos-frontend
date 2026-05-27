@@ -49,20 +49,20 @@ export function CustomersTab() {
   };
 
   return (
-    <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+    <Card className="bg-card/50 border-border backdrop-blur-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4 flex-wrap">
         <div>
           <CardTitle>Top Customers by Spend</CardTitle>
           <CardDescription>Highest-value customers across all time.</CardDescription>
         </div>
-        <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+        <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
           <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-gray-800 bg-gray-900/40">
+        <div className="rounded-md border border-border bg-card/40">
           <Table>
-            <TableHeader className="bg-gray-800/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead className="text-center">Visits</TableHead>
@@ -81,24 +81,24 @@ export function CustomersTab() {
                 </TableRow>
               ) : (
                 data.content.map((cust, i) => (
-                  <TableRow key={cust.customerId} className="hover:bg-gray-800/50">
+                  <TableRow key={cust.customerId} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-violet-500/20 text-violet-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {i + 1}
                         </div>
                         <div>
-                          <div className="font-medium text-white">{cust.customerName}</div>
-                          <div className="text-xs text-gray-500">{cust.email || cust.phone || "—"}</div>
+                          <div className="font-medium text-foreground">{cust.customerName}</div>
+                          <div className="text-xs text-muted-foreground">{cust.email || cust.phone || "—"}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="border-gray-600">{cust.transactionCount}</Badge>
+                      <Badge variant="outline" className="border-border">{cust.transactionCount}</Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold text-emerald-400">{fc(cust.totalSpent)}</TableCell>
+                    <TableCell className="text-right font-bold text-success">{fc(cust.totalSpent)}</TableCell>
                     <TableCell className="text-right">
-                      <span className="inline-flex items-center gap-1 text-amber-400 font-semibold">
+                      <span className="inline-flex items-center gap-1 text-warning font-semibold">
                         <Star size={12} fill="currentColor" />{cust.loyaltyPoints.toLocaleString()}
                       </span>
                     </TableCell>

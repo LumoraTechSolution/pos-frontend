@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSuperAdminStore } from '@/stores/superAdminStore';
 import { ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { cn } from '@/lib/utils';
 
 export default function SuperAdminLayout({
   children,
@@ -47,59 +49,56 @@ export default function SuperAdminLayout({
     }
   }, [pathname, router]);
 
-  if (!mounted) return null; // Prevent hydration errors
+  if (!mounted) return null;
 
   const isLoginPage = pathname === '/super-admin/login';
   const isChangePasswordPage = pathname === '/super-admin/change-password';
 
   if (isLoginPage || isChangePasswordPage) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         {children}
       </div>
     );
   }
 
+  const navItems = [
+    { href: '/super-admin', label: 'Dashboard', exact: true },
+    { href: '/super-admin/tenants', label: 'Tenants' },
+    { href: '/super-admin/audit-log', label: 'Audit Logs' },
+    { href: '/super-admin/account', label: 'My Account' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 text-white flex flex-col">
-        <div className="p-6 border-b border-gray-800 flex items-center gap-3">
-          <ShieldAlert className="w-8 h-8 text-blue-500" />
-          <h1 className="text-xl font-bold tracking-tight">Lumora HQ</h1>
+    <div className="min-h-screen bg-background text-foreground flex">
+      <aside className="w-64 bg-card border-r border-border flex flex-col">
+        <div className="p-6 border-b border-border flex items-center gap-3">
+          <ShieldAlert className="w-7 h-7 text-primary" />
+          <h1 className="text-lg font-bold tracking-tight text-foreground">Lumora HQ</h1>
         </div>
-        
-        <nav className="flex-1 p-4 space-y-2">
-          <Link 
-            href="/super-admin" 
-            className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
-              pathname === '/super-admin' 
-                ? 'bg-gray-800 text-white' 
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-            }`}
-          >
-            Dashboard
-          </Link>
-          <Link 
-            href="/super-admin/tenants" 
-            className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
-              pathname.startsWith('/super-admin/tenants') 
-                ? 'bg-gray-800 text-white' 
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-            }`}
-          >
-            Tenants
-          </Link>
-          <Link 
-            href="/super-admin/audit-log" 
-            className={`block px-4 py-3 rounded-lg font-medium transition-colors ${
-              pathname.startsWith('/super-admin/audit-log') 
-                ? 'bg-gray-800 text-white' 
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-            }`}
-          >
-            Audit Logs
-          </Link>
+
+        <nav className="flex-1 p-3 space-y-1" aria-label="Super-admin navigation">
+          {navItems.map((item) => {
+            const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={cn(
+                  'block px-4 py-2.5 rounded-lg font-medium text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="p-3 border-t border-border">
           <button
             onClick={async () => {
               const refreshToken = useSuperAdminStore.getState().refreshToken;
@@ -111,21 +110,28 @@ export default function SuperAdminLayout({
               logout();
               router.push('/super-admin/login');
             }}
-            className="w-full text-left mt-auto px-4 py-3 rounded-lg text-red-400 font-medium hover:bg-gray-800 hover:text-red-300 transition-colors"
+            className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Sign Out
           </button>
-        </nav>
+        </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
-        <header className="h-16 bg-white border-b flex items-center px-8 shrink-0">
-          <h2 className="text-lg font-semibold text-gray-800">Super Admin Portal</h2>
+        <header className="relative h-16 border-b border-border shrink-0 bg-gradient-to-r from-violet-600/15 via-indigo-600/10 to-transparent">
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-violet-500 to-indigo-500" aria-hidden="true" />
+          <div className="h-full flex items-center justify-between px-8">
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={18} className="text-violet-400" />
+              <h2 className="text-base font-semibold text-foreground">Super Admin Portal</h2>
+              <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest bg-violet-500/15 text-violet-300 border border-violet-500/30">
+                HQ
+              </span>
+            </div>
+            <ThemeToggle />
+          </div>
         </header>
-        <div className="flex-1 overflow-auto p-8">
-          {children}
-        </div>
+        <div className="flex-1 overflow-auto p-8 bg-background">{children}</div>
       </main>
     </div>
   );

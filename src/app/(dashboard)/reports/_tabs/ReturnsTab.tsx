@@ -60,22 +60,22 @@ export function ReturnsTab() {
   };
 
   return (
-    <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+    <Card className="bg-card/50 border-border backdrop-blur-sm">
       <CardHeader className="space-y-3 pb-3">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <CardTitle>Returns History</CardTitle>
             <CardDescription>View past returns and manage pending approvals.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+          <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
             <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-gray-800 bg-gray-900/40">
+        <div className="rounded-md border border-border bg-card/40">
           <Table>
-            <TableHeader className="bg-gray-800/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-10" />
                 <TableHead>Return #</TableHead>
@@ -105,32 +105,32 @@ export function ReturnsTab() {
                   <>
                     <TableRow
                       key={ret.id}
-                      className="hover:bg-gray-800/50 cursor-pointer"
+                      className="hover:bg-muted/50 cursor-pointer"
                       onClick={() => toggle(ret.id)}
                     >
                       <TableCell className="w-10 px-3">
                         {expanded[ret.id]
                           ? <ChevronDown size={16} className="text-primary" />
-                          : <ChevronRight size={16} className="text-gray-500" />}
+                          : <ChevronRight size={16} className="text-muted-foreground" />}
                       </TableCell>
                       <TableCell className="font-mono text-primary">{ret.returnNumber}</TableCell>
-                      <TableCell className="text-gray-300">
+                      <TableCell className="text-foreground">
                         {format(new Date(ret.createdAt), "MMM dd, yyyy HH:mm")}
                       </TableCell>
                       <TableCell>{ret.reason}</TableCell>
-                      <TableCell className="text-gray-400 text-xs">{ret.processedByName || "Unknown"}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{ret.processedByName || "Unknown"}</TableCell>
                       <TableCell>
                         <Badge
                           variant={ret.status === "COMPLETED" ? "default" : ret.status === "PENDING" ? "secondary" : ret.status === "APPROVED" ? "default" : "destructive"}
                           className={
-                            ret.status === "COMPLETED" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" :
-                            ret.status === "PENDING" ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20" : ""
+                            ret.status === "COMPLETED" ? "bg-success/10 text-success hover:bg-success/20" :
+                            ret.status === "PENDING" ? "bg-warning/10 text-warning hover:bg-warning/20" : ""
                           }
                         >
                           {ret.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-bold text-gray-100">{fc(ret.refundAmount)}</TableCell>
+                      <TableCell className="text-right font-bold text-foreground">{fc(ret.refundAmount)}</TableCell>
                       <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         {ret.status === "PENDING" && canApprove ? (
                           <div className="flex justify-end gap-2">
@@ -138,7 +138,7 @@ export function ReturnsTab() {
                               variant="ghost" size="sm"
                               onClick={() => approveMutation.mutate({ id: ret.id, approve: true })}
                               disabled={approveMutation.isPending}
-                              className="text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 px-2"
+                              className="text-success hover:text-success hover:bg-success/10 px-2"
                               title="Approve Return"
                             >
                               <ShieldCheck size={16} />
@@ -147,7 +147,7 @@ export function ReturnsTab() {
                               variant="ghost" size="sm"
                               onClick={() => approveMutation.mutate({ id: ret.id, approve: false })}
                               disabled={approveMutation.isPending}
-                              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 px-2"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 px-2"
                               title="Reject Return"
                             >
                               <ShieldAlert size={16} />
@@ -160,14 +160,14 @@ export function ReturnsTab() {
                     </TableRow>
                     {expanded[ret.id] && (
                       <TableRow key={`${ret.id}-items`}>
-                        <TableCell colSpan={8} className="p-0 border-b border-gray-800">
-                          <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
-                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                        <TableCell colSpan={8} className="p-0 border-b border-border">
+                          <div className="bg-background/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-border/50">
+                            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                               Returned Items
                             </h4>
                             <table className="w-full text-sm">
                               <thead>
-                                <tr className="text-gray-500 text-xs uppercase">
+                                <tr className="text-muted-foreground text-xs uppercase">
                                   <th className="text-left pb-2 pr-4">Product</th>
                                   <th className="text-center pb-2 pr-4">Qty Returned</th>
                                   <th className="text-right pb-2 pr-4">Unit Price</th>
@@ -176,11 +176,11 @@ export function ReturnsTab() {
                               </thead>
                               <tbody>
                                 {ret.items?.map((item, idx) => (
-                                  <tr key={idx} className="border-t border-gray-800/30">
-                                    <td className="py-2 pr-4 text-gray-200 font-medium">{item.productName || "Unknown Product"}</td>
-                                    <td className="py-2 pr-4 text-center text-gray-300">{item.quantityReturned}</td>
-                                    <td className="py-2 pr-4 text-right text-gray-300">{fc(item.unitPrice)}</td>
-                                    <td className="py-2 text-right font-semibold text-gray-100">{fc(item.refundAmount)}</td>
+                                  <tr key={idx} className="border-t border-border/30">
+                                    <td className="py-2 pr-4 text-foreground font-medium">{item.productName || "Unknown Product"}</td>
+                                    <td className="py-2 pr-4 text-center text-foreground">{item.quantityReturned}</td>
+                                    <td className="py-2 pr-4 text-right text-foreground">{fc(item.unitPrice)}</td>
+                                    <td className="py-2 text-right font-semibold text-foreground">{fc(item.refundAmount)}</td>
                                   </tr>
                                 ))}
                               </tbody>

@@ -130,28 +130,28 @@ export default function ConfigurationTab({ tenant, onSave, saving }: Props) {
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Plan Tier Selector */}
       <div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">Base Plan Tier</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <h3 className="text-base font-bold text-muted-foreground mb-1">Base Plan Tier</h3>
+        <p className="text-sm text-muted-foreground mb-4">
           Selecting a plan pre-fills the default limits and features. You can override individually below.
         </p>
         <div className="relative w-full max-w-xs">
           <select
             value={planTier}
             onChange={(e) => handlePlanChange(e.target.value as PlanTier)}
-            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
+            className="w-full appearance-none bg-background border border-border rounded-xl px-4 py-3 pr-10 text-sm font-semibold text-muted-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
           >
             <option value="SMALL_BUSINESS">Small Business</option>
             <option value="MEDIUM_BUSINESS">Medium Business</option>
             <option value="ENTERPRISE">Enterprise</option>
           </select>
-          <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
       </div>
 
       {/* Resource Limits */}
       <div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">Resource Limits</h3>
-        <p className="text-sm text-gray-500 mb-4">Override the plan defaults for this specific tenant.</p>
+        <h3 className="text-base font-bold text-muted-foreground mb-1">Resource Limits</h3>
+        <p className="text-sm text-muted-foreground mb-4">Override the plan defaults for this specific tenant.</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <LimitInput label="Max Branches" value={maxLocations} onChange={setMaxLocations} />
           <LimitInput label="Max Users" value={maxUsers} onChange={setMaxUsers} />
@@ -161,8 +161,8 @@ export default function ConfigurationTab({ tenant, onSave, saving }: Props) {
 
       {/* Feature Toggle Grid */}
       <div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">Feature Matrix</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <h3 className="text-base font-bold text-muted-foreground mb-1">Feature Matrix</h3>
+        <p className="text-sm text-muted-foreground mb-4">
           Toggle individual modules on or off. Overrides plan defaults for à la carte control.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -176,35 +176,35 @@ export default function ConfigurationTab({ tenant, onSave, saving }: Props) {
                 className={`relative flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all duration-200 ${
                   isEnabled
                     ? 'border-blue-500 bg-blue-50/50 shadow-sm shadow-blue-500/10'
-                    : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50'
+                    : 'border-border bg-background hover:border-border hover:bg-muted/50'
                 }`}
               >
                 <div
                   className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                    isEnabled ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'
+                    isEnabled ? 'bg-blue-100 text-blue-600' : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {feat.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold ${isEnabled ? 'text-gray-900' : 'text-gray-600'}`}>
+                    <span className={`text-sm font-semibold ${isEnabled ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                       {feat.label}
                     </span>
                     <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${tierColors[feat.tier]}`}>
                       {feat.tier}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-0.5">{feat.description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{feat.description}</p>
                 </div>
                 {/* Toggle indicator */}
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                    isEnabled ? 'border-blue-500 bg-blue-500' : 'border-gray-300 bg-white'
+                    isEnabled ? 'border-blue-500 bg-blue-500' : 'border-border bg-background'
                   }`}
                 >
                   {isEnabled && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <svg className="w-3 h-3 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -217,25 +217,25 @@ export default function ConfigurationTab({ tenant, onSave, saving }: Props) {
 
       {/* Subscription Dates */}
       <div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">Subscription Period</h3>
-        <p className="text-sm text-gray-500 mb-4">Leave expiry blank for unlimited subscriptions.</p>
+        <h3 className="text-base font-bold text-muted-foreground mb-1">Subscription Period</h3>
+        <p className="text-sm text-muted-foreground mb-4">Leave expiry blank for unlimited subscriptions.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1.5">Start Date</label>
             <input
               type="date"
               value={subStart ? subStart.substring(0, 10) : ''}
               onChange={(e) => setSubStart(e.target.value ? e.target.value + 'T00:00:00' : '')}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
+            <label className="block text-sm font-medium text-muted-foreground mb-1.5">Expiry Date</label>
             <input
               type="date"
               value={subEnd ? subEnd.substring(0, 10) : ''}
               onChange={(e) => setSubEnd(e.target.value ? e.target.value + 'T23:59:59' : '')}
-              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -243,18 +243,18 @@ export default function ConfigurationTab({ tenant, onSave, saving }: Props) {
 
       {/* Admin Notes */}
       <div>
-        <h3 className="text-base font-bold text-gray-900 mb-1">Internal Notes</h3>
+        <h3 className="text-base font-bold text-muted-foreground mb-1">Internal Notes</h3>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder="Private admin notes about this tenant..."
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
         />
       </div>
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-gray-100">
+      <div className="flex justify-end pt-4 border-t border-border">
         <button
           type="submit"
           disabled={saving}
@@ -286,13 +286,13 @@ function LimitInput({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-muted-foreground mb-1.5">{label}</label>
       <input
         type="number"
         min={1}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value) || 1)}
-        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
     </div>
   );

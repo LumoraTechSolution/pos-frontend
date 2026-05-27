@@ -112,7 +112,7 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
             Process Exchange
           </DialogTitle>
           <div className="flex items-center gap-2 mt-2">
-            <div className={`h-1.5 w-1/2 rounded-full ${step === 1 ? 'bg-primary' : 'bg-green-500'}`}></div>
+            <div className={`h-1.5 w-1/2 rounded-full ${step === 1 ? 'bg-primary' : 'bg-success'}`}></div>
             <div className={`h-1.5 w-1/2 rounded-full ${step === 2 ? 'bg-primary' : 'bg-gray-800'}`}></div>
           </div>
         </DialogHeader>
@@ -194,15 +194,15 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm text-gray-400">
                     <span>Return Credit:</span>
-                    <span className="text-emerald-400">+{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
+                    <span className="text-success">+{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-gray-400">
                     <span>Replacement Cost:</span>
-                    <span className="text-red-400">-{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
+                    <span className="text-destructive">-{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-medium pt-2 border-t border-gray-700">
                     <span>Balance:</span>
-                    <span className={priceDifference > 0 ? "text-red-400" : priceDifference < 0 ? "text-emerald-400" : "text-gray-300"}>
+                    <span className={priceDifference > 0 ? "text-destructive" : priceDifference < 0 ? "text-success" : "text-gray-300"}>
                       {priceDifference > 0 ? `Customer pays ${CURRENCY.symbol} ${priceDifference.toFixed(2)}` : 
                        priceDifference < 0 ? `Refund ${CURRENCY.symbol} ${Math.abs(priceDifference).toFixed(2)}` : 
                        `Even Swap (${CURRENCY.symbol} 0.00)`}
@@ -251,7 +251,7 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                 </div>
                 <div className="flex justify-between items-center text-sm pt-2">
                   <span className="text-gray-400">Total Credit:</span>
-                  <span className="font-bold text-emerald-400">{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
+                  <span className="font-bold text-success">{CURRENCY.symbol} {returnCredit.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -267,14 +267,14 @@ export function ExchangeModal({ saleId, returnItems, returnCredit, onClose }: Ex
                 </div>
                 <div className="flex justify-between items-center text-sm pt-2">
                   <span className="text-gray-400">Total Cost:</span>
-                  <span className="font-bold text-red-400">{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
+                  <span className="font-bold text-destructive">{CURRENCY.symbol} {replacementTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             <div className="bg-gray-950 p-4 rounded-lg border border-gray-800 flex justify-between items-center">
               <span className="text-gray-300 text-lg">Final Balance</span>
-              <span className={`text-2xl font-bold ${priceDifference > 0 ? "text-red-400" : priceDifference < 0 ? "text-emerald-400" : "text-gray-100"}`}>
+              <span className={`text-2xl font-bold ${priceDifference > 0 ? "text-destructive" : priceDifference < 0 ? "text-success" : "text-gray-100"}`}>
                  {priceDifference > 0 ? `Pay ${CURRENCY.symbol} ${priceDifference.toFixed(2)}` : 
                   priceDifference < 0 ? `Refund ${CURRENCY.symbol} ${Math.abs(priceDifference).toFixed(2)}` : 
                   `${CURRENCY.symbol} 0.00`}

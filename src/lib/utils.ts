@@ -31,6 +31,22 @@ export function fc(amount: number): string {
   return formatCurrency(amount, CURRENCY.code);
 }
 
+/**
+ * Pulls a user-readable error message out of an Axios-style API error, with
+ * fallback. Use this at every API call-site instead of re-implementing the
+ * `(err as { response?: { data?: ... } })?.message` cast.
+ */
+export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (typeof err === 'object' && err !== null) {
+    const maybe = err as { response?: { data?: { message?: unknown } }; message?: unknown };
+    const apiMsg = maybe.response?.data?.message;
+    if (typeof apiMsg === 'string' && apiMsg.trim().length > 0) return apiMsg;
+    if (typeof maybe.message === 'string' && maybe.message.trim().length > 0) return maybe.message;
+  }
+  if (typeof err === 'string' && err.trim().length > 0) return err;
+  return fallback;
+}
+
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',

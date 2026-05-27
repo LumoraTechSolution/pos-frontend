@@ -47,18 +47,18 @@ export function StockVarianceTab({ dateRange, onDateChange }: Props) {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Total Units Lost", value: (data?.totalUnitsLost ?? 0).toLocaleString(), cls: "text-red-400" },
-          { label: "Estimated Cost Impact", value: fc(data?.estimatedCostLoss ?? 0), cls: "text-amber-400" },
-          { label: "Products Affected", value: (data?.productsAffected ?? 0).toLocaleString(), cls: "text-gray-200" },
+          { label: "Total Units Lost", value: (data?.totalUnitsLost ?? 0).toLocaleString(), cls: "text-destructive" },
+          { label: "Estimated Cost Impact", value: fc(data?.estimatedCostLoss ?? 0), cls: "text-warning" },
+          { label: "Products Affected", value: (data?.productsAffected ?? 0).toLocaleString(), cls: "text-foreground" },
         ].map(stat => (
-          <Card key={stat.label} className="bg-gray-900/50 border-gray-800 p-3">
+          <Card key={stat.label} className="bg-card/50 border-border p-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
             <p className={`text-xl font-bold ${stat.cls}`}>{isLoading ? "..." : stat.value}</p>
           </Card>
         ))}
       </div>
 
-      <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+      <Card className="bg-card/50 border-border backdrop-blur-sm">
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
@@ -68,16 +68,16 @@ export function StockVarianceTab({ dateRange, onDateChange }: Props) {
                 and manual stock-outs. Sales deductions are excluded.
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV}>
+            <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV}>
               <Download size={14} /> CSV
             </Button>
           </div>
           <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-800 bg-gray-900/40">
+          <div className="rounded-md border border-border bg-card/40">
             <Table>
-              <TableHeader className="bg-gray-800/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>SKU</TableHead>
@@ -103,14 +103,14 @@ export function StockVarianceTab({ dateRange, onDateChange }: Props) {
                   </TableRow>
                 ) : (
                   paged.map(p => (
-                    <TableRow key={p.productId} className="hover:bg-gray-800/50">
-                      <TableCell className="font-medium text-gray-200">{p.productName}</TableCell>
-                      <TableCell className="text-gray-400 font-mono text-xs">{p.sku || "—"}</TableCell>
-                      <TableCell className="text-center text-gray-300">{p.reconciledUnits}</TableCell>
-                      <TableCell className="text-center text-red-400">{p.damagedUnits}</TableCell>
-                      <TableCell className="text-center text-gray-300">{p.stockOutUnits}</TableCell>
-                      <TableCell className="text-center font-bold text-red-400">{p.totalLost}</TableCell>
-                      <TableCell className="text-right font-semibold text-amber-400">{fc(p.costImpact)}</TableCell>
+                    <TableRow key={p.productId} className="hover:bg-muted/50">
+                      <TableCell className="font-medium text-foreground">{p.productName}</TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-xs">{p.sku || "—"}</TableCell>
+                      <TableCell className="text-center text-foreground">{p.reconciledUnits}</TableCell>
+                      <TableCell className="text-center text-destructive">{p.damagedUnits}</TableCell>
+                      <TableCell className="text-center text-foreground">{p.stockOutUnits}</TableCell>
+                      <TableCell className="text-center font-bold text-destructive">{p.totalLost}</TableCell>
+                      <TableCell className="text-right font-semibold text-warning">{fc(p.costImpact)}</TableCell>
                     </TableRow>
                   ))
                 )}

@@ -46,9 +46,9 @@ describe("EndShiftModal", () => {
 
     renderWithProviders(<EndShiftModal open onClose={() => {}} />);
 
-    // Expected = 200 + 80 − 30 = 250
+    // Expected = 200 + 80 − 30 = 250 (currency-agnostic — app renders LKR "Rs.")
     await waitFor(() => {
-      expect(screen.getByText("$250.00")).toBeInTheDocument();
+      expect(screen.getByTestId("end-shift-expected")).toHaveTextContent("250.00");
     });
     // The refund-line warning shows when refunds > 0
     expect(screen.getByText(/cash refunds issued/i)).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("EndShiftModal", () => {
     await screen.findByLabelText(/counted cash/i);
     await user.type(screen.getByLabelText(/counted cash/i), "240");
 
-    expect(await screen.findByText(/short by \$10\.00/i)).toBeInTheDocument();
+    expect(await screen.findByText(/short by .*10\.00/i)).toBeInTheDocument();
   });
 
   it("submits the counted amount and reports the variance toast", async () => {

@@ -108,7 +108,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center bg-black gap-4">
         <div className="h-12 w-12 rounded-full border-t-2 border-b-2 border-primary animate-spin"></div>
-        <p className="text-gray-400 text-sm font-medium animate-pulse">Verifying session...</p>
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Verifying session...</p>
       </div>
     );
   }

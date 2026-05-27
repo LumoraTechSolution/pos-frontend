@@ -45,4 +45,7 @@ export const userManagementService = {
 
   toggleStatus: (id: string) =>
     api.patch<ApiResponse<UserResponse>>(`/users/${id}/toggle-status`).then((r) => r.data.data),
+
+  bulkSetStatus: (ids: string[], active: boolean) =>
+    api.post<ApiResponse<number>>("/users/bulk-status", { ids, active }).then((r) => r.data.data),
 };

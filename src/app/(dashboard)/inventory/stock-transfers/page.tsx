@@ -7,12 +7,42 @@ import { stockTransferService } from '@/services/stockTransferService';
 import { StockTransferModal } from '@/components/inventory/StockTransferModal';
 import { toast } from 'sonner';
 import { FeatureGuard } from '@/components/auth/FeatureGuard';
+import { useConfirmDialog } from '@/components/super-admin/ConfirmDialog';
 
 export default function StockTransfersPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
+
+  const askInTransit = async (id: string) => {
+    const ok = await confirm({
+      title: 'Mark this transfer as In Transit?',
+      description: 'Source-branch stock is reserved for this transfer. Destination branch will not see stock until completion.',
+      confirmLabel: 'Mark In Transit',
+    });
+    if (ok) inTransitMutation.mutate(id);
+  };
+
+  const askComplete = async (id: string) => {
+    const ok = await confirm({
+      title: 'Complete this transfer?',
+      description: 'This immediately moves stock from the source branch to the destination branch. Cannot be undone.',
+      confirmLabel: 'Complete transfer',
+    });
+    if (ok) completeMutation.mutate(id);
+  };
+
+  const askCancel = async (id: string) => {
+    const ok = await confirm({
+      title: 'Cancel this transfer?',
+      description: 'Any reserved stock will be returned to the source branch. The transfer record is preserved for audit.',
+      confirmLabel: 'Cancel transfer',
+      variant: 'destructive',
+    });
+    if (ok) cancelMutation.mutate(id);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['stockTransfers', page, statusFilter],
@@ -52,13 +82,13 @@ export default function StockTransfersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">Pending</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-warning/20 text-warning border border-warning/30">Pending</span>;
       case 'IN_TRANSIT':
         return <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-500 border border-blue-500/30">In Transit</span>;
       case 'COMPLETED':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-500 border border-green-500/30">Completed</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-success/20 text-success border border-success/30">Completed</span>;
       case 'CANCELLED':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-500 border border-red-500/30">Cancelled</span>;
+        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-destructive/20 text-destructive border border-destructive/30">Cancelled</span>;
       default:
         return null;
     }
@@ -69,8 +99,8 @@ export default function StockTransfersPage() {
       feature="STOCK_TRANSFERS"
       fallback={
         <div className="flex h-full min-h-[500px] flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
-          <div className="rounded-full bg-red-500/10 p-4 mb-4">
-            <ArrowRightLeft className="h-10 w-10 text-red-500" />
+          <div className="rounded-full bg-destructive/10 p-4 mb-4">
+            <ArrowRightLeft className="h-10 w-10 text-destructive" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight mb-2">Feature Not Available</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
@@ -81,13 +111,14 @@ export default function StockTransfersPage() {
       }
     >
     <div className="p-8 max-w-7xl mx-auto space-y-6">
+      {confirmDialog}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <ArrowRightLeft className="text-primary" size={28} />
             Stock Transfers
           </h1>
-          <p className="text-gray-400 mt-1 flex items-center gap-2">
+          <p className="text-muted-foreground mt-1 flex items-center gap-2">
             Move inventory smoothly between your branches
           </p>
         </div>
@@ -101,14 +132,14 @@ export default function StockTransfersPage() {
         </button>
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-gray-800 flex flex-wrap gap-4 items-center justify-between">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xl">
+        <div className="p-4 border-b border-border flex flex-wrap gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-400">Status:</label>
+            <label className="text-sm text-muted-foreground">Status:</label>
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
-              className="bg-gray-950 border border-gray-800 text-sm rounded-lg px-3 py-2 text-white outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="bg-background border border-border text-sm rounded-lg px-3 py-2 text-foreground outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             >
               <option value="">All</option>
               <option value="PENDING">Pending</option>
@@ -120,8 +151,8 @@ export default function StockTransfersPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-300">
-            <thead className="bg-gray-950/50 text-gray-400 uppercase text-xs font-semibold">
+          <table className="w-full text-left text-sm text-foreground">
+            <thead className="bg-background/50 text-muted-foreground uppercase text-xs font-semibold">
               <tr>
                 <th className="px-6 py-4">Transfer ID / Date</th>
                 <th className="px-6 py-4">Product</th>
@@ -131,15 +162,15 @@ export default function StockTransfersPage() {
                 <th className="px-6 py-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/50">
+            <tbody className="divide-y divide-border/50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">Loading transfers...</td>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">Loading transfers...</td>
                 </tr>
               ) : transfers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
                       <Truck size={48} className="mb-4 opacity-20" />
                       <p className="text-lg">No transfers found</p>
                       <p className="text-sm mt-1">Change filters or create a new transfer</p>
@@ -148,34 +179,34 @@ export default function StockTransfersPage() {
                 </tr>
               ) : (
                 transfers.map((transfer) => (
-                  <tr key={transfer.id} className="hover:bg-gray-800/20 transition-colors group">
+                  <tr key={transfer.id} className="hover:bg-muted/20 transition-colors group">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-200" title={transfer.id}>TRF-{transfer.id.substring(0, 6).toUpperCase()}</div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="font-medium text-foreground" title={transfer.id}>TRF-{transfer.id.substring(0, 6).toUpperCase()}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
                         {format(new Date(transfer.createdAt), "MMM d, yyyy h:mm a")}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-white">{transfer.productName}</div>
-                      <div className="text-xs text-gray-500">SKU: {transfer.productSku}</div>
+                      <div className="font-medium text-foreground">{transfer.productName}</div>
+                      <div className="text-xs text-muted-foreground">SKU: {transfer.productSku}</div>
                       {transfer.notes && (
-                        <div className="text-xs text-gray-400 italic mt-1 line-clamp-1 truncate max-w-[150px]" title={transfer.notes}>
+                        <div className="text-xs text-muted-foreground italic mt-1 line-clamp-1 truncate max-w-[150px]" title={transfer.notes}>
                           {transfer.notes}
                         </div>
                       )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-300 bg-gray-800/50 px-2 py-1 rounded truncate max-w-[100px]" title={transfer.sourceBranchName}>
+                        <span className="text-sm text-foreground bg-muted/50 px-2 py-1 rounded truncate max-w-[100px]" title={transfer.sourceBranchName}>
                           {transfer.sourceBranchName}
                         </span>
-                        <ArrowRightLeft size={14} className="text-gray-500 shrink-0" />
+                        <ArrowRightLeft size={14} className="text-muted-foreground shrink-0" />
                         <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-1 rounded truncate max-w-[100px]" title={transfer.destinationBranchName}>
                           {transfer.destinationBranchName}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-center font-semibold text-white">
+                    <td className="px-6 py-4 text-center font-semibold text-foreground">
                       {transfer.quantity}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -185,12 +216,9 @@ export default function StockTransfersPage() {
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         {transfer.status === 'PENDING' && (
                           <button
-                            onClick={() => {
-                              if(confirm('Mark this transfer as In Transit?')) {
-                                inTransitMutation.mutate(transfer.id);
-                              }
-                            }}
-                            className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 p-2 rounded-lg transition-colors border border-blue-500/20"
+                            onClick={() => askInTransit(transfer.id)}
+                            className="bg-info/15 hover:bg-info/25 text-info p-2 rounded-lg transition-colors border border-info/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Mark transfer as In Transit"
                             title="Mark In Transit"
                           >
                             <Truck size={16} />
@@ -198,12 +226,9 @@ export default function StockTransfersPage() {
                         )}
                         {(transfer.status === 'PENDING' || transfer.status === 'IN_TRANSIT') && (
                           <button
-                            onClick={() => {
-                              if(confirm('Complete transfer? This will immediately move stock from Source to Destination branch.')) {
-                                completeMutation.mutate(transfer.id);
-                              }
-                            }}
-                            className="bg-green-500/20 hover:bg-green-500/30 text-green-400 p-2 rounded-lg transition-colors border border-green-500/20"
+                            onClick={() => askComplete(transfer.id)}
+                            className="bg-success/20 hover:bg-success/30 text-success p-2 rounded-lg transition-colors border border-success/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Complete transfer"
                             title="Complete Transfer"
                           >
                             <Flag size={16} />
@@ -211,12 +236,9 @@ export default function StockTransfersPage() {
                         )}
                         {(transfer.status === 'PENDING' || transfer.status === 'IN_TRANSIT') && (
                           <button
-                            onClick={() => {
-                              if(confirm('Are you sure you want to cancel this transfer?')) {
-                                cancelMutation.mutate(transfer.id);
-                              }
-                            }}
-                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-lg transition-colors border border-red-500/20"
+                            onClick={() => askCancel(transfer.id)}
+                            className="bg-destructive/10 hover:bg-destructive/20 text-destructive p-2 rounded-lg transition-colors border border-destructive/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label="Cancel transfer"
                             title="Cancel Transfer"
                           >
                             <X size={16} />
@@ -233,21 +255,21 @@ export default function StockTransfersPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-gray-800 flex justify-between items-center bg-gray-950/30">
+          <div className="p-4 border-t border-border flex justify-between items-center bg-background/30">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white disabled:opacity-50"
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               Page {page + 1} of {totalPages}
             </span>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= totalPages - 1}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white disabled:opacity-50"
+              className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
               Next
             </button>

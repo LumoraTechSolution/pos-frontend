@@ -120,7 +120,7 @@ export function DateRangePicker({ value, onChange, onRangeChange, className }: D
                 'text-[11px] px-2.5 py-1 rounded-md border transition-colors',
                 active
                   ? 'bg-primary/20 border-primary/40 text-primary'
-                  : 'bg-gray-800/50 border-gray-700 text-gray-400 hover:bg-gray-700 hover:text-white'
+                  : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {p.label}
@@ -128,15 +128,15 @@ export function DateRangePicker({ value, onChange, onRangeChange, className }: D
           );
         })}
       </div>
-      <div className="flex items-center gap-2 bg-gray-800 rounded-md p-1 px-3 border border-gray-700 ml-auto">
-        <Calendar size={14} className="text-gray-500" />
+      <div className="flex items-center gap-2 bg-muted rounded-md p-1 px-3 border border-border ml-auto">
+        <Calendar size={14} className="text-muted-foreground" />
         <input
           type="date"
           className="bg-transparent border-none text-sm focus:ring-0 px-1"
           value={value.start.split('T')[0]}
           onChange={(e) => apply({ ...value, start: `${e.target.value}T00:00:00` })}
         />
-        <ArrowRight size={12} className="text-gray-600" />
+        <ArrowRight size={12} className="text-muted-foreground" />
         <input
           type="date"
           className="bg-transparent border-none text-sm focus:ring-0 px-1"

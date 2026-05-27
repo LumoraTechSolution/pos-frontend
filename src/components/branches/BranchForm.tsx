@@ -81,10 +81,10 @@ export default function BranchFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-950 border-gray-800 text-gray-200">
+      <DialogContent className="sm:max-w-[425px] bg-background border-border text-foreground">
         <DialogHeader>
           <DialogTitle>{initialData ? "Edit Branch" : "Add New Branch"}</DialogTitle>
-          <DialogDescription className="text-gray-400">
+          <DialogDescription className="text-muted-foreground">
             {initialData 
               ? "Update details for the selected branch physical location." 
               : "Register a new branch, store, or warehouse for your business."}
@@ -100,7 +100,7 @@ export default function BranchFormModal({
                 <FormItem>
                   <FormLabel>Branch Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Downtown Store" {...field} className="bg-gray-900 border-gray-800" />
+                    <Input placeholder="Downtown Store" {...field} className="bg-card border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,7 +114,7 @@ export default function BranchFormModal({
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="123 Business St, City" {...field} className="bg-gray-900 border-gray-800" />
+                    <Input placeholder="123 Business St, City" {...field} className="bg-card border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,7 +128,7 @@ export default function BranchFormModal({
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1 (555) 000-0000" {...field} className="bg-gray-900 border-gray-800" />
+                    <Input placeholder="+1 (555) 000-0000" {...field} className="bg-card border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,10 +139,10 @@ export default function BranchFormModal({
               control={form.control}
               name="isActive"
               render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border border-gray-800 p-4">
+                <FormItem className="flex items-center justify-between rounded-lg border border-border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base text-gray-200">Active Status</FormLabel>
-                    <div className="text-sm text-gray-400">
+                    <FormLabel className="text-base text-foreground">Active Status</FormLabel>
+                    <div className="text-sm text-muted-foreground">
                       If disabled, this branch will not appear in the POS terminal.
                     </div>
                   </div>

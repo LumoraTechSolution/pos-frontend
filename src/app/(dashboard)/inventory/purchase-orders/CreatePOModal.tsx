@@ -140,8 +140,8 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[700px] h-[90vh] flex flex-col bg-gray-900 border-gray-800 text-white p-0">
-        <DialogHeader className="p-6 pb-2 border-b border-gray-800">
+      <DialogContent className="max-w-[700px] h-[90vh] flex flex-col bg-card border-border text-foreground p-0">
+        <DialogHeader className="p-6 pb-2 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Truck className="h-5 w-5 text-primary" />
             Create Purchase Order
@@ -156,10 +156,10 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                 <div className="space-y-2">
                   <Label>Supplier *</Label>
                   <Select value={supplierId} onValueChange={setSupplierId}>
-                    <SelectTrigger className="bg-gray-950 border-gray-800">
+                    <SelectTrigger className="bg-background border-border">
                       <SelectValue placeholder="Select Supplier" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                    <SelectContent className="bg-card border-border text-foreground">
                       {suppliers.map(s => (
                         <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
@@ -170,10 +170,10 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                 <div className="space-y-2">
                   <Label>Delivery Branch *</Label>
                   <Select value={branchId} onValueChange={setBranchId}>
-                    <SelectTrigger className="bg-gray-950 border-gray-800">
+                    <SelectTrigger className="bg-background border-border">
                       <SelectValue placeholder="Select Branch" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                    <SelectContent className="bg-card border-border text-foreground">
                       {branches?.map(b => (
                         <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                       ))}
@@ -187,7 +187,7 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                     type="date"
                     value={expectedDate}
                     onChange={(e) => setExpectedDate(e.target.value)}
-                    className="bg-gray-950 border-gray-800 [color-scheme:dark]"
+                    className="bg-background border-border [color-scheme:dark]"
                   />
                 </div>
                 
@@ -197,21 +197,21 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                     placeholder="Optional remarks..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="bg-gray-950 border-gray-800"
+                    className="bg-background border-border"
                   />
                 </div>
               </div>
 
               {/* Items Section */}
-              <div className="space-y-4 pt-4 border-t border-gray-800">
+              <div className="space-y-4 pt-4 border-t border-border">
                 <div className="flex justify-between items-center">
                   <Label className="text-lg font-semibold">Order Items</Label>
                   <div className="w-[300px]">
                     <Select onValueChange={addProduct} value="">
-                      <SelectTrigger className="bg-gray-950 border-gray-800 h-8">
+                      <SelectTrigger className="bg-background border-border h-8">
                         <SelectValue placeholder="+ Select product to add..." />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                      <SelectContent className="bg-card border-border text-foreground">
                         {products.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
                         ))}
@@ -221,13 +221,13 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                 </div>
 
                 {items.length === 0 ? (
-                  <div className="text-center py-8 bg-gray-950 rounded border border-dashed border-gray-800 text-gray-400">
+                  <div className="text-center py-8 bg-background rounded border border-dashed border-border text-muted-foreground">
                     No products added yet. Select products from the dropdown above.
                   </div>
                 ) : (
-                  <div className="border border-gray-800 rounded-md overflow-hidden bg-gray-950">
+                  <div className="border border-border rounded-md overflow-hidden bg-background">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-900 text-gray-400 border-b border-gray-800">
+                      <thead className="bg-card text-muted-foreground border-b border-border">
                         <tr>
                           <th className="text-left py-2 px-3 font-medium">Product</th>
                           <th className="text-left py-2 px-3 font-medium w-24">Unit Cost</th>
@@ -238,17 +238,17 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                       </thead>
                       <tbody>
                         {items.map(item => (
-                          <tr key={item.id} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-900/50 transition-colors">
+                          <tr key={item.id} className="border-b border-border/50 last:border-0 hover:bg-card/50 transition-colors">
                             <td className="py-2 px-3">
                               <div className="font-medium">{item.name}</div>
-                              <div className="text-xs text-gray-500">{item.sku}</div>
+                              <div className="text-xs text-muted-foreground">{item.sku}</div>
                             </td>
                             <td className="py-2 px-3">
                               <Input 
                                 type="number" 
                                 min="0" 
                                 step="0.01"
-                                className="h-8 bg-gray-900 border-gray-800 px-2"
+                                className="h-8 bg-card border-border px-2"
                                 value={item.unitCost}
                                 onChange={(e) => updateItemCost(item.id, Number(e.target.value))}
                               />
@@ -257,12 +257,12 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                               <Input 
                                 type="number" 
                                 min="1" 
-                                className="h-8 bg-gray-900 border-gray-800 px-2"
+                                className="h-8 bg-card border-border px-2"
                                 value={item.quantity}
                                 onChange={(e) => updateItemQty(item.id, Number(e.target.value))}
                               />
                             </td>
-                            <td className="py-2 px-3 text-right font-medium text-emerald-400">
+                            <td className="py-2 px-3 text-right font-medium text-success">
                               {CURRENCY.symbol} {(item.quantity * item.unitCost).toFixed(2)}
                             </td>
                             <td className="py-2 px-2 text-center">
@@ -270,7 +270,9 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-400/10"
+                                aria-label="Remove item"
+                                title="Remove item"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => removeProduct(item.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -286,13 +288,13 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t border-gray-800 bg-gray-950 flex items-center justify-between">
+          <div className="p-4 border-t border-border bg-background flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-sm text-gray-400">Total Order Amount</span>
-              <span className="text-xl font-bold text-emerald-400">{CURRENCY.symbol} {totalAmount.toFixed(2)}</span>
+              <span className="text-sm text-muted-foreground">Total Order Amount</span>
+              <span className="text-xl font-bold text-success">{CURRENCY.symbol} {totalAmount.toFixed(2)}</span>
             </div>
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={onClose} className="border-gray-800 hover:bg-gray-800 text-gray-300">
+              <Button type="button" variant="outline" onClick={onClose} className="border-border hover:bg-muted text-foreground">
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[120px]">

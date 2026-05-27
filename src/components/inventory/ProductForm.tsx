@@ -192,7 +192,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/inventory/products">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-800" type="button">
+            <Button variant="ghost" size="icon" aria-label="Back to products" title="Back to products" className="rounded-full hover:bg-muted" type="button">
               <ArrowLeft size={20} />
             </Button>
           </Link>
@@ -203,7 +203,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-lg">General Information</CardTitle>
               </CardHeader>
@@ -217,7 +217,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormControl>
                         <Input 
                           placeholder="Enter product name" 
-                          className="bg-gray-950 border-gray-800" 
+                          className="bg-background border-border" 
                           {...field} 
                           ref={(e) => {
                             field.ref(e);
@@ -238,7 +238,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[100px] px-3 py-2 bg-gray-950 border border-gray-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full min-h-[100px] px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="Provide details about the product..."
                           {...field}
                         />
@@ -250,7 +250,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-lg">Pricing & Identification</CardTitle>
               </CardHeader>
@@ -263,7 +263,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>Sale Price ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" className="bg-gray-950 border-gray-800" {...field} />
+                          <Input type="number" step="0.01" className="bg-background border-border" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -276,7 +276,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>Cost Price ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" className="bg-gray-950 border-gray-800" {...field} />
+                          <Input type="number" step="0.01" className="bg-background border-border" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -289,7 +289,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormItem>
                         <FormLabel>SKU</FormLabel>
                         <FormControl>
-                          <Input placeholder="Leave empty for auto-generation" className="bg-gray-950 border-gray-800" {...field} />
+                          <Input placeholder="Leave empty for auto-generation" className="bg-background border-border" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -305,7 +305,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         <div className="relative">
                           <Input 
                             placeholder="UPC / EAN" 
-                            className={`bg-gray-950 border-gray-800 ${barcodeFromUrl && !initialData ? 'border-primary/50 text-primary' : ''}`} 
+                            className={`bg-background border-border ${barcodeFromUrl && !initialData ? 'border-primary/50 text-primary' : ''}`} 
                             {...field} 
                           />
                           {barcodeFromUrl && !initialData && (
@@ -323,14 +323,14 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-lg">Inventory</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!initialData && branches && branches.length > 1 ? (
                   <div className="space-y-4">
-                    <label className="text-sm font-semibold text-gray-400">Initial Stock per Branch</label>
+                    <label className="text-sm font-semibold text-muted-foreground">Initial Stock per Branch</label>
                     {branches.map((branch: Branch) => (
                       <FormField
                         key={branch.id}
@@ -338,9 +338,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         name={`branchStockLevels.${branch.id}`}
                         render={({ field }) => (
                           <FormItem className="flex items-center justify-between gap-4 space-y-0">
-                            <FormLabel className="text-xs text-gray-400 w-1/2">{branch.name}</FormLabel>
+                            <FormLabel className="text-xs text-muted-foreground w-1/2">{branch.name}</FormLabel>
                             <FormControl className="w-1/2">
-                              <Input type="number" className="bg-gray-950 border-gray-800 h-8" {...field} />
+                              <Input type="number" className="bg-background border-border h-8" {...field} />
                             </FormControl>
                           </FormItem>
                         )}
@@ -356,22 +356,23 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         <FormLabel>{initialData ? 'Total Stock (Read-only)' : 'Initial Stock'}</FormLabel>
                         <div className="flex gap-2">
                           <FormControl className="flex-1">
-                            <Input type="number" className="bg-gray-950 border-gray-800" {...field} disabled={!!initialData} />
+                            <Input type="number" className="bg-background border-border" {...field} disabled={!!initialData} />
                           </FormControl>
                           {initialData && (
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="icon" 
-                              className="shrink-0 border-gray-800 hover:bg-gray-800"
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="shrink-0 border-border hover:bg-muted"
                               onClick={() => setIsAdjModalOpen(true)}
+                              aria-label="Adjust inventory"
                               title="Adjust Inventory"
                             >
                               <PencilLine size={16} className="text-primary" />
                             </Button>
                           )}
                         </div>
-                        {initialData && <p className="text-[10px] text-gray-500">Stock can be managed via the Adjustment tool.</p>}
+                        {initialData && <p className="text-[10px] text-muted-foreground">Stock can be managed via the Adjustment tool.</p>}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -384,7 +385,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <FormItem>
                       <FormLabel>Low Stock Threshold</FormLabel>
                       <FormControl>
-                        <Input type="number" className="bg-gray-950 border-gray-800" {...field} />
+                        <Input type="number" className="bg-background border-border" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -393,7 +394,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-lg">Classification</CardTitle>
               </CardHeader>
@@ -406,7 +407,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Category</FormLabel>
                       <FormControl>
                         <select 
-                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm"
                           value={field.value || ""}
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
@@ -428,7 +429,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Brand</FormLabel>
                       <FormControl>
                         <select
-                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm"
                           value={field.value || ""}
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
@@ -450,7 +451,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <FormLabel>Primary Supplier</FormLabel>
                       <FormControl>
                         <select
-                          className="w-full h-10 px-3 bg-gray-950 border border-gray-800 rounded-lg text-sm"
+                          className="w-full h-10 px-3 bg-background border border-border rounded-lg text-sm"
                           value={field.value || ""}
                           onChange={(e) => field.onChange(e.target.value || null)}
                         >
@@ -467,12 +468,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+            <Card className="bg-card border-border overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-lg">Product Image</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="aspect-square rounded border border-gray-800 bg-gray-950 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-square rounded border border-border bg-background flex items-center justify-center relative overflow-hidden">
                   {form.watch("imageUrl") ? (
                     <>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -480,13 +481,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       <button
                         type="button"
                         onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1 z-10"
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-foreground rounded-full p-1 z-10"
                       >
                         <X size={14} />
                       </button>
                     </>
                   ) : (
-                    <div className="text-center text-gray-600">
+                    <div className="text-center text-muted-foreground">
                       <div className="text-2xl mb-1">🖼️</div>
                       <p className="text-xs font-medium">No Image</p>
                     </div>
@@ -502,7 +503,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full gap-2 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800"
+                  className="w-full gap-2 border-border text-foreground hover:text-foreground hover:bg-muted"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload size={15} />
@@ -513,7 +514,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pb-12 border-t border-gray-800 pt-8">
+        <div className="flex justify-end gap-4 pb-12 border-t border-border pt-8">
           <Link href="/inventory/products">
             <Button variant="ghost" type="button">Discard</Button>
           </Link>

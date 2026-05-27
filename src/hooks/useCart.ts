@@ -6,6 +6,8 @@ import { Category } from '@/types/inventory';
 
 export interface CartItem extends Product {
   cartQuantity: number;
+  /** Per-line discount amount in tenant currency. Default 0. Capped at line subtotal. */
+  discountAmount: number;
 }
 
 export interface TaxContext {
@@ -15,37 +17,32 @@ export interface TaxContext {
 
 /**
  * Resolves the tax rate for a product using the chain:
- * Product → Category → category.taxRateId → taxRate.rate
- * Fallback → Default tax rate
- * Fallback → 0 (tax-exempt)
+ * Product -> Category -> category.taxRateId -> taxRate.rate
+ * Fallback -> Default tax rate
+ * Fallback -> 0 (tax-exempt)
  */
 function getProductTaxRate(product: Product, taxContext: TaxContext | null): number {
   if (!taxContext || taxContext.taxRates.length === 0) return 0;
 
   const { taxRates, categories } = taxContext;
 
-  // 1. Find the product's category
   if (product.categoryId) {
     const category = categories.find(c => c.id === product.categoryId);
     if (category?.taxRateId) {
-      // 2. Find the tax rate assigned to this category
       const categoryTax = taxRates.find(t => t.id === category.taxRateId && t.isActive);
       if (categoryTax) return categoryTax.rate;
     }
   }
 
-  // 3. Fallback to default tax rate
   const defaultTax = taxRates.find(t => t.isDefault && t.isActive);
   if (defaultTax) return defaultTax.rate;
 
-  // 4. No tax (tax-exempt)
   return 0;
 }
 
 /**
  * Returns the in-stock quantity for the currently selected branch. Falls back
- * to the global stockQuantity only when no branch is selected — at the POS
- * the branch is always set, so this fallback only fires in tests / harnesses.
+ * to the global stockQuantity only when no branch is selected.
  */
 function stockForBranch(product: Product, branchId?: string): number {
   if (branchId && product.stockLevels) {
@@ -79,7 +76,7 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
         return prevItems;
       }
 
-      return [...prevItems, { ...product, cartQuantity: 1 }];
+      return [...prevItems, { ...product, cartQuantity: 1, discountAmount: 0 }];
     });
   }, [selectedBranchId]);
 
@@ -101,42 +98,69 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
         toast.error(`Only ${branchStock} in stock at this branch`);
         return prevItems;
       }
-      return prevItems.map((i) =>
-        i.id === productId ? { ...i, cartQuantity: quantity } : i
-      );
+      return prevItems.map((i) => {
+        if (i.id !== productId) return i;
+        const newSubtotal = i.basePrice * quantity;
+        const clamped = Math.min(i.discountAmount, newSubtotal);
+        return { ...i, cartQuantity: quantity, discountAmount: clamped };
+      });
     });
   }, [removeFromCart, selectedBranchId]);
+
+  const setItemDiscount = useCallback((productId: string, discount: number) => {
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id !== productId) return item;
+        const subtotal = item.basePrice * item.cartQuantity;
+        const safe = Math.max(0, Math.min(discount, subtotal));
+        if (safe !== discount) {
+          toast.warning(`Discount capped at ${subtotal.toFixed(2)}`);
+        }
+        return { ...item, discountAmount: Number(safe.toFixed(2)) };
+      })
+    );
+  }, []);
 
   const clearCart = useCallback(() => {
     setItems([]);
   }, []);
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.basePrice * item.cartQuantity, 0);
-  }, [items]);
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.basePrice * item.cartQuantity, 0),
+    [items]
+  );
 
-  // Dynamic per-item tax calculation & metadata
+  const discountAmount = useMemo(
+    () => items.reduce((sum, item) => sum + item.discountAmount, 0),
+    [items]
+  );
+
   const taxInfo = useMemo(() => {
     const itemTaxes = items.map(item => {
       const rate = getProductTaxRate(item, taxContext);
-      
-      // Get the name for labeling
+
       let name = 'Tax';
       if (taxContext) {
         const { taxRates, categories } = taxContext;
+        // Resolve the rate name with the same precedence as getProductTaxRate:
+        // the product's category-specific rate wins, falling back to the default.
+        // (A plain find() with `|| t.isDefault` would wrongly return the default
+        // first whenever it appears earlier in the array.)
         const category = categories.find(c => c.id === item.categoryId);
-        const resolvedTax = taxRates.find(t => 
-          (category?.taxRateId === t.id) || (t.isDefault)
-        );
+        const categoryTax = category?.taxRateId
+          ? taxRates.find(t => t.id === category.taxRateId && t.isActive)
+          : undefined;
+        const resolvedTax = categoryTax ?? taxRates.find(t => t.isDefault && t.isActive);
         name = resolvedTax?.name || 'Tax';
       }
 
-      return { rate, name, amount: item.basePrice * item.cartQuantity * rate };
+      const lineSubtotal = item.basePrice * item.cartQuantity;
+      const taxableBase = Math.max(0, lineSubtotal - item.discountAmount);
+      return { rate, name, amount: taxableBase * rate };
     });
 
     const totalAmount = itemTaxes.reduce((sum, t) => sum + t.amount, 0);
-    
-    // Determine the label
+
     let label = 'Tax';
     if (items.length > 0) {
       const uniqueRates = new Set(itemTaxes.map(t => t.rate));
@@ -149,7 +173,6 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
         label = 'Combined Tax';
       }
     } else {
-      // Fallback to default tax for empty cart preview
       const defaultTax = taxContext?.taxRates.find(t => t.isDefault && t.isActive);
       if (defaultTax) {
         label = `${defaultTax.name} (${(defaultTax.rate * 100).toFixed(0)}%)`;
@@ -159,15 +182,20 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
     return { totalAmount, label };
   }, [items, taxContext]);
 
-  const total = useMemo(() => subtotal + taxInfo.totalAmount, [subtotal, taxInfo.totalAmount]);
+  const total = useMemo(
+    () => subtotal - discountAmount + taxInfo.totalAmount,
+    [subtotal, discountAmount, taxInfo.totalAmount]
+  );
 
   return {
     items,
     addToCart,
     removeFromCart,
     updateQuantity,
+    setItemDiscount,
     clearCart,
     subtotal,
+    discountAmount,
     taxAmount: taxInfo.totalAmount,
     taxLabel: taxInfo.label,
     total,

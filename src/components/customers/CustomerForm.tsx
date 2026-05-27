@@ -52,9 +52,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-300">First Name</FormLabel>
+                <FormLabel className="text-foreground">First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. John" {...field} className="bg-black border-gray-800" />
+                  <Input placeholder="e.g. John" {...field} className="bg-background border-border" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -65,9 +65,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-300">Last Name</FormLabel>
+                <FormLabel className="text-foreground">Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Doe" {...field} className="bg-black border-gray-800" />
+                  <Input placeholder="e.g. Doe" {...field} className="bg-background border-border" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -81,9 +81,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-300">Phone Number</FormLabel>
+                <FormLabel className="text-foreground">Phone Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. +123456789" {...field} className="bg-black border-gray-800" />
+                  <Input placeholder="e.g. +123456789" {...field} className="bg-background border-border" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,9 +94,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-gray-300">Email Address</FormLabel>
+                <FormLabel className="text-foreground">Email Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. john@example.com" {...field} className="bg-black border-gray-800" />
+                  <Input placeholder="e.g. john@example.com" {...field} className="bg-background border-border" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -109,9 +109,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({ initialData, onSubmi
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-gray-300">Full Address</FormLabel>
+              <FormLabel className="text-foreground">Full Address</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. 123 Main St, New York..." {...field} className="bg-black border-gray-800" />
+                <Input placeholder="e.g. 123 Main St, New York..." {...field} className="bg-background border-border" />
               </FormControl>
               <FormMessage />
             </FormItem>

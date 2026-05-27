@@ -22,49 +22,49 @@ interface BranchTableProps {
 export default function BranchTable({ data, isLoading, onEdit }: BranchTableProps) {
   if (isLoading) {
     return (
-      <div className="w-full h-64 bg-gray-900/20 rounded-xl border border-gray-800 animate-pulse flex items-center justify-center">
-        <span className="text-gray-500">Loading branches...</span>
+      <div className="w-full h-64 bg-card/20 rounded-xl border border-border animate-pulse flex items-center justify-center">
+        <span className="text-muted-foreground">Loading branches...</span>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-950 border border-gray-800 rounded-xl overflow-hidden">
+    <div className="bg-background border border-border rounded-xl overflow-hidden">
       <Table>
-        <TableHeader className="bg-gray-900/50">
-          <TableRow className="border-gray-800">
-            <TableHead className="text-gray-400">Branch Name</TableHead>
-            <TableHead className="text-gray-400">Address</TableHead>
-            <TableHead className="text-gray-400">Contact</TableHead>
-            <TableHead className="text-gray-400">Status</TableHead>
-            <TableHead className="text-gray-400">Type</TableHead>
-            <TableHead className="text-right text-gray-400">Actions</TableHead>
+        <TableHeader className="bg-card/50">
+          <TableRow className="border-border">
+            <TableHead className="text-muted-foreground">Branch Name</TableHead>
+            <TableHead className="text-muted-foreground">Address</TableHead>
+            <TableHead className="text-muted-foreground">Contact</TableHead>
+            <TableHead className="text-muted-foreground">Status</TableHead>
+            <TableHead className="text-muted-foreground">Type</TableHead>
+            <TableHead className="text-right text-muted-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-32 text-center text-gray-500">
+              <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                 No branches found.
               </TableCell>
             </TableRow>
           ) : (
             data.map((branch) => (
-              <TableRow key={branch.id} className="border-gray-800 hover:bg-gray-900/30 transition-colors">
+              <TableRow key={branch.id} className="border-border hover:bg-card/30 transition-colors">
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
-                    <span className="text-gray-200">{branch.name}</span>
-                    <span className="text-xs text-gray-500 font-mono">{branch.id.substring(0, 8)}...</span>
+                    <span className="text-foreground">{branch.name}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{branch.id.substring(0, 8)}...</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin size={14} className="shrink-0" />
                     <span className="text-sm truncate max-w-[200px]">{branch.address || 'No address provided'}</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2 text-gray-400">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone size={14} className="shrink-0" />
                     <span className="text-sm">{branch.phoneNumber || 'N/A'}</span>
                   </div>
@@ -72,7 +72,7 @@ export default function BranchTable({ data, isLoading, onEdit }: BranchTableProp
                 <TableCell>
                   <Badge 
                     variant={branch.isActive ? "default" : "secondary"}
-                    className={branch.isActive ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-gray-800 text-gray-400"}
+                    className={branch.isActive ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}
                   >
                     {branch.isActive ? "Active" : "Inactive"}
                   </Badge>
@@ -83,14 +83,14 @@ export default function BranchTable({ data, isLoading, onEdit }: BranchTableProp
                       Primary
                     </Badge>
                   ) : (
-                    <span className="text-gray-500 text-xs text-center block">Standard</span>
+                    <span className="text-muted-foreground text-xs text-center block">Standard</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-8 w-8 p-0 text-gray-400 hover:text-white"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                     onClick={() => onEdit(branch)}
                   >
                     <Edit2 size={16} />

@@ -24,6 +24,8 @@ export interface SaleItemResponse {
   productName: string;
   quantity: number;
   unitPrice: number;
+  discountAmount?: number;
+  taxAmount?: number;
   totalAmount: number;
 }
 

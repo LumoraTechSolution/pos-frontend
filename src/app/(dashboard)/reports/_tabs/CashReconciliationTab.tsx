@@ -58,20 +58,20 @@ export function CashReconciliationTab({ dateRange, onDateChange }: Props) {
   };
 
   return (
-    <Card className="bg-gray-900/50 border-gray-800">
+    <Card className="bg-card/50 border-border">
       <CardHeader className="pb-2 flex flex-row items-start justify-between gap-4 flex-wrap">
         <div>
-          <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Wallet size={18} className="text-primary" /> Cash Reconciliation
           </CardTitle>
-          <CardDescription className="text-gray-400 mt-1">
+          <CardDescription className="text-muted-foreground mt-1">
             Closed shift summaries with opening float, expected balance, counted balance, and variance.
             Sorted by largest absolute variance.
           </CardDescription>
         </div>
         <div className="flex items-center gap-2">
           <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
-          <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+          <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
             <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
           </Button>
         </div>
@@ -80,31 +80,31 @@ export function CashReconciliationTab({ dateRange, onDateChange }: Props) {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-gray-800">
-                <TableHead className="text-gray-400">Cashier</TableHead>
-                <TableHead className="text-gray-400">Opened</TableHead>
-                <TableHead className="text-gray-400">Closed</TableHead>
-                <TableHead className="text-gray-400 text-right">Opening</TableHead>
-                <TableHead className="text-gray-400 text-right">Expected</TableHead>
-                <TableHead className="text-gray-400 text-right">Counted</TableHead>
-                <TableHead className="text-gray-400 text-right">Variance</TableHead>
-                <TableHead className="text-gray-400">Notes</TableHead>
+              <TableRow className="border-border">
+                <TableHead className="text-muted-foreground">Cashier</TableHead>
+                <TableHead className="text-muted-foreground">Opened</TableHead>
+                <TableHead className="text-muted-foreground">Closed</TableHead>
+                <TableHead className="text-muted-foreground text-right">Opening</TableHead>
+                <TableHead className="text-muted-foreground text-right">Expected</TableHead>
+                <TableHead className="text-muted-foreground text-right">Counted</TableHead>
+                <TableHead className="text-muted-foreground text-right">Variance</TableHead>
+                <TableHead className="text-muted-foreground">Notes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-gray-800">
+                  <TableRow key={i} className="border-border">
                     {Array.from({ length: 8 }).map((_, j) => (
                       <TableCell key={j}>
-                        <div className="h-4 bg-gray-800 rounded animate-pulse w-16" />
+                        <div className="h-4 bg-muted rounded animate-pulse w-16" />
                       </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (data?.content?.length ?? 0) === 0 ? (
-                <TableRow className="border-gray-800">
-                  <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                <TableRow className="border-border">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     No closed sessions in this date range.
                   </TableCell>
                 </TableRow>
@@ -115,30 +115,30 @@ export function CashReconciliationTab({ dateRange, onDateChange }: Props) {
                   .map(row => {
                     const variance = row.variance ?? 0;
                     return (
-                      <TableRow key={row.sessionId} className="border-gray-800 hover:bg-gray-800/30">
-                        <TableCell className="text-gray-200 font-medium">{row.cashierName}</TableCell>
-                        <TableCell className="text-gray-400 text-sm">
+                      <TableRow key={row.sessionId} className="border-border hover:bg-muted/30">
+                        <TableCell className="text-foreground font-medium">{row.cashierName}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
                           {format(new Date(row.openedAt), "dd/MM/yy HH:mm")}
                         </TableCell>
-                        <TableCell className="text-gray-400 text-sm">
+                        <TableCell className="text-muted-foreground text-sm">
                           {row.closedAt ? format(new Date(row.closedAt), "dd/MM/yy HH:mm") : "—"}
                         </TableCell>
-                        <TableCell className="text-gray-300 text-right font-mono">{fc(row.openingBalance)}</TableCell>
-                        <TableCell className="text-gray-300 text-right font-mono">
+                        <TableCell className="text-foreground text-right font-mono">{fc(row.openingBalance)}</TableCell>
+                        <TableCell className="text-foreground text-right font-mono">
                           {row.expectedBalance != null ? fc(row.expectedBalance) : "—"}
                         </TableCell>
-                        <TableCell className="text-gray-300 text-right font-mono">
+                        <TableCell className="text-foreground text-right font-mono">
                           {row.closingBalance != null ? fc(row.closingBalance) : "—"}
                         </TableCell>
                         <TableCell className="text-right font-mono font-semibold">
                           <span className={
-                            Math.abs(variance) < 0.01 ? "text-emerald-400" :
-                            variance > 0 ? "text-amber-400" : "text-red-400"
+                            Math.abs(variance) < 0.01 ? "text-success" :
+                            variance > 0 ? "text-warning" : "text-destructive"
                           }>
                             {variance >= 0 ? "+" : ""}{fc(variance)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-gray-500 text-xs max-w-[180px] truncate">
+                        <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">
                           {row.notes ?? "—"}
                         </TableCell>
                       </TableRow>

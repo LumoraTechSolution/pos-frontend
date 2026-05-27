@@ -51,7 +51,7 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, session, on
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-gray-950 rounded-xl border border-gray-800/50">
                 <div className="flex items-center gap-3">
-                  <Banknote className="text-emerald-500" size={18} />
+                  <Banknote className="text-success" size={18} />
                   <span className="text-sm font-medium text-gray-300">Cash</span>
                 </div>
                 <span className="font-bold text-white">{CURRENCY.symbol} {(summary.salesByPaymentMethod['CASH'] || 0).toFixed(2)}</span>
@@ -84,7 +84,7 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, session, on
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Total Discounts</span>
-              <span className="text-red-500/70">-{CURRENCY.symbol} {summary.totalDiscounts.toFixed(2)}</span>
+              <span className="text-destructive/70">-{CURRENCY.symbol} {summary.totalDiscounts.toFixed(2)}</span>
             </div>
           </div>
 
@@ -100,12 +100,12 @@ export const ShiftSummary: React.FC<ShiftSummaryProps> = ({ summary, session, on
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Cash Sales</span>
-                  <span className="text-emerald-400">+{CURRENCY.symbol} {(session.cashSalesTotal ?? 0).toFixed(2)}</span>
+                  <span className="text-success">+{CURRENCY.symbol} {(session.cashSalesTotal ?? 0).toFixed(2)}</span>
                 </div>
                 {(session.cashRefundsTotal ?? 0) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Cash Refunds</span>
-                    <span className="text-red-400">-{CURRENCY.symbol} {(session.cashRefundsTotal ?? 0).toFixed(2)}</span>
+                    <span className="text-destructive">-{CURRENCY.symbol} {(session.cashRefundsTotal ?? 0).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold border-t border-gray-800 pt-2">

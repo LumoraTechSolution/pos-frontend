@@ -42,7 +42,7 @@ export function InventoryTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gray-900/50 border-gray-800">
+        <Card className="bg-card/50 border-border">
           <CardHeader className="pb-2">
             <CardDescription>Total Inventory Cost</CardDescription>
             <CardTitle className="text-3xl font-bold flex items-center gap-2">
@@ -54,10 +54,10 @@ export function InventoryTab() {
             <p className="text-xs text-muted-foreground">The net value based on product cost price.</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-900/50 border-gray-800">
+        <Card className="bg-card/50 border-border">
           <CardHeader className="pb-2">
             <CardDescription>Retail Stock Value</CardDescription>
-            <CardTitle className="text-3xl font-bold flex items-center gap-2 text-emerald-400">
+            <CardTitle className="text-3xl font-bold flex items-center gap-2 text-success">
               <TrendingUp />
               {isLoading ? "..." : fc(data?.totalRetailValue ?? 0)}
             </CardTitle>
@@ -66,35 +66,35 @@ export function InventoryTab() {
             <p className="text-xs text-muted-foreground">Potential revenue if everything is sold.</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-900/50 border-gray-800">
+        <Card className="bg-card/50 border-border">
           <CardHeader className="pb-2">
             <CardDescription>Potential Profit</CardDescription>
-            <CardTitle className="text-3xl font-bold text-amber-400">
+            <CardTitle className="text-3xl font-bold text-warning">
               {isLoading ? "..." : fc(data?.potentialProfit ?? 0)}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge className="bg-amber-400/10 text-amber-400">
+            <Badge className="bg-warning/10 text-warning">
               {isLoading ? "0%" : (((data?.potentialProfit ?? 0) / (data?.totalCostValue || 1)) * 100).toFixed(1) + "% Margin"}
             </Badge>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-gray-900/50 border-gray-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader className="flex flex-row items-start justify-between gap-4 flex-wrap">
           <div>
             <CardTitle>Category Breakdown</CardTitle>
             <CardDescription>Detailed valuation across different product categories.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV}>
+          <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV}>
             <Download size={14} /> CSV
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-800 bg-gray-900/40">
+          <div className="rounded-md border border-border bg-card/40">
             <Table>
-              <TableHeader className="bg-gray-800/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Category</TableHead>
                   <TableHead className="text-center">Products</TableHead>
@@ -113,15 +113,15 @@ export function InventoryTab() {
                   </TableRow>
                 ) : (
                   paged.map(cat => (
-                    <TableRow key={cat.categoryName} className="hover:bg-gray-800/50">
+                    <TableRow key={cat.categoryName} className="hover:bg-muted/50">
                       <TableCell className="font-medium">{cat.categoryName}</TableCell>
                       <TableCell className="text-center">{cat.productCount}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="border-gray-700">{cat.stockCount}</Badge>
+                        <Badge variant="outline" className="border-border">{cat.stockCount}</Badge>
                       </TableCell>
                       <TableCell className="text-right">{fc(cat.costValue)}</TableCell>
-                      <TableCell className="text-right text-emerald-400">{fc(cat.retailValue)}</TableCell>
-                      <TableCell className="text-right font-bold text-amber-400">
+                      <TableCell className="text-right text-success">{fc(cat.retailValue)}</TableCell>
+                      <TableCell className="text-right font-bold text-warning">
                         {fc(cat.retailValue - cat.costValue)}
                       </TableCell>
                     </TableRow>

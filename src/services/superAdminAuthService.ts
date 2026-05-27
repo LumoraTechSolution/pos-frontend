@@ -21,6 +21,19 @@ export interface SuperAdminChangePasswordRequest {
   newPassword: string;
 }
 
+export interface SuperAdminProfileResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  firstName?: string;
+  lastName?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  lastLoginUserAgent?: string;
+  passwordLastChangedAt?: string;
+}
+
 export const superAdminAuthService = {
   login: async (data: SuperAdminLoginRequest): Promise<SuperAdminAuthResponse> => {
     const response = await superAdminApi.post<ApiResponse<SuperAdminAuthResponse>>('/auth/login', data);
@@ -42,6 +55,11 @@ export const superAdminAuthService = {
 
   changePassword: async (data: SuperAdminChangePasswordRequest): Promise<void> => {
     await superAdminApi.post('/auth/change-password', data);
+  },
+
+  getProfile: async (): Promise<SuperAdminProfileResponse> => {
+    const response = await superAdminApi.get<ApiResponse<SuperAdminProfileResponse>>('/auth/me');
+    return response.data.data;
   },
 
   ping: async (): Promise<boolean> => {

@@ -70,7 +70,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] bg-gray-950 border-gray-800">
+      <DialogContent className="sm:max-w-[500px] bg-background border-border">
         <DialogHeader>
           <DialogTitle>Import Products</DialogTitle>
           <DialogDescription>
@@ -80,10 +80,10 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
 
         <div className="space-y-4 py-4">
           <div 
-            className="border-2 border-dashed border-gray-800 rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary/50 transition-colors cursor-pointer bg-gray-900/20"
+            className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center gap-3 hover:border-primary/50 transition-colors cursor-pointer bg-card/20"
             onClick={() => document.getElementById('csv-upload')?.click()}
           >
-            <Upload className="text-gray-500" size={32} />
+            <Upload className="text-muted-foreground" size={32} />
             <div className="text-center">
               <p className="text-sm font-medium">{file ? file.name : "Click to select CSV file"}</p>
               <p className="text-xs text-muted-foreground mt-1">Maximum size 5MB</p>
@@ -99,15 +99,15 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
 
           <Button 
             variant="outline" 
-            className="w-full gap-2 border-gray-800 hover:bg-gray-900"
+            className="w-full gap-2 border-border hover:bg-card"
             onClick={downloadTemplate}
           >
             <FileDown size={18} /> Download CSV Template
           </Button>
 
           {result && result.failureCount > 0 && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 space-y-2">
-              <div className="flex items-center gap-2 text-red-400 font-medium">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2 text-destructive font-medium">
                 <AlertCircle size={18} />
                 <span>Import Errors ({result.failureCount})</span>
               </div>
@@ -122,11 +122,11 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Impo
           )}
 
           {result && result.successCount > 0 && result.failureCount === 0 && (
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 flex items-center gap-3">
-              <CheckCircle2 className="text-emerald-400" size={24} />
+            <div className="bg-success/10 border border-success/20 rounded-lg p-4 flex items-center gap-3">
+              <CheckCircle2 className="text-success" size={24} />
               <div>
-                <p className="text-sm font-medium text-emerald-400">Import Successful</p>
-                <p className="text-xs text-emerald-500/80">{result.successCount} products have been added.</p>
+                <p className="text-sm font-medium text-success">Import Successful</p>
+                <p className="text-xs text-success/80">{result.successCount} products have been added.</p>
               </div>
             </div>
           )}

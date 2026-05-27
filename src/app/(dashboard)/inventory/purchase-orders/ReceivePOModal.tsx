@@ -87,14 +87,14 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[700px] bg-gray-900 border-gray-800 text-white p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="p-6 pb-4 border-b border-gray-800">
+      <DialogContent className="max-w-[700px] bg-card border-border text-foreground p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="p-6 pb-4 border-b border-border">
           <DialogTitle className="flex flex-col gap-1">
             <div className="flex items-center gap-2 text-xl">
               <PackageCheck className="h-5 w-5 text-primary" />
               Receive Purchase Order
             </div>
-            <span className="text-sm font-normal text-gray-400">
+            <span className="text-sm font-normal text-muted-foreground">
               Receiving stock for {purchaseOrder.poNumber} at {purchaseOrder.branchName}
             </span>
           </DialogTitle>
@@ -102,9 +102,9 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
 
         <form onSubmit={handleSubmit} className="flex flex-col">
           <ScrollArea className="max-h-[60vh] p-6">
-            <div className="border border-gray-800 rounded-lg overflow-hidden bg-gray-950">
+            <div className="border border-border rounded-lg overflow-hidden bg-background">
               <table className="w-full text-sm">
-                <thead className="bg-gray-900 text-gray-400 border-b border-gray-800">
+                <thead className="bg-card text-muted-foreground border-b border-border">
                   <tr>
                     <th className="text-left py-3 px-4 font-medium">Product</th>
                     <th className="text-center py-3 px-2 font-medium w-20">Ordered</th>
@@ -112,28 +112,28 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
                     <th className="text-center py-3 px-4 font-medium w-36">Receive Now</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y divide-border">
                   {items.map(item => {
                     const remaining = item.ordered - item.previouslyReceived;
                     const isFullyReceived = remaining <= 0;
 
                     return (
-                      <tr key={item.id} className="hover:bg-gray-900/50 transition-colors">
+                      <tr key={item.id} className="hover:bg-card/50 transition-colors">
                         <td className="py-3 px-4">
-                          <div className="font-medium text-gray-200">{item.productName}</div>
-                          <div className="text-xs text-gray-500">{item.sku}</div>
+                          <div className="font-medium text-foreground">{item.productName}</div>
+                          <div className="text-xs text-muted-foreground">{item.sku}</div>
                         </td>
-                        <td className="py-3 px-2 text-center text-gray-300 font-medium">
+                        <td className="py-3 px-2 text-center text-foreground font-medium">
                           {item.ordered}
                         </td>
                         <td className="py-3 px-2 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isFullyReceived ? 'bg-emerald-500/10 text-emerald-400' : 'bg-gray-800 text-gray-400'}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${isFullyReceived ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                             {item.previouslyReceived}
                           </span>
                         </td>
                         <td className="py-2 px-4">
                           {isFullyReceived ? (
-                            <div className="text-center text-xs font-semibold text-emerald-500 bg-emerald-500/10 py-1.5 rounded w-full">
+                            <div className="text-center text-xs font-semibold text-success bg-success/10 py-1.5 rounded w-full">
                               Completed
                             </div>
                           ) : (
@@ -141,7 +141,7 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
                               type="number" 
                               min="0" 
                               max={remaining + 10} // allow slight over-receiving handling by backend
-                              className="h-9 bg-gray-900 border-gray-700 focus-visible:ring-primary text-center font-bold"
+                              className="h-9 bg-card border-border focus-visible:ring-primary text-center font-bold"
                               value={item.qtyToReceiveNow}
                               onChange={(e) => updateQty(item.id, Number(e.target.value))}
                             />
@@ -154,13 +154,13 @@ export function ReceivePOModal({ isOpen, onClose, purchaseOrder }: ReceivePOModa
               </table>
             </div>
             
-            <div className="mt-4 text-sm text-yellow-500/80 bg-yellow-500/10 p-3 rounded-md border border-yellow-500/20">
+            <div className="mt-4 text-sm text-warning/80 bg-warning/10 p-3 rounded-md border border-warning/20">
               <strong>Note:</strong> Receiving items here will directly update the physical stock count for <strong>{purchaseOrder.branchName}</strong> immediately upon submission.
             </div>
           </ScrollArea>
 
-          <div className="p-4 border-t border-gray-800 bg-gray-950 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onClose} className="border-gray-800 hover:bg-gray-800 text-gray-300">
+          <div className="p-4 border-t border-border bg-background flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={onClose} className="border-border hover:bg-muted text-foreground">
               Cancel
             </Button>
             <Button 

@@ -59,20 +59,20 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">New Stock Transfer</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+      <div className="bg-background border border-border rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-foreground">New Stock Transfer</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Product</label>
+            <label className="text-sm font-medium text-foreground">Product</label>
             <select
               required
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               value={formData.productId}
               onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
             >
@@ -85,10 +85,10 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Source Branch</label>
+              <label className="text-sm font-medium text-foreground">Source Branch</label>
               <select
                 required
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 value={formData.sourceBranchId}
                 onChange={(e) => setFormData({ ...formData, sourceBranchId: e.target.value })}
               >
@@ -100,10 +100,10 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Destination Branch</label>
+              <label className="text-sm font-medium text-foreground">Destination Branch</label>
               <select
                 required
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 value={formData.destinationBranchId}
                 onChange={(e) => setFormData({ ...formData, destinationBranchId: e.target.value })}
               >
@@ -116,32 +116,32 @@ export function StockTransferModal({ onClose }: StockTransferModalProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Quantity</label>
+            <label className="text-sm font-medium text-foreground">Quantity</label>
             <input
               type="number"
               min="1"
               required
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               value={formData.quantity}
               onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Notes (Optional)</label>
+            <label className="text-sm font-medium text-foreground">Notes (Optional)</label>
             <textarea
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none h-24"
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none h-24"
               placeholder="Reason for transfer..."
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-800 mt-6">
+          <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               Cancel
             </button>

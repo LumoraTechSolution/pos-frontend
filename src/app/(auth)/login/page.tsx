@@ -30,7 +30,7 @@ export default function LoginPage() {
           <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground mb-4">
             <Store className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">StoreX </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">StoreX </h1>
           <p className="text-muted-foreground">powerd by Lumora Tech</p>
         </div>
 

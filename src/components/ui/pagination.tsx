@@ -24,7 +24,9 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 border-gray-800 bg-gray-900/50 text-gray-400 hover:text-primary hover:border-primary/50 transition-all"
+          aria-label="First page"
+          title="First page"
+          className="h-8 w-8 border-border bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
           disabled={currentPage === 0 || isLoading}
           onClick={() => onPageChange(0)}
         >
@@ -33,7 +35,9 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 border-gray-800 bg-gray-900/50 text-gray-400 hover:text-primary hover:border-primary/50 transition-all"
+          aria-label="Previous page"
+          title="Previous page"
+          className="h-8 w-8 border-border bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
           disabled={currentPage === 0 || isLoading}
           onClick={() => onPageChange(currentPage - 1)}
         >
@@ -41,11 +45,11 @@ export function Pagination({
         </Button>
       </div>
 
-      <div className="flex items-center px-4 py-1 rounded-md bg-gray-900/80 border border-gray-800 shadow-inner">
+      <div className="flex items-center px-4 py-1 rounded-md bg-card/80 border border-border shadow-inner">
         <span className="text-xs font-mono tracking-wider tabular-nums">
           <span className="text-primary font-bold">{currentPage + 1}</span>
-          <span className="text-gray-600 mx-2">/</span>
-          <span className="text-gray-400">{totalPages}</span>
+          <span className="text-muted-foreground mx-2">/</span>
+          <span className="text-muted-foreground">{totalPages}</span>
         </span>
       </div>
 
@@ -53,7 +57,9 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 border-gray-800 bg-gray-900/50 text-gray-400 hover:text-primary hover:border-primary/50 transition-all"
+          aria-label="Next page"
+          title="Next page"
+          className="h-8 w-8 border-border bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
           disabled={currentPage + 1 >= totalPages || isLoading}
           onClick={() => onPageChange(currentPage + 1)}
         >
@@ -62,7 +68,9 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 border-gray-800 bg-gray-900/50 text-gray-400 hover:text-primary hover:border-primary/50 transition-all"
+          aria-label="Last page"
+          title="Last page"
+          className="h-8 w-8 border-border bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
           disabled={currentPage + 1 >= totalPages || isLoading}
           onClick={() => onPageChange(totalPages - 1)}
         >

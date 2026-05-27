@@ -19,6 +19,7 @@ import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterSer
 import { Customer } from '@/services/customerService';
 import { performLogout } from '@/lib/performLogout';
 import { QK } from '@/lib/queryKeys';
+import { useConfirmDialog } from '@/components/super-admin/ConfirmDialog';
 
 // POS Components
 import { POSHeader } from '@/components/pos/POSHeader';
@@ -50,6 +51,7 @@ export default function TerminalPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   // Role gate — INVENTORY_MANAGER (or anyone without a sales-capable role) has no
   // business at the POS terminal. Bounce them to the dashboard.
@@ -116,7 +118,20 @@ export default function TerminalPage() {
   }, [branches, selectedBranch]);
 
   // Cart — branch-aware so add/update reads the right stockLevels row.
-  const { items, addToCart, updateQuantity, removeFromCart, clearCart, subtotal, taxAmount, taxLabel, total, itemCount } = useCart(taxContext, selectedBranch?.id);
+  const {
+    items,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    setItemDiscount,
+    clearCart,
+    subtotal,
+    discountAmount,
+    taxAmount,
+    taxLabel,
+    total,
+    itemCount,
+  } = useCart(taxContext, selectedBranch?.id);
 
   // Per-product cart quantities — fed to ProductGrid so it can show "at limit"
   // when a tile's cart count equals the branch stock.
@@ -170,6 +185,10 @@ export default function TerminalPage() {
     mutationFn: (data: SaleRequest) => salesService.createSale(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      // A cash sale changes the drawer's expected balance — refresh the active
+      // session so the header widget and End Shift modal reconcile against the
+      // up-to-date cash-received total instead of the pre-sale snapshot.
+      queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
       setLastSale(data);
       setSelectedCustomer(null);
@@ -191,12 +210,12 @@ export default function TerminalPage() {
           name: item.name,
           quantity: item.cartQuantity,
           price: item.basePrice,
-          total: item.basePrice * item.cartQuantity
+          total: item.basePrice * item.cartQuantity,
         })),
         subtotal: subtotal,
         tax: taxAmount,
         taxLabel: taxLabel,
-        discount: 0,
+        discount: discountAmount,
         total: total,
         paymentMethod: paymentMethod,
         tendered: cashTendered > 0 ? cashTendered : total,
@@ -249,7 +268,7 @@ export default function TerminalPage() {
         productId: item.id,
         quantity: item.cartQuantity,
         unitPrice: item.basePrice,
-        discountAmount: 0
+        discountAmount: item.discountAmount,
       }))
     });
   };
@@ -269,10 +288,15 @@ export default function TerminalPage() {
     }
   };
 
-  const handleDiscard = () => {
-    if (items.length > 0 && confirm('Discard current sale?')) {
-      clearCart();
-    }
+  const handleDiscard = async () => {
+    if (items.length === 0) return;
+    const ok = await confirm({
+      title: 'Discard current sale?',
+      description: `This will clear all ${items.length} item${items.length === 1 ? '' : 's'} from the cart. The customer has not been charged.`,
+      confirmLabel: 'Discard sale',
+      variant: 'destructive',
+    });
+    if (ok) clearCart();
   };
 
   // F4 — cycle through CASH → CARD → ONLINE → SPLIT → CASH.
@@ -332,15 +356,18 @@ export default function TerminalPage() {
   // Render
   if (sessionLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      <div className="dark h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+          <p className="text-sm">Loading cash drawer...</p>
+        </div>
       </div>
     );
   }
 
   if (!activeSession) {
     return (
-      <div className="h-screen flex items-center justify-center bg-black">
+      <div className="dark h-screen flex items-center justify-center bg-background">
         <StartShiftModal
           open
           onCancel={() => router.push('/overview')}
@@ -351,9 +378,9 @@ export default function TerminalPage() {
 
   return (
     <>
-      <div className="h-screen flex bg-black overflow-hidden font-sans print:hidden">
-      {/* Left Side — Products */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {confirmDialog}
+      <div className="dark h-screen flex flex-col lg:grid lg:grid-cols-[1fr_22rem] xl:grid-cols-[1fr_26rem] bg-background text-foreground overflow-hidden font-sans print:hidden">
+      <div className="flex flex-col min-w-0 min-h-0 overflow-hidden">
         <POSHeader
           userName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
           userRole={user?.roles?.[0] ?? ''}
@@ -364,21 +391,21 @@ export default function TerminalPage() {
           onLogout={handleLogout}
         />
         <ProductSearch search={search} onSearchChange={setSearch} />
-        <ProductGrid
-          products={filteredProducts}
-          isLoading={isLoading}
-          searchTerm={search}
-          onProductClick={addToCart}
-          selectedBranchId={selectedBranch?.id}
-          cartQuantities={cartQuantities}
-        />
+        <div className="flex-1 min-h-0 overflow-auto">
+          <ProductGrid
+            products={filteredProducts}
+            isLoading={isLoading}
+            searchTerm={search}
+            onProductClick={addToCart}
+            selectedBranchId={selectedBranch?.id}
+            cartQuantities={cartQuantities}
+          />
+        </div>
 
-        {/* Hotkey legend — slim bottom strip so cashiers learn the bindings without
-            having to open a help dialog. Mirror order with usePosHotkeys. */}
-        <div className="border-t border-gray-800 bg-gray-950/60 px-4 py-2 flex items-center gap-4 text-[11px] text-gray-500 print:hidden">
+        <div className="border-t border-border bg-card/70 px-4 py-2.5 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground print:hidden shrink-0">
           {HOTKEY_LEGEND.map((h) => (
-            <div key={h.key} className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-gray-800 border border-gray-700 text-gray-300 font-mono text-[10px]">
+            <div key={h.key} className="flex items-center gap-2">
+              <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-foreground font-mono text-xs">
                 {h.key}
               </kbd>
               <span>{h.label}</span>
@@ -387,28 +414,38 @@ export default function TerminalPage() {
         </div>
       </div>
 
-      {/* Right Side — Cart */}
-      <div className="w-[400px] bg-gray-900/40 backdrop-blur-xl border-l border-gray-800 flex flex-col shadow-2xl">
-        {/* Cart Header */}
-        <div className="h-16 border-b border-gray-800 flex items-center px-6">
-          <ShoppingCart className="text-primary mr-2" size={20} />
-          <h2 className="font-bold text-lg text-white">Current Sale</h2>
-          <div className="ml-auto bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold">
-            {itemCount} ITEMS
+      <aside
+        aria-label="Current sale"
+        className="bg-card/40 backdrop-blur-xl border-t lg:border-t-0 lg:border-l border-border flex flex-col shadow-2xl min-h-0 overflow-hidden"
+      >
+        <div className="h-14 border-b border-border flex items-center px-4 sm:px-6 shrink-0">
+          <ShoppingCart className="text-primary mr-2" size={20} aria-hidden="true" />
+          <h2 className="font-bold text-lg text-foreground">Current Sale</h2>
+          <div
+            className="ml-auto bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold tabular-nums"
+            aria-live="polite"
+          >
+            {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
           </div>
         </div>
 
-        {/* Customer Selector */}
-        <div className="px-4 py-3 border-b border-gray-800/50">
+        <div className="px-4 py-3 border-b border-border/60 shrink-0">
           <CustomerSelector selectedCustomer={selectedCustomer} onSelect={setSelectedCustomer} />
         </div>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+        <div
+          className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2.5 min-h-0"
+          tabIndex={0}
+          role="region"
+          aria-label="Cart items"
+        >
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-600 italic gap-2">
-              <ShoppingCart size={40} className="opacity-10" />
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground italic gap-2 py-12">
+              <ShoppingCart size={40} className="opacity-30" aria-hidden="true" />
               <p className="text-sm">Cart is empty</p>
+              <p className="text-xs text-muted-foreground/80 not-italic">
+                Scan a barcode or tap a product to start
+              </p>
             </div>
           ) : (
             items.map((item) => (
@@ -417,18 +454,19 @@ export default function TerminalPage() {
                 item={item}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}
+                onSetDiscount={setItemDiscount}
               />
             ))
           )}
         </div>
 
-        {/* Checkout */}
         <CheckoutPanel
           paymentMethod={paymentMethod}
           onPaymentMethodChange={(m) => { setPaymentMethod(m); setCashTendered(0); }}
           cashTendered={cashTendered}
           onCashTenderedChange={setCashTendered}
           subtotal={subtotal}
+          discountAmount={discountAmount}
           taxAmount={taxAmount}
           taxLabel={taxLabel}
           total={total}
@@ -438,9 +476,8 @@ export default function TerminalPage() {
           onHoldSale={() => {}}
           onDiscard={handleDiscard}
         />
-      </div>
+      </aside>
 
-      {/* Shift Summary Modal */}
       {showSummary && (
         <ShiftSummary summary={summary} session={activeSession} onClose={() => setShowSummary(false)} />
       )}

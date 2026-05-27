@@ -73,7 +73,7 @@ export default function TenantDetailPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
           <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto" />
-          <p className="text-gray-500 font-medium">Loading tenant details...</p>
+          <p className="text-muted-foreground font-medium">Loading tenant details...</p>
         </div>
       </div>
     );
@@ -84,9 +84,9 @@ export default function TenantDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4 max-w-md">
-          <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto" />
-          <h2 className="text-xl font-bold text-gray-900">Tenant Not Found</h2>
-          <p className="text-gray-500">{error || 'The requested tenant could not be loaded.'}</p>
+          <AlertTriangle className="w-12 h-12 text-warning mx-auto" />
+          <h2 className="text-xl font-bold text-muted-foreground">Tenant Not Found</h2>
+          <p className="text-muted-foreground">{error || 'The requested tenant could not be loaded.'}</p>
           <button
             onClick={() => router.push('/super-admin/tenants')}
             className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -114,7 +114,7 @@ export default function TenantDetailPage() {
       )}
 
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500">
+      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
         <Link href="/super-admin" className="hover:text-blue-600 transition-colors">
           Dashboard
         </Link>
@@ -123,18 +123,18 @@ export default function TenantDetailPage() {
           Tenants
         </Link>
         <ChevronRight className="w-4 h-4" />
-        <span className="text-gray-900 font-medium">{tenant.name}</span>
+        <span className="text-muted-foreground font-medium">{tenant.name}</span>
       </nav>
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-background rounded-2xl border border-border shadow-sm p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
             <Building2 className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{tenant.name}</h1>
-            <p className="text-gray-500 text-sm mt-0.5">
+            <h1 className="text-2xl font-bold text-muted-foreground">{tenant.name}</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
               {tenant.domain} &bull; {tenant.slug}
             </p>
           </div>
@@ -166,8 +166,8 @@ export default function TenantDetailPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="flex border-b border-gray-100">
+      <div className="bg-background rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="flex border-b border-border">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -175,7 +175,7 @@ export default function TenantDetailPage() {
               className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold transition-colors relative ${
                 activeTab === tab.key
                   ? 'text-blue-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : 'text-muted-foreground hover:text-muted-foreground'
               }`}
             >
               {tab.icon}

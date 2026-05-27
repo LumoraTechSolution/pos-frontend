@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright run output (reports/screenshots/traces) — not committed; baselines live in e2e/*-snapshots/
+/test-results/
+/playwright-report/

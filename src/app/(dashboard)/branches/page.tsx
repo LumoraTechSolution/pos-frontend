@@ -87,26 +87,26 @@ export default function BranchesPage() {
             onClick={() => setIsModalOpen(true)} 
             className="gap-2 bg-primary hover:bg-primary/90"
           >
-            {isLimitReached ? <Shield size={18} className="text-amber-400" /> : <Plus size={18} />}
+            {isLimitReached ? <Shield size={18} className="text-warning" /> : <Plus size={18} />}
             Add Branch
           </Button>
           {isLimitReached && (
-            <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <span className="text-[10px] text-warning font-bold bg-warning/10 px-2 py-0.5 rounded border border-warning/20">
               Plan Limit: {maxLocations} Location{maxLocations > 1 ? 's' : ''}
             </span>
           )}
         </div>
       </div>
 
-      <div className={`rounded-xl p-4 flex gap-3 items-start transition-colors ${isLimitReached ? 'bg-amber-500/5 border border-amber-500/10' : 'bg-primary/5 border border-primary/10'}`}>
-        <Info className={`${isLimitReached ? 'text-amber-500' : 'text-primary'} shrink-0 mt-0.5`} size={18} />
+      <div className={`rounded-xl p-4 flex gap-3 items-start transition-colors ${isLimitReached ? 'bg-warning/5 border border-warning/10' : 'bg-primary/5 border border-primary/10'}`}>
+        <Info className={`${isLimitReached ? 'text-warning' : 'text-primary'} shrink-0 mt-0.5`} size={18} />
         <div className="space-y-1">
           <p className={`text-sm leading-relaxed ${isLimitReached ? 'text-amber-200/80' : 'text-indigo-300/80'}`}>
             Branches allow you to track inventory across different physical sites. Each transaction at the POS 
             terminal should be associated with a branch to ensure stock is deducted from the correct location.
           </p>
           {isLimitReached && (
-            <p className="text-xs text-amber-500/60 font-medium">
+            <p className="text-xs text-warning/60 font-medium">
               You have reached your current plan limit. Upgrade to <strong>Medium Business</strong> to manage up to 3 locations.
             </p>
           )}
