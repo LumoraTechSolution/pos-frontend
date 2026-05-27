@@ -115,6 +115,7 @@ export function DiscountDialog({
                 step={0.01}
                 value={amount}
                 onChange={(e) => { setAmount(e.target.value); setError(null); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApply(); } }}
                 placeholder="0.00"
                 autoFocus
               />
@@ -135,6 +136,7 @@ export function DiscountDialog({
                 step={0.1}
                 value={percent}
                 onChange={(e) => { setPercent(e.target.value); setError(null); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleApply(); } }}
                 placeholder="0"
                 autoFocus
               />

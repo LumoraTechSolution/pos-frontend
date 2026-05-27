@@ -2,7 +2,7 @@
 
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { POS_SEARCH_INPUT_ID } from '@/hooks/usePosHotkeys';
+import { POS_SEARCH_INPUT_ID } from '@/hooks/usePosKeyboard';
 
 interface ProductSearchProps {
   search: string;
