@@ -14,7 +14,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { customerService, Customer, CustomerRequest } from '@/services/customerService';
-import { POS_ADD_CUSTOMER_BUTTON_ID } from '@/hooks/usePosHotkeys';
+import { POS_ADD_CUSTOMER_BUTTON_ID } from '@/hooks/usePosKeyboard';
 import { toast } from 'sonner';
 
 interface CustomerSelectorProps {

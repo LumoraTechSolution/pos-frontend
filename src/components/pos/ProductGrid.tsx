@@ -1,10 +1,11 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Package, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Product } from '@/types/inventory';
-import { CURRENCY } from '@/lib/utils';
+import { CURRENCY, cn } from '@/lib/utils';
 
 interface ProductGridProps {
   products: Product[];
@@ -13,6 +14,8 @@ interface ProductGridProps {
   onProductClick: (product: Product) => void;
   selectedBranchId?: string;
   cartQuantities?: Record<string, number>;
+  /** Keyboard-focused card index (-1 = none). Renders a ring + scrolls into view. */
+  focusedIndex?: number;
 }
 
 export function ProductGrid({
@@ -22,7 +25,17 @@ export function ProductGrid({
   onProductClick,
   selectedBranchId,
   cartQuantities,
+  focusedIndex = -1,
 }: ProductGridProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusedIndex < 0) return;
+    containerRef.current
+      ?.querySelector(`[data-product-index="${focusedIndex}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [focusedIndex]);
+
   if (isLoading) {
     return (
       <div className="flex-1 p-4 pt-0 flex items-center justify-center">
@@ -42,8 +55,8 @@ export function ProductGrid({
 
   return (
     <div className="flex-1 p-4 pt-0 overflow-y-auto custom-scrollbar">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {products.map((product) => {
+      <div ref={containerRef} data-product-grid className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {products.map((product, index) => {
           const displayStock = selectedBranchId && product.stockLevels
             ? (product.stockLevels.find(sl => sl.branchId === selectedBranchId)?.quantity || 0)
             : product.stockQuantity;
@@ -55,17 +68,19 @@ export function ProductGrid({
           <Card
             key={product.id}
             data-product-card=""
+            data-product-index={index}
             data-product-name={product.name}
             data-product-sku={product.sku}
             data-price={product.basePrice.toFixed(2)}
             data-disabled={outOfStock || atLimit ? 'true' : 'false'}
-            className={
+            className={cn(
               outOfStock
                 ? 'bg-gray-900/50 border-gray-800 opacity-60 cursor-not-allowed'
                 : atLimit
                 ? 'bg-gray-900 border-warning/40 cursor-not-allowed'
-                : 'bg-gray-900 border-gray-800 hover:border-primary/50 hover:bg-gray-800/50 transition-all cursor-pointer group active:scale-[0.98]'
-            }
+                : 'bg-gray-900 border-gray-800 hover:border-primary/50 hover:bg-gray-800/50 transition-all cursor-pointer group active:scale-[0.98]',
+              focusedIndex === index && 'ring-2 ring-primary ring-offset-2 ring-offset-background z-10'
+            )}
             onClick={outOfStock || atLimit ? undefined : () => onProductClick(product)}
           >
             <CardContent className="p-0">

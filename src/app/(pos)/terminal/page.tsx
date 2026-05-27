@@ -14,7 +14,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import { usePosHotkeys, HOTKEY_LEGEND } from '@/hooks/usePosHotkeys';
+import { usePosKeyboard, HOTKEY_LEGEND, type PosRegion } from '@/hooks/usePosKeyboard';
 import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
 import { Customer } from '@/services/customerService';
 import { performLogout } from '@/lib/performLogout';
@@ -26,7 +26,9 @@ import { POSHeader } from '@/components/pos/POSHeader';
 import { ProductSearch } from '@/components/pos/ProductSearch';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { CartItemCard } from '@/components/pos/CartItemCard';
-import { CheckoutPanel } from '@/components/pos/CheckoutPanel';
+import { CartSummary } from '@/components/pos/CartSummary';
+import { TenderOverlay } from '@/components/pos/TenderOverlay';
+import { ShortcutsOverlay } from '@/components/pos/ShortcutsOverlay';
 import { CustomerSelector } from '@/components/pos/CustomerSelector';
 import { Receipt } from '@/components/pos/Receipt';
 import { ShiftSummary } from '@/components/pos/ShiftSummary';
@@ -38,6 +40,8 @@ export default function TerminalPage() {
   // State
   const [search, setSearch] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'ONLINE' | 'SPLIT'>('CASH');
+  const [tenderOpen, setTenderOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [cashTendered, setCashTendered] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -156,6 +160,20 @@ export default function TerminalPage() {
     p.barcode?.includes(search)
   );
 
+  // Keyboard focus model: which region is active and which tile / cart line is
+  // focused. Indices are kept in range as the lists change.
+  const [activeRegion, setActiveRegion] = useState<PosRegion>('grid');
+  const [gridIndex, setGridIndex] = useState(0);
+  const [cartIndex, setCartIndex] = useState(0);
+
+  useEffect(() => {
+    setGridIndex((i) => Math.min(i, Math.max(0, filteredProducts.length - 1)));
+  }, [filteredProducts.length]);
+  useEffect(() => {
+    if (items.length === 0) setActiveRegion('grid');
+    setCartIndex((i) => Math.min(i, Math.max(0, items.length - 1)));
+  }, [items.length]);
+
   // Duplicate scan protection — prevents double-fire within 500ms
   const lastScanRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
 
@@ -190,6 +208,7 @@ export default function TerminalPage() {
       // up-to-date cash-received total instead of the pre-sale snapshot.
       queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
       toast.success(`Sale Processed: ${data.invoiceNumber}`);
+      setTenderOpen(false);
       setLastSale(data);
       setSelectedCustomer(null);
       setCashTendered(0);
@@ -255,6 +274,12 @@ export default function TerminalPage() {
   });
 
   // Handlers
+  // F9 / Charge → open the tender overlay (the overlay's Complete fires the sale).
+  const openTender = () => {
+    if (items.length === 0) return;
+    setTenderOpen(true);
+  };
+
   const handleCheckout = () => {
     if (items.length === 0) return;
     checkoutMutation.mutate({
@@ -344,13 +369,43 @@ export default function TerminalPage() {
     receiptPrinterService.processHardwareCheckoutActions(receiptData);
   };
 
-  usePosHotkeys({
-    onCyclePaymentMethod: cyclePaymentMethod,
-    onCheckout: handleCheckout,
-    onPrintLastReceipt: handlePrintLastReceipt,
-    // Disable while a blocking modal is in front of the terminal so F4/F9 don't
-    // fire under the user's nose while they're filling Stock Fix or Shift forms.
-    disabled: !!stockFixProduct || showSummary,
+  usePosKeyboard({
+    // Disabled while a blocking surface owns the keyboard: the tender overlay
+    // handles its own keys; Stock Fix / Shift Summary / Shortcuts are modals.
+    disabled: tenderOpen || helpOpen || !!stockFixProduct || showSummary,
+    activeRegion,
+    setActiveRegion,
+    productCount: filteredProducts.length,
+    setGridIndex,
+    cartCount: items.length,
+    setCartIndex,
+    actions: {
+      addFocusedProduct: () => {
+        const p = filteredProducts[gridIndex];
+        if (p) addToCart(p);
+      },
+      incFocusedCart: () => {
+        const it = items[cartIndex];
+        if (it) updateQuantity(it.id, it.cartQuantity + 1);
+      },
+      decFocusedCart: () => {
+        const it = items[cartIndex];
+        if (it) updateQuantity(it.id, it.cartQuantity - 1);
+      },
+      removeFocusedCart: () => {
+        const it = items[cartIndex];
+        if (it) removeFromCart(it.id);
+      },
+      discountFocusedCart: () => {
+        (document.querySelector(`[data-cart-index="${cartIndex}"] [data-discount-trigger]`) as HTMLButtonElement | null)?.click();
+      },
+      charge: openTender,
+      cyclePayment: cyclePaymentMethod,
+      printLastReceipt: handlePrintLastReceipt,
+      hold: () => {},
+      discard: handleDiscard,
+      showHelp: () => setHelpOpen(true),
+    },
   });
 
   // Render
@@ -399,6 +454,7 @@ export default function TerminalPage() {
             onProductClick={addToCart}
             selectedBranchId={selectedBranch?.id}
             cartQuantities={cartQuantities}
+            focusedIndex={activeRegion === 'grid' ? gridIndex : -1}
           />
         </div>
 
@@ -448,10 +504,12 @@ export default function TerminalPage() {
               </p>
             </div>
           ) : (
-            items.map((item) => (
+            items.map((item, index) => (
               <CartItemCard
                 key={item.id}
                 item={item}
+                index={index}
+                isFocused={activeRegion === 'cart' && index === cartIndex}
                 onUpdateQuantity={updateQuantity}
                 onRemove={removeFromCart}
                 onSetDiscount={setItemDiscount}
@@ -460,20 +518,15 @@ export default function TerminalPage() {
           )}
         </div>
 
-        <CheckoutPanel
-          paymentMethod={paymentMethod}
-          onPaymentMethodChange={(m) => { setPaymentMethod(m); setCashTendered(0); }}
-          cashTendered={cashTendered}
-          onCashTenderedChange={setCashTendered}
+        <CartSummary
           subtotal={subtotal}
           discountAmount={discountAmount}
           taxAmount={taxAmount}
           taxLabel={taxLabel}
           total={total}
           itemCount={itemCount}
-          isProcessing={checkoutMutation.isPending}
-          onCheckout={handleCheckout}
-          onHoldSale={() => {}}
+          onCharge={openTender}
+          onHold={() => {}}
           onDiscard={handleDiscard}
         />
       </aside>
@@ -483,6 +536,24 @@ export default function TerminalPage() {
       )}
 
       </div>
+
+      <TenderOverlay
+        open={tenderOpen}
+        onClose={() => setTenderOpen(false)}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={(m) => { setPaymentMethod(m); setCashTendered(0); }}
+        cashTendered={cashTendered}
+        onCashTenderedChange={setCashTendered}
+        subtotal={subtotal}
+        discountAmount={discountAmount}
+        taxAmount={taxAmount}
+        taxLabel={taxLabel}
+        total={total}
+        isProcessing={checkoutMutation.isPending}
+        onComplete={handleCheckout}
+      />
+
+      <ShortcutsOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Stock Fix modal — opened from the checkout error toast's action */}
       {stockFixProduct && (

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Trash2, Plus, Minus, Package, Tag } from 'lucide-react';
 import { CartItem } from '@/hooks/useCart';
-import { CURRENCY } from '@/lib/utils';
+import { CURRENCY, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DiscountDialog } from '@/components/pos/DiscountDialog';
 
@@ -13,10 +13,39 @@ interface CartItemCardProps {
   onUpdateQuantity: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onSetDiscount: (id: string, amount: number) => void;
+  /** Keyboard-focused line — renders a ring + scrolls into view. */
+  isFocused?: boolean;
+  /** Position in the cart, exposed via data-cart-index for keyboard actions. */
+  index?: number;
 }
 
-export function CartItemCard({ item, onUpdateQuantity, onRemove, onSetDiscount }: CartItemCardProps) {
+export function CartItemCard({ item, onUpdateQuantity, onRemove, onSetDiscount, isFocused = false, index }: CartItemCardProps) {
   const [discountOpen, setDiscountOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isFocused) rootRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [isFocused]);
+
+  // Swipe-left-to-remove (touch only — mouse/keyboard use the trash button / Del).
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const swipeStartX = useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    swipeStartX.current = e.touches[0].clientX;
+    setDragging(true);
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (swipeStartX.current === null) return;
+    const dx = e.touches[0].clientX - swipeStartX.current;
+    setDragX(Math.max(-120, Math.min(0, dx))); // left-only
+  };
+  const onTouchEnd = () => {
+    if (dragX < -80) onRemove(item.id);
+    setDragX(0);
+    setDragging(false);
+    swipeStartX.current = null;
+  };
   const grossLine = item.basePrice * item.cartQuantity;
   const netLine = grossLine - item.discountAmount;
   const identifier = item.sku || item.barcode;
@@ -24,7 +53,21 @@ export function CartItemCard({ item, onUpdateQuantity, onRemove, onSetDiscount }
 
   return (
     <>
-      <div className="bg-card border border-border/60 rounded-xl p-3 flex gap-3 animate-in fade-in slide-in-from-right-2 duration-200">
+      <div
+        ref={rootRef}
+        data-cart-index={index}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: dragX ? `translateX(${dragX}px)` : undefined,
+          transition: dragging ? 'none' : 'transform 150ms ease',
+        }}
+        className={cn(
+          'bg-card border border-border/60 rounded-xl p-3 flex gap-3 animate-in fade-in slide-in-from-right-2 duration-200',
+          isFocused && 'ring-2 ring-primary border-primary/60'
+        )}
+      >
         <div className="w-14 h-14 bg-muted rounded-lg relative overflow-hidden shrink-0">
           {item.imageUrl ? (
             <Image src={item.imageUrl} fill className="object-cover rounded-lg" alt="" />
@@ -95,6 +138,7 @@ export function CartItemCard({ item, onUpdateQuantity, onRemove, onSetDiscount }
 
           <button
             type="button"
+            data-discount-trigger
             onClick={() => setDiscountOpen(true)}
             aria-label={hasDiscount ? 'Edit discount' : 'Add discount'}
             className={

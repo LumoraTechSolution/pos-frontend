@@ -47,9 +47,10 @@ test.describe("cash session — open / sell / close", () => {
     expect(price).toBeGreaterThan(0);
     await productCard.click();
 
-    // ── 3. CASH, exact tender, complete sale ─────────────────────────────
-    // CASH is the default method; clicking the radio is idempotent and guards
-    // against the default changing. "Exact" tenders precisely the amount due.
+    // ── 3. Charge → tender overlay → CASH, exact tender, complete ────────
+    // Payment now lives in a full-screen tender overlay opened from the cart's
+    // Charge button (or F9). CASH is the default method there.
+    await page.getByRole("button", { name: /charge/i }).click();
     await page.getByRole("radio", { name: /cash/i }).click();
     await page.getByRole("button", { name: /^exact$/i }).click();
     await page.getByRole("button", { name: /complete sale/i }).click();
