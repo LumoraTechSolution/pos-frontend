@@ -5,6 +5,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash2, AlertTriangle, LayoutList, Loader2 } from "lucide-react";
 import { Product } from "@/types/inventory";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -25,6 +26,12 @@ interface ProductTableProps {
   onSort: (key: string, direction: SortDirection) => void;
   onToggleStatus?: (product: Product) => void;
   togglingIds?: Set<string>;
+  /** Selection — when onToggleRow is provided, a checkbox column is rendered. */
+  selectedIds?: Set<string>;
+  onToggleRow?: (id: string, checked: boolean) => void;
+  allSelected?: boolean;
+  someSelected?: boolean;
+  onTogglePage?: (checked: boolean) => void;
 }
 
 export default function ProductTable({
@@ -41,17 +48,33 @@ export default function ProductTable({
   onSort,
   onToggleStatus,
   togglingIds,
+  selectedIds,
+  onToggleRow,
+  allSelected,
+  someSelected,
+  onTogglePage,
 }: ProductTableProps) {
+  const selectable = !!onToggleRow;
   if (isLoading) {
-    return <div className="py-20 text-center text-gray-400">Loading products...</div>;
+    return <div className="py-20 text-center text-muted-foreground">Loading products...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-800 bg-gray-900 overflow-hidden">
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-800 hover:bg-transparent bg-gray-800/20">
+            <TableRow className="border-border hover:bg-transparent bg-muted/20">
+              {selectable && (
+                <TableHead className="w-12 pl-4">
+                  <Checkbox
+                    checked={!!allSelected}
+                    indeterminate={!!someSelected && !allSelected}
+                    onCheckedChange={(c) => onTogglePage?.(c)}
+                    aria-label="Select all products on this page"
+                  />
+                </TableHead>
+              )}
               <SortableHeader
                 label="Product"
                 sortKey="name"
@@ -60,8 +83,8 @@ export default function ProductTable({
                 onSort={onSort}
                 className="py-4"
               />
-              <TableHead className="text-gray-400 font-semibold">SKU</TableHead>
-              <TableHead className="text-gray-400 font-semibold">Category</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">SKU</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Category</TableHead>
               <SortableHeader
                 label="Price"
                 sortKey="basePrice"
@@ -78,8 +101,8 @@ export default function ProductTable({
                 onSort={onSort}
                 className="text-center"
               />
-              <TableHead className="text-gray-400 font-semibold">Status</TableHead>
-              <TableHead className="text-gray-400 font-semibold text-right">Actions</TableHead>
+              <TableHead className="text-muted-foreground font-semibold">Status</TableHead>
+              <TableHead className="text-muted-foreground font-semibold text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,16 +111,26 @@ export default function ProductTable({
               return (
               <TableRow
                 key={product.id}
+                data-state={selectedIds?.has(product.id) ? 'selected' : undefined}
                 className={cn(
-                  'border-gray-800 hover:bg-gray-800/40 transition-colors group',
-                  !product.isActive && 'bg-gray-950/60'
+                  'border-border hover:bg-muted/40 data-[state=selected]:bg-primary/5 transition-colors group',
+                  !product.isActive && 'bg-background/60'
                 )}
               >
+                {selectable && (
+                  <TableCell className="pl-4">
+                    <Checkbox
+                      checked={selectedIds?.has(product.id) ?? false}
+                      onCheckedChange={(c) => onToggleRow?.(product.id, c)}
+                      aria-label={`Select ${product.name}`}
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="py-2">
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
-                        'w-10 h-10 rounded bg-gray-800 relative overflow-hidden flex items-center justify-center text-gray-600 font-bold border border-gray-700',
+                        'w-10 h-10 rounded bg-muted relative overflow-hidden flex items-center justify-center text-muted-foreground font-bold border border-border',
                         !product.isActive && 'grayscale'
                       )}
                     >
@@ -111,12 +144,12 @@ export default function ProductTable({
                       <div
                         className={cn(
                           'font-medium',
-                          product.isActive ? 'text-white' : 'text-gray-400 line-through decoration-gray-600'
+                          product.isActive ? 'text-foreground' : 'text-muted-foreground line-through decoration-gray-600'
                         )}
                       >
                         {product.name}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {product.isActive
                           ? product.brandName || 'No Brand'
                           : 'Hidden from POS'}
@@ -124,31 +157,31 @@ export default function ProductTable({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-gray-300 font-mono text-xs">{product.sku}</TableCell>
+                <TableCell className="text-foreground font-mono text-xs">{product.sku}</TableCell>
                 <TableCell>
-                  <span className="text-gray-400 text-sm bg-gray-800/50 px-2 py-1 rounded">
+                  <span className="text-muted-foreground text-sm bg-muted/50 px-2 py-1 rounded">
                     {product.categoryName || 'Uncategorized'}
                   </span>
                 </TableCell>
-                <TableCell className="text-right font-medium text-emerald-400">
+                <TableCell className="text-right font-medium text-success">
                   {formatCurrency(product.basePrice)}
                 </TableCell>
                 <TableCell className="text-center">
                   <div className="flex flex-col items-center">
-                    <span className={product.stockQuantity <= product.lowStockThreshold ? 'text-red-400 font-bold' : 'text-gray-300'}>
+                    <span className={product.stockQuantity <= product.lowStockThreshold ? 'text-destructive font-bold' : 'text-foreground'}>
                       {product.stockQuantity}
                     </span>
                     {product.stockQuantity <= product.lowStockThreshold && (
-                      <span className="text-[10px] text-red-500 font-semibold flex items-center gap-0.5">
+                      <span className="text-[10px] text-destructive font-semibold flex items-center gap-0.5">
                         <AlertTriangle size={10} /> LOW
                       </span>
                     )}
                     
                     {/* Branch Breakdown */}
                     {product.stockLevels && product.stockLevels.length > 1 && (
-                      <div className="mt-1 pt-1 border-t border-gray-800 w-full hidden group-hover:block transition-all duration-200">
+                      <div className="mt-1 pt-1 border-t border-border w-full hidden group-hover:block transition-all duration-200">
                         {product.stockLevels.map((sl) => (
-                           <div key={sl.id} className="text-[10px] text-gray-500 flex justify-between gap-2 px-2">
+                           <div key={sl.id} className="text-[10px] text-muted-foreground flex justify-between gap-2 px-2">
                              <span>{sl.branchName}:</span>
                              <span className="font-mono">{sl.quantity}</span>
                            </div>
@@ -158,54 +191,53 @@ export default function ProductTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <button
-                    type="button"
-                    disabled={isToggling || !onToggleStatus}
-                    onClick={() => onToggleStatus?.(product)}
-                    aria-label={`${product.isActive ? 'Deactivate' : 'Activate'} ${product.name}`}
-                    aria-busy={isToggling}
+                  <div
+                    className="flex items-center gap-2"
                     title={
                       product.isActive
-                        ? 'Active — visible in POS. Click to deactivate.'
-                        : 'Inactive — hidden from POS. Click to activate.'
+                        ? 'Active — visible in POS. Toggle to deactivate.'
+                        : 'Inactive — hidden from POS. Toggle to activate.'
                     }
-                    className="flex items-center gap-2 rounded-md px-1 py-0.5 -mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:cursor-wait"
                   >
                     <Switch
                       checked={product.isActive}
-                      disabled={isToggling}
+                      disabled={isToggling || !onToggleStatus}
                       onCheckedChange={() => onToggleStatus?.(product)}
-                      className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-gray-700 border-gray-600 pointer-events-none"
-                      tabIndex={-1}
+                      aria-label={`${product.isActive ? 'Deactivate' : 'Activate'} ${product.name}`}
+                      aria-busy={isToggling}
+                      className="data-[state=checked]:bg-success data-[state=unchecked]:bg-muted border-border"
                     />
                     <span
                       className={cn(
                         'text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border',
                         product.isActive
-                          ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
-                          : 'text-gray-400 bg-gray-800 border-gray-700'
+                          ? 'text-success bg-success/10 border-success/30'
+                          : 'text-muted-foreground bg-muted border-border'
                       )}
                     >
                       {isToggling && <Loader2 size={11} className="animate-spin" />}
                       {product.isActive ? 'Active' : 'Inactive'}
                     </span>
-                  </button>
+                  </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-primary hover:text-indigo-300 hover:bg-primary/10"
-                      onClick={() => onManageInventory?.(product)}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Adjust inventory for ${product.name}`}
                       title="Adjust Inventory"
+                      className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
+                      onClick={() => onManageInventory?.(product)}
                     >
                       <LayoutList size={14} />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Edit ${product.name}`}
+                      title="Edit"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                       onClick={() => onEdit?.(product)}
                     >
                       <Pencil size={14} />
@@ -213,7 +245,9 @@ export default function ProductTable({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-400/10"
+                      aria-label={`Delete ${product.name}`}
+                      title="Delete"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete?.(product)}
                     >
                       <Trash2 size={14} />
@@ -225,7 +259,7 @@ export default function ProductTable({
             })}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                <TableCell colSpan={selectable ? 8 : 7} className="h-24 text-center text-muted-foreground">
                   No products found.
                 </TableCell>
               </TableRow>
@@ -242,11 +276,11 @@ export default function ProductTable({
             size="sm" 
             disabled={currentPage === 0}
             onClick={() => onPageChange(currentPage - 1)}
-            className="border-gray-800 bg-gray-900 text-gray-400 hover:text-white"
+            className="border-border bg-card text-muted-foreground hover:text-foreground"
           >
             Previous
           </Button>
-          <div className="flex items-center px-4 text-sm text-gray-400">
+          <div className="flex items-center px-4 text-sm text-muted-foreground">
              Page {currentPage + 1} of {totalPages}
           </div>
           <Button 
@@ -254,7 +288,7 @@ export default function ProductTable({
             size="sm" 
             disabled={currentPage + 1 >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
-            className="border-gray-800 bg-gray-900 text-gray-400 hover:text-white"
+            className="border-border bg-card text-muted-foreground hover:text-foreground"
           >
             Next
           </Button>

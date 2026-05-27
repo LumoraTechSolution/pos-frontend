@@ -74,7 +74,7 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 bg-gray-900/50 border-gray-800 backdrop-blur-sm h-[320px]">
+        <Card className="md:col-span-2 bg-card/50 border-border backdrop-blur-sm h-[320px]">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-medium">Sales Volume Trend</CardTitle>
           </CardHeader>
@@ -109,40 +109,40 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
           </CardContent>
         </Card>
         <div className="space-y-4">
-          <Card className="bg-gray-900/50 border-gray-800 p-4">
+          <Card className="bg-card/50 border-border p-4">
             <p className="text-xs text-muted-foreground">Total Revenue</p>
             <h3 className="text-2xl font-bold text-primary">{fc(totalRevenue)}</h3>
           </Card>
-          <Card className="bg-gray-900/50 border-gray-800 p-4">
+          <Card className="bg-card/50 border-border p-4">
             <p className="text-xs text-muted-foreground">Total Transactions</p>
             <h3 className="text-2xl font-bold">{data?.totalElements ?? 0}</h3>
           </Card>
-          <Card className="bg-gray-900/50 border-gray-800 p-4">
+          <Card className="bg-card/50 border-border p-4">
             <p className="text-xs text-muted-foreground">Average Order Value</p>
-            <h3 className="text-2xl font-bold text-emerald-400">
+            <h3 className="text-2xl font-bold text-success">
               {fc(totalRevenue / (data?.totalElements || 1))}
             </h3>
           </Card>
         </div>
       </div>
 
-      <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+      <Card className="bg-card/50 border-border backdrop-blur-sm">
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
               <CardTitle>Sales Filters</CardTitle>
               <CardDescription>Select a date range to filter sales records.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+            <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
               <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
             </Button>
           </div>
           <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-800 bg-gray-900/40">
+          <div className="rounded-md border border-border bg-card/40">
             <Table>
-              <TableHeader className="bg-gray-800/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-10" />
                   <TableHead>Invoice #</TableHead>
@@ -172,38 +172,38 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
                   data.content.map(sale => (
                     <Fragment key={sale.saleId}>
                       <TableRow
-                        className="hover:bg-gray-800/50 cursor-pointer"
+                        className="hover:bg-muted/50 cursor-pointer"
                         onClick={() => toggle(sale.saleId)}
                       >
                         <TableCell className="w-10 px-3">
                           {expanded[sale.saleId]
                             ? <ChevronDown size={16} className="text-primary" />
-                            : <ChevronRight size={16} className="text-gray-500" />}
+                            : <ChevronRight size={16} className="text-muted-foreground" />}
                         </TableCell>
                         <TableCell className="font-mono text-primary">{sale.invoiceNumber}</TableCell>
-                        <TableCell className="text-gray-300">
+                        <TableCell className="text-foreground">
                           {format(new Date(sale.createdAt), "MMM dd, yyyy HH:mm")}
                         </TableCell>
                         <TableCell>{sale.customerName}</TableCell>
-                        <TableCell className="text-gray-400 text-xs">{sale.cashierName}</TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{sale.cashierName}</TableCell>
                         <TableCell>
-                          <span className="text-xs text-gray-400 uppercase">{sale.paymentMethod}</span>
+                          <span className="text-xs text-muted-foreground uppercase">{sale.paymentMethod}</span>
                         </TableCell>
                         <TableCell>
                           <Badge
                             variant={sale.paymentStatus === "PAID" ? "default" : "outline"}
                             className={
                               sale.paymentStatus === "PAID"
-                                ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                ? "bg-success/10 text-success hover:bg-success/20"
                                 : sale.paymentStatus === "REFUNDED"
-                                ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                ? "bg-warning/10 text-warning hover:bg-warning/20"
                                 : ""
                             }
                           >
                             {sale.paymentStatus}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-bold text-gray-100">
+                        <TableCell className="text-right font-bold text-foreground">
                           {fc(sale.netAmount)}
                         </TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
@@ -211,7 +211,7 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
                             variant="ghost"
                             size="sm"
                             onClick={() => onReturn(sale.saleId)}
-                            className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+                            className="text-warning hover:text-warning hover:bg-warning/10"
                           >
                             <RotateCcw size={14} className="mr-1" /> Return
                           </Button>
@@ -219,14 +219,14 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
                       </TableRow>
                       {expanded[sale.saleId] && (
                         <TableRow key={`${sale.saleId}-items`}>
-                          <TableCell colSpan={9} className="p-0 border-b border-gray-800">
-                            <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
-                              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                          <TableCell colSpan={9} className="p-0 border-b border-border">
+                            <div className="bg-background/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-border/50">
+                              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                 Items in this Transaction
                               </h4>
                               <table className="w-full text-sm">
                                 <thead>
-                                  <tr className="text-gray-500 text-xs uppercase">
+                                  <tr className="text-muted-foreground text-xs uppercase">
                                     <th className="text-left pb-2 pr-4">Product</th>
                                     <th className="text-left pb-2 pr-4">SKU</th>
                                     <th className="text-center pb-2 pr-4">Qty</th>
@@ -238,21 +238,21 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
                                 </thead>
                                 <tbody>
                                   {sale.items?.map((item, idx) => (
-                                    <tr key={idx} className="border-t border-gray-800/30">
+                                    <tr key={idx} className="border-t border-border/30">
                                       <td className="py-2 pr-4">
-                                        <span className="text-gray-200 font-medium">{item.productName}</span>
+                                        <span className="text-foreground font-medium">{item.productName}</span>
                                         {item.description && (
-                                          <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">
+                                          <p className="text-xs text-muted-foreground mt-0.5 max-w-xs truncate">
                                             ↳ {item.description}
                                           </p>
                                         )}
                                       </td>
-                                      <td className="py-2 pr-4 text-gray-400 font-mono text-xs">{item.sku || "—"}</td>
-                                      <td className="py-2 pr-4 text-center text-gray-300">{item.quantity}</td>
-                                      <td className="py-2 pr-4 text-right text-gray-300">{fc(item.unitPrice)}</td>
-                                      <td className="py-2 pr-4 text-right text-gray-400">{fc(item.taxAmount)}</td>
-                                      <td className="py-2 pr-4 text-right text-gray-400">{fc(item.discountAmount)}</td>
-                                      <td className="py-2 text-right font-semibold text-gray-100">{fc(item.totalAmount)}</td>
+                                      <td className="py-2 pr-4 text-muted-foreground font-mono text-xs">{item.sku || "—"}</td>
+                                      <td className="py-2 pr-4 text-center text-foreground">{item.quantity}</td>
+                                      <td className="py-2 pr-4 text-right text-foreground">{fc(item.unitPrice)}</td>
+                                      <td className="py-2 pr-4 text-right text-muted-foreground">{fc(item.taxAmount)}</td>
+                                      <td className="py-2 pr-4 text-right text-muted-foreground">{fc(item.discountAmount)}</td>
+                                      <td className="py-2 text-right font-semibold text-foreground">{fc(item.totalAmount)}</td>
                                     </tr>
                                   ))}
                                 </tbody>

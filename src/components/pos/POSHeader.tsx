@@ -50,7 +50,7 @@ export function POSHeader({
             >
               <Store size={14} className="text-primary" />
               <div className="flex flex-col items-start leading-none gap-0.5">
-                <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Store Location</span>
+                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Store Location</span>
                 <span className="text-sm font-semibold text-gray-200">
                   {selectedBranch?.name || 'Select Branch'}
                 </span>
@@ -108,7 +108,7 @@ export function POSHeader({
               // Do NOT open the drawer if the audit fails
             }
           }}
-          className="hidden md:flex bg-gray-950 border-gray-800 hover:bg-gray-800 text-gray-400 hover:text-emerald-400 gap-2 h-9 rounded-lg"
+          className="hidden md:flex bg-gray-950 border-gray-800 hover:bg-gray-800 text-gray-400 hover:text-success gap-2 h-9 rounded-lg"
           title="Open Cash Drawer manually"
         >
           <Unlock size={16} /> Open Drawer
@@ -125,11 +125,11 @@ export function POSHeader({
         <div className="flex items-center gap-6 border-l border-gray-800 pl-4 ml-2">
           <div className="hidden md:flex flex-col items-end leading-tight">
             <span className="text-sm font-semibold text-white">{userName}</span>
-            <span className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">
+            <span className="text-[10px] text-primary font-bold uppercase tracking-widest">
               {userRole}
             </span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onLogout} className="text-gray-400 hover:text-red-400 h-9 w-9 rounded-lg hover:bg-red-400/10 transition-all">
+          <Button variant="ghost" size="icon" onClick={onLogout} aria-label="Log out" title="Log out" className="text-gray-400 hover:text-destructive h-9 w-9 rounded-lg hover:bg-destructive/10 transition-all">
             <LogOut size={18} />
           </Button>
         </div>

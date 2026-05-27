@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "@/test-utils/renderWithProviders";
 import { StartShiftModal } from "./StartShiftModal";
@@ -37,11 +37,14 @@ describe("StartShiftModal", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("rejects a negative opening balance without calling the service", async () => {
-    const user = userEvent.setup();
     renderWithProviders(<StartShiftModal open onCancel={() => {}} />);
 
-    await user.type(screen.getByLabelText(/opening cash/i), "-50");
-    await user.click(screen.getByRole("button", { name: /start shift/i }));
+    const input = screen.getByLabelText(/opening cash/i);
+    fireEvent.change(input, { target: { value: "-50" } });
+    // Submit the form directly: the input's min="0" makes a clicked submit fail
+    // HTML constraint validation (so the handler never runs). fireEvent.submit
+    // bypasses that gate and exercises the JS guard in handleSubmit.
+    fireEvent.submit(input.closest("form")!);
 
     expect(cashSessionService.start).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("Enter a valid opening cash amount");

@@ -28,13 +28,13 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4 bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+      <div className="flex items-center gap-4 bg-background p-6 rounded-xl border border-border shadow-sm">
         <div className="w-16 h-16 bg-blue-50 text-blue-600 border border-blue-100 rounded-full flex items-center justify-center shrink-0">
           <ShieldCheck className="w-8 h-8" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user.firstName}</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-muted-foreground">Welcome back, {user.firstName}</h1>
+          <p className="text-muted-foreground mt-1">
             Super Admin Access Level • {user.email}
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function SuperAdminDashboard() {
         <StatCard 
           title="Projected MRR" 
           value={`LKR ${(stats?.projectedMrr ?? 0).toLocaleString()}`} 
-          icon={<DollarSign className="w-6 h-6 text-emerald-500" />}
+          icon={<DollarSign className="w-6 h-6 text-success" />}
           gradient="from-emerald-500/10 to-transparent border-emerald-100"
         />
         <StatCard 
@@ -68,15 +68,15 @@ export default function SuperAdminDashboard() {
         <StatCard 
           title="Expired Subscriptions" 
           value={stats?.expiredSubscriptions ?? '-'} 
-          icon={<CreditCard className="w-6 h-6 text-amber-500" />}
+          icon={<CreditCard className="w-6 h-6 text-warning" />}
           gradient="from-amber-500/10 to-transparent border-amber-100"
         />
       </div>
 
       {/* Breakdown Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-        <div className="bg-white p-8 border border-gray-100 rounded-2xl shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 border-b pb-4">Tier Distribution</h3>
+        <div className="bg-background p-8 border border-border rounded-2xl shadow-sm">
+          <h3 className="text-lg font-bold text-muted-foreground mb-6 border-b pb-4">Tier Distribution</h3>
           <div className="h-64">
             {stats ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -110,18 +110,18 @@ export default function SuperAdminDashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400">Loading chart...</div>
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
             )}
           </div>
         </div>
         
-        <div className="bg-white p-8 border border-gray-100 rounded-2xl shadow-sm">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 border-b pb-4">Revenue Opportunities</h3>
+        <div className="bg-background p-8 border border-border rounded-2xl shadow-sm">
+          <h3 className="text-lg font-bold text-muted-foreground mb-6 border-b pb-4">Revenue Opportunities</h3>
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white rounded-full shadow-sm">
-                  <CreditCard className="w-5 h-5 text-amber-600" />
+                <div className="p-2 bg-background rounded-full shadow-sm">
+                  <CreditCard className="w-5 h-5 text-warning" />
                 </div>
                 <div>
                   <h4 className="font-semibold text-amber-900">Expired Subscriptions</h4>
@@ -132,7 +132,7 @@ export default function SuperAdminDashboard() {
             
             <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white rounded-full shadow-sm">
+                <div className="p-2 bg-background rounded-full shadow-sm">
                   <Building2 className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
@@ -150,13 +150,13 @@ export default function SuperAdminDashboard() {
 
 function StatCard({ title, value, icon, gradient }: { title: string, value: string | number, icon: React.ReactNode, gradient: string }) {
   return (
-    <div className={`bg-white p-6 rounded-2xl border ${gradient} shadow-sm flex items-start justify-between relative overflow-hidden group`}>
+    <div className={`bg-background p-6 rounded-2xl border ${gradient} shadow-sm flex items-start justify-between relative overflow-hidden group`}>
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${gradient} opacity-50 -translate-y-8 translate-x-8 rounded-full blur-2xl group-hover:scale-110 transition-transform`} />
       <div className="relative">
-        <p className="text-sm font-semibold text-gray-500">{title}</p>
-        <p className="text-3xl font-black text-gray-900 mt-2 tracking-tight">{value}</p>
+        <p className="text-sm font-semibold text-muted-foreground">{title}</p>
+        <p className="text-3xl font-black text-muted-foreground mt-2 tracking-tight">{value}</p>
       </div>
-      <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center border border-gray-100 relative z-10">
+      <div className="w-12 h-12 bg-background rounded-xl shadow-sm flex items-center justify-center border border-border relative z-10">
         {icon}
       </div>
     </div>

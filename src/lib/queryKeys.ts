@@ -10,4 +10,7 @@ export const QK = {
   cashSessionActive: ['cash-session-active'] as const,
   categories: ['categories'] as const,
   brands: ['brands'] as const,
+  superAdmin: {
+    me: ['super-admin', 'me'] as const,
+  },
 } as const;

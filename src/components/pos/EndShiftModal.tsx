@@ -108,13 +108,13 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">Cash sales</p>
-                <p className="text-base font-mono font-semibold text-emerald-400">
+                <p data-testid="end-shift-cash-sales" className="text-base font-mono font-semibold text-success">
                   +{formatCurrency(active.cashSalesTotal)}
                 </p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-gray-500">Expected</p>
-                <p className="text-base font-mono font-semibold text-primary">
+                <p data-testid="end-shift-expected" className="text-base font-mono font-semibold text-primary">
                   {formatCurrency(expected)}
                 </p>
               </div>
@@ -122,7 +122,7 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
             {(active.cashRefundsTotal ?? 0) > 0 && (
               <div className="flex items-center justify-between rounded-lg bg-red-950/30 border border-red-900/30 px-3 py-2 text-sm">
                 <span className="text-gray-400">Cash refunds issued this shift</span>
-                <span className="font-mono font-semibold text-red-400">
+                <span className="font-mono font-semibold text-destructive">
                   -{formatCurrency(active.cashRefundsTotal)}
                 </span>
               </div>
@@ -152,10 +152,10 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
                   className={cn(
                     "text-xs font-mono",
                     Math.abs(varianceLive) < 0.01
-                      ? "text-emerald-400"
+                      ? "text-success"
                       : varianceLive > 0
-                      ? "text-amber-400"
-                      : "text-red-400"
+                      ? "text-warning"
+                      : "text-destructive"
                   )}
                 >
                   {Math.abs(varianceLive) < 0.01

@@ -35,4 +35,7 @@ export const customerService = {
 
   deleteCustomer: (id: string) =>
     api.delete<ApiResponse<void>>(`/customers/${id}`).then(res => res.data.data),
+
+  bulkDeleteCustomers: (ids: string[]) =>
+    api.post<ApiResponse<number>>('/customers/bulk-delete', { ids }).then(res => res.data.data),
 };

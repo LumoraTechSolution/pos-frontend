@@ -5,8 +5,8 @@ import { inventoryService, ProductFilters } from "@/services/inventoryService";
 import { useState, useMemo, useCallback, useRef } from "react";
 import type { Page } from "@/types/common";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, X, Upload, Download, Shield } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, X, Upload, Download, Shield, CheckCircle2, Ban } from "lucide-react";
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import ProductTable from "@/components/inventory/ProductTable";
 import ImportProductsModal from "@/components/inventory/ImportProductsModal";
 import InventoryAdjustmentModal from "@/components/inventory/InventoryAdjustmentModal";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { QK } from "@/lib/queryKeys";
+import { useConfirmDialog } from "@/components/super-admin/ConfirmDialog";
 
 export default function ProductsPage() {
   const { user: currentUser } = useAuthStore();
@@ -37,6 +38,7 @@ export default function ProductsPage() {
 
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   // Debounce search input
   const handleSearchChange = useCallback((value: string) => {
@@ -90,9 +92,32 @@ export default function ProductsPage() {
 
   // Per-row pending state so each row shows its own spinner and can't be spam-clicked.
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   // Track reason for the current mutation so we can skip the undo toast when
   // this toggle was itself triggered by an undo click (avoids nested undos).
   const isUndoRef = useRef(false);
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: ({ ids, active }: { ids: string[]; active: boolean }) =>
+      inventoryService.bulkSetStatus(ids, active),
+    onSuccess: (count, { active }) => {
+      toast.success(`${count} product${count === 1 ? '' : 's'} ${active ? 'activated' : 'deactivated'}`);
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Bulk update failed');
+    },
+  });
+
+  const toggleRow = (id: string, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
 
   const toggleStatusMutation = useMutation({
     mutationFn: (id: string) => inventoryService.toggleStatus(id),
@@ -168,10 +193,14 @@ export default function ProductsPage() {
     router.push(`/inventory/products/${product.id}`);
   };
 
-  const handleDelete = (product: Product) => {
-    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
-      deleteMutation.mutate(product.id);
-    }
+  const handleDelete = async (product: Product) => {
+    const ok = await confirm({
+      title: `Delete "${product.name}"?`,
+      description: 'The product will be removed from the catalog. Historical sales remain intact.',
+      confirmLabel: 'Delete product',
+      variant: 'destructive',
+    });
+    if (ok) deleteMutation.mutate(product.id);
   };
 
   const handleManageInventory = (product: Product) => {
@@ -226,14 +255,29 @@ export default function ProductsPage() {
     }
   });
 
+  const pageProducts = productsData?.content ?? [];
+  const allPageSelected = pageProducts.length > 0 && pageProducts.every((p) => selected.has(p.id));
+  const somePageSelected = pageProducts.some((p) => selected.has(p.id));
+  const togglePage = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const p of pageProducts) {
+        if (checked) next.add(p.id);
+        else next.delete(p.id);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {confirmDialog}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground flex items-center gap-2">
             Manage your inventory, pricing, and stock levels.
-            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${isLimitReached ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-gray-800 text-gray-500 border-gray-700'}`}>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${isLimitReached ? 'bg-warning/10 text-warning border-warning/20' : 'bg-muted text-muted-foreground border-border'}`}>
                {totalElements} / {maxProducts} Products
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
@@ -245,14 +289,14 @@ export default function ProductsPage() {
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            className="gap-2 border-gray-800"
+            className="gap-2 border-border"
             onClick={() => inventoryService.exportProducts()}
           >
             <Download size={18} /> Export
           </Button>
           <Button 
             variant="outline" 
-            className="gap-2 border-gray-800"
+            className="gap-2 border-border"
             onClick={() => setIsImportModalOpen(true)}
           >
             <Upload size={18} /> Import
@@ -263,12 +307,12 @@ export default function ProductsPage() {
                  disabled={isLimitReached}
                  className="gap-2 bg-primary hover:bg-primary/90"
                >
-                 {isLimitReached ? <Shield size={18} className="text-amber-400" /> : <Plus size={18} />}
+                 {isLimitReached ? <Shield size={18} className="text-warning" /> : <Plus size={18} />}
                  Add Product
                </Button>
              </Link>
              {isLimitReached && (
-                <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                <span className="text-[10px] text-warning font-bold bg-warning/10 px-2 py-0.5 rounded border border-warning/20">
                   Quota Exceeded
                 </span>
              )}
@@ -278,64 +322,91 @@ export default function ProductsPage() {
 
       {/* Search & Filters Bar */}
       <div className="space-y-3">
-        <div className="flex gap-4 items-center bg-gray-900/50 p-4 rounded-xl border border-gray-800">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <Input 
-              placeholder="Search products by name or SKU..." 
-              className="pl-10 bg-gray-950 border-gray-800"
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
-          </div>
+        <DataTableToolbar
+          searchValue={search}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search products by name or SKU..."
+          resultsCount={{ shown: pageProducts.length, total: totalElements, label: 'products' }}
+          filters={
+            <>
+              <select
+                value={categoryId}
+                onChange={(e) => { setCategoryId(e.target.value); setPage(0); }}
+                aria-label="Filter by category"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground focus:border-primary focus:outline-none min-w-[150px]"
+              >
+                <option value="">All Categories</option>
+                {categories?.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
 
-          {/* Category Filter */}
-          <select
-            value={categoryId}
-            onChange={(e) => { setCategoryId(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[150px]"
-          >
-            <option value="">All Categories</option>
-            {categories?.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+              <select
+                value={brandId}
+                onChange={(e) => { setBrandId(e.target.value); setPage(0); }}
+                aria-label="Filter by brand"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground focus:border-primary focus:outline-none min-w-[150px]"
+              >
+                <option value="">All Brands</option>
+                {brands?.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
 
-          {/* Brand Filter */}
-          <select
-            value={brandId}
-            onChange={(e) => { setBrandId(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[150px]"
-          >
-            <option value="">All Brands</option>
-            {brands?.map((b) => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
+              <select
+                value={isActive}
+                onChange={(e) => { setIsActive(e.target.value); setPage(0); }}
+                aria-label="Filter by status"
+                className="h-10 px-3 rounded-lg bg-background border border-border text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
+              >
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
 
-          {/* Status Filter */}
-          <select
-            value={isActive}
-            onChange={(e) => { setIsActive(e.target.value); setPage(0); }}
-            className="h-10 px-3 rounded-lg bg-gray-950 border border-gray-800 text-sm text-gray-300 focus:border-primary focus:outline-none min-w-[120px]"
-          >
-            <option value="">All Status</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="text-gray-400 hover:text-white gap-1"
-            >
-              <X size={14} /> Clear
-            </Button>
-          )}
-        </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-muted-foreground hover:text-foreground gap-1"
+                >
+                  <X size={14} /> Clear
+                </Button>
+              )}
+            </>
+          }
+          selectionBar={
+            selected.size > 0 ? (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+                    Clear
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={bulkStatusMutation.isPending}
+                    onClick={() => bulkStatusMutation.mutate({ ids: Array.from(selected), active: true })}
+                    className="gap-2 text-success hover:text-success"
+                  >
+                    <CheckCircle2 size={14} /> Activate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={bulkStatusMutation.isPending}
+                    onClick={() => bulkStatusMutation.mutate({ ids: Array.from(selected), active: false })}
+                    className="gap-2 text-muted-foreground"
+                  >
+                    <Ban size={14} /> Deactivate
+                  </Button>
+                </div>
+              </div>
+            ) : undefined
+          }
+        />
 
         {/* Active Filter Tags */}
         {hasActiveFilters && (
@@ -343,19 +414,19 @@ export default function ProductsPage() {
             {categoryId && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
                 Category: {categories?.find(c => c.id === categoryId)?.name}
-                <button onClick={() => setCategoryId("")} className="hover:text-white"><X size={12} /></button>
+                <button onClick={() => setCategoryId("")} className="hover:text-foreground"><X size={12} /></button>
               </span>
             )}
             {brandId && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-success/10 text-success text-xs font-medium border border-success/20">
                 Brand: {brands?.find(b => b.id === brandId)?.name}
-                <button onClick={() => setBrandId("")} className="hover:text-white"><X size={12} /></button>
+                <button onClick={() => setBrandId("")} className="hover:text-foreground"><X size={12} /></button>
               </span>
             )}
             {isActive !== '' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning/10 text-warning text-xs font-medium border border-warning/20">
                 Status: {isActive === 'true' ? 'Active' : 'Inactive'}
-                <button onClick={() => setIsActive("")} className="hover:text-white"><X size={12} /></button>
+                <button onClick={() => setIsActive("")} className="hover:text-foreground"><X size={12} /></button>
               </span>
             )}
           </div>
@@ -376,6 +447,11 @@ export default function ProductsPage() {
         sortKey={sortKey}
         sortDirection={sortDirection}
         onSort={handleSort}
+        selectedIds={selected}
+        onToggleRow={toggleRow}
+        allSelected={allPageSelected}
+        someSelected={somePageSelected}
+        onTogglePage={togglePage}
       />
 
       <ImportProductsModal 

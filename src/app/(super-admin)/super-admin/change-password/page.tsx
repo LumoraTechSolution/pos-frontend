@@ -55,21 +55,21 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8 text-white relative overflow-hidden">
+    <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-8 text-foreground relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 bg-blue-600/20 blur-[100px] pointer-events-none" />
 
       <div className="flex flex-col items-center mb-8 relative">
-        <div className="w-16 h-16 bg-gray-800 border border-gray-700 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+        <div className="w-16 h-16 bg-muted border border-border rounded-2xl flex items-center justify-center mb-4 shadow-inner">
           <ShieldAlert className="w-8 h-8 text-blue-500" />
         </div>
         <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
-        <p className="text-gray-400 mt-2 text-sm text-center">
+        <p className="text-muted-foreground mt-2 text-sm text-center">
           The default credentials are public. Rotate them now to access the platform.
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-xl text-sm mb-6 flex items-start gap-3">
+        <div className="bg-destructive/10 border border-destructive/50 text-destructive p-4 rounded-xl text-sm mb-6 flex items-start gap-3">
           <Lock className="w-5 h-5 shrink-0" />
           <p>{error}</p>
         </div>
@@ -77,7 +77,7 @@ export default function ChangePasswordPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5 relative">
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2" htmlFor="current">
+          <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="current">
             Current password
           </label>
           <input
@@ -88,12 +88,12 @@ export default function ChangePasswordPage() {
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2" htmlFor="new">
+          <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="new">
             New password (min 12 chars)
           </label>
           <input
@@ -105,12 +105,12 @@ export default function ChangePasswordPage() {
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2" htmlFor="confirm">
+          <label className="block text-sm font-medium text-muted-foreground mb-2" htmlFor="confirm">
             Confirm new password
           </label>
           <input
@@ -122,7 +122,7 @@ export default function ChangePasswordPage() {
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
         </div>
 

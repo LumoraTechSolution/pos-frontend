@@ -73,4 +73,9 @@ export const supplierService = {
     const response = await api.patch<{ data: Supplier }>(`/suppliers/${id}/status`);
     return response.data.data;
   },
+
+  bulkSetStatus: async (ids: string[], active: boolean) => {
+    const response = await api.post<{ data: number }>(`/suppliers/bulk-status`, { ids, active });
+    return response.data.data;
+  },
 };

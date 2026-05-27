@@ -11,7 +11,6 @@ import {
 import {
   UserPlus,
   Shield,
-  Search,
   Pencil,
   CheckCircle2,
   XCircle,
@@ -21,10 +20,16 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Download,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataTableToolbar } from "@/components/ui/data-table-toolbar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportToCsv, type CsvColumn } from "@/lib/exportCsv";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "next/navigation";
@@ -35,13 +40,24 @@ const ROLE_COLORS: Record<string, string> = {
   ADMIN: "bg-rose-500/10 text-rose-400 border-rose-500/30",
   MANAGER: "bg-violet-500/10 text-violet-400 border-violet-500/30",
   CASHIER: "bg-primary/10 text-primary border-primary/30",
-  INVENTORY_MANAGER: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  INVENTORY_MANAGER: "bg-warning/10 text-warning border-warning/30",
 };
 
 const ALL_ROLES = ["ADMIN", "MANAGER", "CASHIER", "INVENTORY_MANAGER"];
 
+const USER_CSV_COLUMNS: CsvColumn<UserResponse>[] = [
+  { header: "First Name", value: (u) => u.firstName },
+  { header: "Last Name", value: (u) => u.lastName },
+  { header: "Email", value: (u) => u.email },
+  { header: "Phone", value: (u) => u.phone ?? "" },
+  { header: "Roles", value: (u) => u.roles.join("; ") },
+  { header: "Status", value: (u) => (u.active ? "Active" : "Inactive") },
+  { header: "Last Login", value: (u) => (u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "") },
+  { header: "Created", value: (u) => new Date(u.createdAt).toLocaleDateString() },
+];
+
 function RoleBadge({ role }: { role: string }) {
-  const cls = ROLE_COLORS[role] ?? "bg-gray-700 text-gray-400 border-gray-600";
+  const cls = ROLE_COLORS[role] ?? "bg-muted text-muted-foreground border-border";
   return (
     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
       {role}
@@ -91,56 +107,56 @@ function CreateUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="bg-background border border-border rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
             <UserPlus size={20} className="text-primary" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Add New Employee</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Create a staff account for your business</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Create a staff account for your business</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">First Name *</label>
-              <Input placeholder="John" className="bg-gray-900 border-gray-700" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
+              <label className="text-xs text-muted-foreground mb-1.5 block">First Name *</label>
+              <Input placeholder="John" className="bg-card border-border" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Last Name *</label>
-              <Input placeholder="Doe" className="bg-gray-900 border-gray-700" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
+              <label className="text-xs text-muted-foreground mb-1.5 block">Last Name *</label>
+              <Input placeholder="Doe" className="bg-card border-border" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Email Address *</label>
-            <Input type="email" placeholder="john@example.com" className="bg-gray-900 border-gray-700" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+            <label className="text-xs text-muted-foreground mb-1.5 block">Email Address *</label>
+            <Input type="email" placeholder="john@example.com" className="bg-card border-border" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Password *</label>
+              <label className="text-xs text-muted-foreground mb-1.5 block">Password *</label>
               <div className="relative">
-                <Input type={showPassword ? "text" : "password"} placeholder="Min 8 characters" className="bg-gray-900 border-gray-700 pr-10" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300" onClick={() => setShowPassword((v) => !v)}>
+                <Input type={showPassword ? "text" : "password"} placeholder="Min 8 characters" className="bg-card border-border pr-10" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword((v) => !v)}>
                   {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">PIN (4 digits)</label>
-              <Input type="password" placeholder="••••" maxLength={4} className="bg-gray-900 border-gray-700" value={form.pin} onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))} />
+              <label className="text-xs text-muted-foreground mb-1.5 block">PIN (4 digits)</label>
+              <Input type="password" placeholder="••••" maxLength={4} className="bg-card border-border" value={form.pin} onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Phone</label>
-            <Input placeholder="+1 234 567 8900" className="bg-gray-900 border-gray-700" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+            <label className="text-xs text-muted-foreground mb-1.5 block">Phone</label>
+            <Input placeholder="+1 234 567 8900" className="bg-card border-border" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs text-gray-400 mb-2 block">Assign Roles *</label>
+            <label className="text-xs text-muted-foreground mb-2 block">Assign Roles *</label>
             <div className="flex gap-2 flex-wrap">
               {ALL_ROLES.map((role) => (
-                <button key={role} type="button" onClick={() => toggleRole(role)} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${form.roleNames.includes(role) ? ROLE_COLORS[role] + " border-current" : "border-gray-700 text-gray-500 hover:border-gray-500"}`}>
+                <button key={role} type="button" onClick={() => toggleRole(role)} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${form.roleNames.includes(role) ? ROLE_COLORS[role] + " border-current" : "border-border text-muted-foreground hover:border-border"}`}>
                   <Shield size={11} className="inline mr-1.5" />{role}
                 </button>
               ))}
@@ -148,13 +164,13 @@ function CreateUserModal({
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20">
               {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to create user."}
             </p>
           )}
         </div>
         <div className="flex gap-3 mt-8">
-          <Button variant="outline" className="flex-1 border-gray-700" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" className="flex-1 border-border" onClick={onClose} disabled={isPending}>Cancel</Button>
           <Button className="flex-1 bg-primary hover:bg-primary" onClick={() => mutate(form)} disabled={isPending || !form.firstName || !form.email || !form.password}>
             {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <UserPlus size={16} className="mr-2" />}
             Create Employee
@@ -214,48 +230,48 @@ function EditUserModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="bg-background border border-border rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2.5 bg-violet-500/10 rounded-xl border border-violet-500/20">
             <Pencil size={20} className="text-violet-400" />
           </div>
           <div>
             <h2 className="text-xl font-bold">Edit Employee</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Update {user.firstName}&apos;s details and roles</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Update {user.firstName}&apos;s details and roles</p>
           </div>
         </div>
 
         <div className="space-y-4">
           {/* Email (read-only) */}
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Email Address</label>
-            <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-500">
+            <label className="text-xs text-muted-foreground mb-1.5 block">Email Address</label>
+            <div className="flex items-center gap-2 bg-card border border-border rounded-md px-3 py-2 text-sm text-muted-foreground">
               <Mail size={14} /> {user.email}
-              <span className="text-[10px] bg-gray-800 px-1.5 py-0.5 rounded ml-auto">Read only</span>
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded ml-auto">Read only</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">First Name</label>
-              <Input className="bg-gray-900 border-gray-700" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
+              <label className="text-xs text-muted-foreground mb-1.5 block">First Name</label>
+              <Input className="bg-card border-border" value={form.firstName} onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Last Name</label>
-              <Input className="bg-gray-900 border-gray-700" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
+              <label className="text-xs text-muted-foreground mb-1.5 block">Last Name</label>
+              <Input className="bg-card border-border" value={form.lastName} onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))} />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-gray-400 mb-1.5 block">Phone</label>
-            <Input placeholder="+1 234 567 8900" className="bg-gray-900 border-gray-700" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+            <label className="text-xs text-muted-foreground mb-1.5 block">Phone</label>
+            <Input placeholder="+1 234 567 8900" className="bg-card border-border" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
           </div>
 
           <div>
-            <label className="text-xs text-gray-400 mb-2 block">Roles</label>
+            <label className="text-xs text-muted-foreground mb-2 block">Roles</label>
             <div className="flex gap-2 flex-wrap">
               {ALL_ROLES.map((role) => (
-                <button key={role} type="button" onClick={() => toggleRole(role)} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${(form.roleNames ?? []).includes(role) ? ROLE_COLORS[role] + " border-current" : "border-gray-700 text-gray-500 hover:border-gray-500"}`}>
+                <button key={role} type="button" onClick={() => toggleRole(role)} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${(form.roleNames ?? []).includes(role) ? ROLE_COLORS[role] + " border-current" : "border-border text-muted-foreground hover:border-border"}`}>
                   <Shield size={11} className="inline mr-1.5" />{role}
                 </button>
               ))}
@@ -263,13 +279,13 @@ function EditUserModal({
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20">
               {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update user."}
             </p>
           )}
         </div>
         <div className="flex gap-3 mt-8">
-          <Button variant="outline" className="flex-1 border-gray-700" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" className="flex-1 border-border" onClick={onClose} disabled={isPending}>Cancel</Button>
           <Button className="flex-1 bg-violet-600 hover:bg-violet-500" onClick={() => mutate(form)} disabled={isPending}>
             {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Pencil size={16} className="mr-2" />}
             Save Changes
@@ -288,6 +304,9 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const canManage = !!currentUser?.roles?.includes("ADMIN");
 
   const { data: users = [], isLoading } = useQuery<UserResponse[]>({
     queryKey: ["users"],
@@ -299,12 +318,57 @@ export default function EmployeesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
 
+  const bulkStatusMutation = useMutation({
+    mutationFn: ({ ids, active }: { ids: string[]; active: boolean }) =>
+      userManagementService.bulkSetStatus(ids, active),
+    onSuccess: (count, { active }) => {
+      toast.success(`${count} employee${count === 1 ? "" : "s"} ${active ? "activated" : "deactivated"}`);
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error: unknown) => {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Bulk update failed");
+    },
+  });
+
   const filtered = users.filter(
     (u) =>
       u.firstName.toLowerCase().includes(search.toLowerCase()) ||
       u.lastName.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const allSelected = filtered.length > 0 && filtered.every((u) => selected.has(u.id));
+  const someSelected = filtered.some((u) => selected.has(u.id));
+
+  const toggleRow = (id: string, checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const togglePage = (checked: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const u of filtered) {
+        if (checked) next.add(u.id);
+        else next.delete(u.id);
+      }
+      return next;
+    });
+  };
+
+  const handleExport = () => {
+    if (filtered.length === 0) {
+      toast.info("No employees to export");
+      return;
+    }
+    exportToCsv("employees", USER_CSV_COLUMNS, filtered);
+    toast.success(`Exported ${filtered.length} employee${filtered.length === 1 ? "" : "s"}`);
+  };
 
   // Plan Limit Check
   const maxUsers = currentUser?.maxUsers || 5;
@@ -317,12 +381,12 @@ export default function EmployeesPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Employee Management</h1>
-          <p className="text-gray-400 mt-1">Manage staff accounts, roles, and access permissions.</p>
+          <p className="text-muted-foreground mt-1">Manage staff accounts, roles, and access permissions.</p>
         </div>
         <div className="flex gap-3">
           {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
             <FeatureGuard feature="TIME_CLOCK">
-              <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-gray-700 bg-gray-900 hover:bg-gray-800 hover:text-white text-gray-300 gap-2 h-10 shadow-sm">
+              <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-border bg-card hover:bg-muted hover:text-foreground text-foreground gap-2 h-10 shadow-sm">
                 <Clock size={16} className="text-primary" /> View Timesheets
               </Button>
             </FeatureGuard>
@@ -334,11 +398,11 @@ export default function EmployeesPage() {
                 disabled={isLimitReached}
                 className="bg-primary hover:bg-primary gap-2 h-10 shadow-lg shadow-primary/20"
               >
-                {isLimitReached ? <Shield size={16} className="text-amber-400" /> : <UserPlus size={16} />}
+                {isLimitReached ? <Shield size={16} className="text-warning" /> : <UserPlus size={16} />}
                 Add Employee
               </Button>
               {isLimitReached && (
-                <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                <span className="text-[10px] text-warning font-bold bg-warning/10 px-2 py-0.5 rounded border border-warning/20">
                   Plan Limit Reached
                 </span>
               )}
@@ -349,65 +413,125 @@ export default function EmployeesPage() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-3 gap-4">
-        <div className={`bg-gray-900 border ${isLimitReached ? 'border-amber-500/30' : 'border-gray-800'} rounded-xl p-4 flex items-center justify-between transition-colors`}>
+        <div className={`bg-card border ${isLimitReached ? 'border-warning/30' : 'border-border'} rounded-xl p-4 flex items-center justify-between transition-colors`}>
           <div className="space-y-0.5">
-            <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Total Employees</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Total Employees</span>
             <div className="flex items-baseline gap-1">
-              <span className={`text-2xl font-bold ${isLimitReached ? 'text-amber-400' : 'text-white'}`}>{users.length}</span>
-              <span className="text-xs text-gray-600">/ {maxUsers}</span>
+              <span className={`text-2xl font-bold ${isLimitReached ? 'text-warning' : 'text-foreground'}`}>{users.length}</span>
+              <span className="text-xs text-muted-foreground">/ {maxUsers}</span>
             </div>
           </div>
           {isLimitReached && (
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-               <Shield size={18} className="text-amber-500" />
+            <div className="p-2 bg-warning/10 rounded-lg">
+               <Shield size={18} className="text-warning" />
             </div>
           )}
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
-          <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Active</span>
-          <span className="text-2xl font-bold text-emerald-400">{activeCount}</span>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Active</span>
+          <span className="text-2xl font-bold text-success">{activeCount}</span>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
-          <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">Inactive</span>
-          <span className="text-2xl font-bold text-red-400">{users.length - activeCount}</span>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">Inactive</span>
+          <span className="text-2xl font-bold text-destructive">{users.length - activeCount}</span>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-        <Input placeholder="Search by name or email..." className="pl-9 bg-gray-900 border-gray-700 h-10" value={search} onChange={(e) => setSearch(e.target.value)} />
-      </div>
+      {/* Toolbar */}
+      <DataTableToolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or email..."
+        resultsCount={{ shown: filtered.length, total: users.length, label: "employees" }}
+        actions={
+          <Button variant="outline" onClick={handleExport} className="gap-2">
+            <Download size={16} /> Export
+          </Button>
+        }
+        selectionBar={
+          canManage && selected.size > 0 ? (
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">{selected.size} selected</span>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+                  Clear
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={bulkStatusMutation.isPending}
+                  onClick={() => bulkStatusMutation.mutate({ ids: Array.from(selected), active: true })}
+                  className="gap-2 text-success hover:text-success"
+                >
+                  <CheckCircle2 size={14} /> Activate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={bulkStatusMutation.isPending}
+                  onClick={() => bulkStatusMutation.mutate({ ids: Array.from(selected), active: false })}
+                  className="gap-2 text-muted-foreground"
+                >
+                  <Ban size={14} /> Deactivate
+                </Button>
+              </div>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-800 bg-gray-800/50 hover:bg-gray-800/50">
-              <TableHead className="text-gray-400 font-medium">Employee</TableHead>
-              <TableHead className="text-gray-400 font-medium">Contact</TableHead>
-              <TableHead className="text-gray-400 font-medium">Roles</TableHead>
-              <TableHead className="text-gray-400 font-medium">Last Login</TableHead>
-              <TableHead className="text-gray-400 font-medium">Status</TableHead>
+            <TableRow className="border-border bg-muted/50 hover:bg-muted/50">
+              {canManage && (
+                <TableHead className="w-12 pl-4">
+                  <Checkbox
+                    checked={allSelected}
+                    indeterminate={someSelected && !allSelected}
+                    onCheckedChange={togglePage}
+                    aria-label="Select all employees"
+                  />
+                </TableHead>
+              )}
+              <TableHead className="text-muted-foreground font-medium">Employee</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Contact</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Roles</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Last Login</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Status</TableHead>
               {currentUser?.roles?.includes('ADMIN') && (
-                <TableHead className="text-gray-400 font-medium text-right">Actions</TableHead>
+                <TableHead className="text-muted-foreground font-medium text-right">Actions</TableHead>
               )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               [...Array(4)].map((_, i) => (
-                <TableRow key={i} className="border-gray-800">
-                  <TableCell colSpan={currentUser?.roles?.includes('ADMIN') ? 6 : 5}><div className="h-5 bg-gray-800 rounded animate-pulse" /></TableCell>
+                <TableRow key={i} className="border-border">
+                  <TableCell colSpan={canManage ? 7 : 5}><div className="h-5 bg-muted rounded animate-pulse" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
-              <TableRow className="border-gray-800">
-                <TableCell colSpan={currentUser?.roles?.includes('ADMIN') ? 6 : 5} className="text-center py-12 text-gray-500">No employees found.</TableCell>
+              <TableRow className="border-border">
+                <TableCell colSpan={canManage ? 7 : 5} className="text-center py-12 text-muted-foreground">No employees found.</TableCell>
               </TableRow>
             ) : (
               filtered.map((user) => (
-                <TableRow key={user.id} className="border-gray-800 hover:bg-gray-800/30 transition-colors">
+                <TableRow
+                  key={user.id}
+                  data-state={selected.has(user.id) ? "selected" : undefined}
+                  className="border-border hover:bg-muted/30 data-[state=selected]:bg-primary/5 transition-colors"
+                >
+                  {canManage && (
+                    <TableCell className="pl-4">
+                      <Checkbox
+                        checked={selected.has(user.id)}
+                        onCheckedChange={(c) => toggleRow(user.id, c)}
+                        aria-label={`Select ${user.firstName} ${user.lastName}`}
+                      />
+                    </TableCell>
+                  )}
                   {/* Name + Avatar */}
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -415,45 +539,45 @@ export default function EmployeesPage() {
                         {user.firstName[0]}{user.lastName[0]}
                       </div>
                       <div>
-                        <div className="font-medium text-white">{user.firstName} {user.lastName}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5"><Mail size={10} />{user.email}</div>
+                        <div className="font-medium text-foreground">{user.firstName} {user.lastName}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Mail size={10} />{user.email}</div>
                       </div>
                     </div>
                   </TableCell>
 
                   {/* Contact */}
-                  <TableCell className="text-gray-400 text-sm">
+                  <TableCell className="text-muted-foreground text-sm">
                     {user.phone ? (
                       <span className="flex items-center gap-1"><Phone size={12} /> {user.phone}</span>
                     ) : (
-                      <span className="text-gray-600">—</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
 
                   {/* Roles */}
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {user.roles.length > 0 ? user.roles.map((r) => <RoleBadge key={r} role={r} />) : <span className="text-gray-600 text-xs">No roles</span>}
+                      {user.roles.length > 0 ? user.roles.map((r) => <RoleBadge key={r} role={r} />) : <span className="text-muted-foreground text-xs">No roles</span>}
                     </div>
                   </TableCell>
 
                   {/* Last Login */}
-                  <TableCell className="text-gray-400 text-sm">
+                  <TableCell className="text-muted-foreground text-sm">
                     {user.lastLoginAt ? (
                       <span className="flex items-center gap-1"><Clock size={12} />{format(new Date(user.lastLoginAt), "MMM dd, HH:mm")}</span>
                     ) : (
-                      <span className="text-gray-600">Never</span>
+                      <span className="text-muted-foreground">Never</span>
                     )}
                   </TableCell>
 
                   {/* Status Badge */}
                   <TableCell>
                     {user.active ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
                         <CheckCircle2 size={12} /> Active
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400 bg-red-400/10 px-2 py-1 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive bg-destructive/10 px-2 py-1 rounded-full">
                         <XCircle size={12} /> Inactive
                       </span>
                     )}
@@ -466,7 +590,7 @@ export default function EmployeesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-xs h-8 border-gray-700 hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-500/5 transition-all"
+                          className="text-xs h-8 border-border hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-500/5 transition-all"
                           onClick={() => setEditingUser(user)}
                         >
                           <Pencil size={12} className="mr-1" /> Edit
@@ -474,10 +598,10 @@ export default function EmployeesPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`text-xs h-8 border-gray-700 transition-all ${
+                          className={`text-xs h-8 border-border transition-all ${
                             user.active
-                              ? "hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/5"
-                              : "hover:border-emerald-500/50 hover:text-emerald-400 hover:bg-emerald-500/5"
+                              ? "hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5"
+                              : "hover:border-success/50 hover:text-success hover:bg-success/5"
                           }`}
                           onClick={() => toggleStatus(user.id)}
                           disabled={toggling}

@@ -63,7 +63,7 @@ export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2 bg-gray-900/50 border-gray-800 backdrop-blur-sm h-[320px]">
+        <Card className="md:col-span-2 bg-card/50 border-border backdrop-blur-sm h-[320px]">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm font-medium">Top 10 Profitable Products</CardTitle>
           </CardHeader>
@@ -96,12 +96,12 @@ export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
         </Card>
         <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
           {[
-            { label: "Total Revenue", value: fc(data?.totalRevenue ?? 0), cls: "text-white" },
-            { label: "Total Profit", value: fc(data?.totalProfit ?? 0), cls: "text-emerald-400" },
-            { label: "Total COGS", value: fc(data?.totalCost ?? 0), cls: "text-red-400" },
-            { label: "Overall Margin", value: `${data?.overallMarginPct ?? 0}%`, cls: "text-amber-400" },
+            { label: "Total Revenue", value: fc(data?.totalRevenue ?? 0), cls: "text-foreground" },
+            { label: "Total Profit", value: fc(data?.totalProfit ?? 0), cls: "text-success" },
+            { label: "Total COGS", value: fc(data?.totalCost ?? 0), cls: "text-destructive" },
+            { label: "Overall Margin", value: `${data?.overallMarginPct ?? 0}%`, cls: "text-warning" },
           ].map(stat => (
-            <Card key={stat.label} className="bg-gray-900/50 border-gray-800 p-3">
+            <Card key={stat.label} className="bg-card/50 border-border p-3">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
               <p className={`text-xl font-bold ${stat.cls}`}>{isLoading ? "..." : stat.value}</p>
             </Card>
@@ -109,23 +109,23 @@ export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
         </div>
       </div>
 
-      <Card className="bg-gray-900/50 border-gray-800">
+      <Card className="bg-card/50 border-border">
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
               <CardTitle>Product Profitability Breakdown</CardTitle>
               <CardDescription>Revenue, cost, and margin per product sold in the period.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+            <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
               <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
             </Button>
           </div>
           <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-800 bg-gray-900/40">
+          <div className="rounded-md border border-border bg-card/40">
             <Table>
-              <TableHeader className="bg-gray-800/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>Category</TableHead>
@@ -147,20 +147,20 @@ export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
                   </TableRow>
                 ) : (
                   data.products.content.map((p: ProductProfitRecord) => (
-                    <TableRow key={p.productId} className="hover:bg-gray-800/50">
+                    <TableRow key={p.productId} className="hover:bg-muted/50">
                       <TableCell>
-                        <div className="font-medium text-white">{p.productName}</div>
-                        <div className="text-xs text-gray-500 font-mono">{p.sku}</div>
+                        <div className="font-medium text-foreground">{p.productName}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{p.sku}</div>
                       </TableCell>
-                      <TableCell className="text-gray-400 text-sm">{p.category}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{p.category}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="border-gray-600">{p.unitsSold}</Badge>
+                        <Badge variant="outline" className="border-border">{p.unitsSold}</Badge>
                       </TableCell>
-                      <TableCell className="text-right text-gray-200">{fc(p.revenue)}</TableCell>
-                      <TableCell className="text-right text-red-400">{fc(p.costOfGoodsSold)}</TableCell>
-                      <TableCell className="text-right font-bold text-emerald-400">{fc(p.grossProfit)}</TableCell>
+                      <TableCell className="text-right text-foreground">{fc(p.revenue)}</TableCell>
+                      <TableCell className="text-right text-destructive">{fc(p.costOfGoodsSold)}</TableCell>
+                      <TableCell className="text-right font-bold text-success">{fc(p.grossProfit)}</TableCell>
                       <TableCell className="text-right">
-                        <span className={`font-bold ${p.marginPct >= 30 ? "text-emerald-400" : p.marginPct >= 15 ? "text-amber-400" : "text-red-400"}`}>
+                        <span className={`font-bold ${p.marginPct >= 30 ? "text-success" : p.marginPct >= 15 ? "text-warning" : "text-destructive"}`}>
                           {p.marginPct}%
                         </span>
                       </TableCell>

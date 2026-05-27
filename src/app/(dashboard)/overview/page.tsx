@@ -84,7 +84,7 @@ function KPICard({
   gradient: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-800 bg-gray-900 p-6 transition-all hover:border-gray-700 hover:shadow-lg hover:shadow-primary/5 group">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all hover:border-border hover:shadow-lg hover:shadow-primary/5 group">
       {/* Gradient glow */}
       <div className={`absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 blur-2xl ${gradient} group-hover:opacity-20 transition-opacity`} />
 
@@ -95,8 +95,8 @@ function KPICard({
         <div
           className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
             change.positive
-              ? "text-emerald-400 bg-emerald-400/10"
-              : "text-red-400 bg-red-400/10"
+              ? "text-success bg-success/10"
+              : "text-destructive bg-destructive/10"
           }`}
         >
           {change.positive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
@@ -104,7 +104,7 @@ function KPICard({
         </div>
       </div>
       <div className="text-2xl font-bold tracking-tight">{value}</div>
-      <div className="text-sm text-gray-400 mt-1">{title}</div>
+      <div className="text-sm text-muted-foreground mt-1">{title}</div>
     </div>
   );
 }
@@ -115,8 +115,8 @@ function KPICard({
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 shadow-lg">
-      <div className="text-xs text-gray-400 mb-1">{label}</div>
+    <div className="bg-muted border border-border rounded-lg px-4 py-3 shadow-lg">
+      <div className="text-xs text-muted-foreground mb-1">{label}</div>
       {payload.map((p, i: number) => (
         <div key={i} className="text-sm font-medium" style={{ color: p.color }}>
           {p.name}: {p.name === "revenue" || p.name === "Revenue" ? formatCurrency(p.value) : p.value}
@@ -140,15 +140,15 @@ export default function OverviewPage() {
     return (
       <div className="p-8">
         <div className="animate-pulse space-y-6">
-          <div className="h-8 w-48 bg-gray-800 rounded" />
+          <div className="h-8 w-48 bg-muted rounded" />
           <div className="grid grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-36 bg-gray-800/50 rounded-2xl" />
+              <div key={i} className="h-36 bg-muted/50 rounded-2xl" />
             ))}
           </div>
           <div className="grid grid-cols-2 gap-6">
-            <div className="h-80 bg-gray-800/50 rounded-2xl" />
-            <div className="h-80 bg-gray-800/50 rounded-2xl" />
+            <div className="h-80 bg-muted/50 rounded-2xl" />
+            <div className="h-80 bg-muted/50 rounded-2xl" />
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function OverviewPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">📊</div>
           <h2 className="text-xl font-bold mb-2">Unable to load dashboard</h2>
-          <p className="text-gray-400">Please check if the backend is running and try again.</p>
+          <p className="text-muted-foreground">Please check if the backend is running and try again.</p>
         </div>
       </div>
     );
@@ -179,12 +179,12 @@ export default function OverviewPage() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             Real-time business overview — auto-refreshes every 60 seconds.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
           Live
         </div>
       </div>
@@ -224,13 +224,13 @@ export default function OverviewPage() {
       {/* Charts Row 1: Sales Trend + Top Products */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Trend — 2/3 width */}
-        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold">Sales Trend</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Last 7 days revenue</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Last 7 days revenue</p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <TrendingUp size={14} className="text-primary" /> Revenue
             </div>
           </div>
@@ -273,13 +273,13 @@ export default function OverviewPage() {
         </div>
 
         {/* Top Products — 1/3 width */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold">Top Products</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Best sellers (30 days)</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Best sellers (30 days)</p>
           </div>
           {data.topProducts.length === 0 ? (
-            <div className="h-52 flex items-center justify-center text-gray-600 text-sm">
+            <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">
               No sales data yet
             </div>
           ) : (
@@ -287,28 +287,28 @@ export default function OverviewPage() {
               {data.topProducts.map((product, idx) => {
                 const maxQty = data.topProducts[0]?.quantitySold || 1;
                 const barWidth = (product.quantitySold / maxQty) * 100;
-                const colors = ["bg-primary", "bg-emerald-500", "bg-amber-500", "bg-violet-500", "bg-rose-500"];
+                const colors = ["bg-primary", "bg-success", "bg-warning", "bg-violet-500", "bg-rose-500"];
 
                 return (
                   <div key={product.productId} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-500 w-5">#{idx + 1}</span>
-                        <span className="text-sm font-medium text-gray-200 truncate max-w-[140px]">
+                        <span className="text-xs font-bold text-muted-foreground w-5">#{idx + 1}</span>
+                        <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
                           {product.productName}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-gray-400">{product.quantitySold} sold</span>
+                        <span className="text-xs text-muted-foreground">{product.quantitySold} sold</span>
                       </div>
                     </div>
-                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${colors[idx % colors.length]} transition-all duration-500`}
                         style={{ width: `${barWidth}%` }}
                       />
                     </div>
-                    <div className="text-right text-xs text-emerald-400 font-medium">
+                    <div className="text-right text-xs text-success font-medium">
                       {formatCurrency(product.revenue)}
                     </div>
                   </div>
@@ -322,13 +322,13 @@ export default function OverviewPage() {
       {/* Charts Row 2: Payment Breakdown + Low Stock Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Payment Breakdown — Donut Chart */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-6">
           <div className="mb-6">
             <h3 className="text-lg font-semibold">Payment Methods</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Today&apos;s breakdown</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Today&apos;s breakdown</p>
           </div>
           {data.paymentBreakdown.length === 0 ? (
-            <div className="h-52 flex items-center justify-center text-gray-600 text-sm">
+            <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">
               No transactions today
             </div>
           ) : (
@@ -359,9 +359,9 @@ export default function OverviewPage() {
                         if (!active || !payload?.length) return null;
                         const d = payload[0].payload as PaymentMethodBreakdown;
                         return (
-                          <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 shadow-lg text-sm">
+                          <div className="bg-muted border border-border rounded-lg px-3 py-2 shadow-lg text-sm">
                             <div className="font-medium">{d.method}</div>
-                            <div className="text-gray-400">{formatCurrency(d.amount)} · {d.count} txns</div>
+                            <div className="text-muted-foreground">{formatCurrency(d.amount)} · {d.count} txns</div>
                           </div>
                         );
                       }}
@@ -379,11 +379,11 @@ export default function OverviewPage() {
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: PAYMENT_COLORS[pm.method] || PIE_COLORS[idx] }}
                         />
-                        <PayIcon size={14} className="text-gray-400" />
-                        <span className="text-gray-300">{pm.method}</span>
+                        <PayIcon size={14} className="text-muted-foreground" />
+                        <span className="text-foreground">{pm.method}</span>
                       </div>
-                      <div className="text-gray-400">
-                        {formatCurrency(pm.amount)} <span className="text-gray-600">({pm.count})</span>
+                      <div className="text-muted-foreground">
+                        {formatCurrency(pm.amount)} <span className="text-muted-foreground">({pm.count})</span>
                       </div>
                     </div>
                   );
@@ -400,23 +400,23 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent Transactions */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+      <div className="bg-card border border-border rounded-2xl p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Clock size={18} className="text-primary" />
             <h3 className="text-lg font-semibold">Recent Transactions</h3>
           </div>
-          <span className="text-xs text-gray-500">Last 10 sales</span>
+          <span className="text-xs text-muted-foreground">Last 10 sales</span>
         </div>
         {data.recentTransactions.length === 0 ? (
-          <div className="h-32 flex items-center justify-center text-gray-600 text-sm">
+          <div className="h-32 flex items-center justify-center text-muted-foreground text-sm">
             No transactions recorded yet
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-gray-500 text-xs uppercase">
+                <tr className="text-muted-foreground text-xs uppercase">
                   <th className="text-left pb-3 font-medium">Invoice</th>
                   <th className="text-left pb-3 font-medium">Customer</th>
                   <th className="text-left pb-3 font-medium">Cashier</th>
@@ -427,19 +427,19 @@ export default function OverviewPage() {
                   <th className="text-right pb-3 font-medium">Time</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {data.recentTransactions.map((txn) => (
-                  <tr key={txn.saleId} className="hover:bg-gray-800/40 transition-colors">
+                  <tr key={txn.saleId} className="hover:bg-muted/40 transition-colors">
                     <td className="py-3 font-mono text-primary text-xs">{txn.invoiceNumber}</td>
-                    <td className="py-3 text-gray-300">{txn.customerName}</td>
-                    <td className="py-3 text-gray-400 text-xs">{txn.cashierName}</td>
+                    <td className="py-3 text-foreground">{txn.customerName}</td>
+                    <td className="py-3 text-muted-foreground text-xs">{txn.cashierName}</td>
                     <td className="py-3 text-center">
-                      <span className="bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full text-xs">
+                      <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-xs">
                         {txn.itemCount}
                       </span>
                     </td>
                     <td className="py-3">
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         {txn.paymentMethod === "CASH" && <Banknote size={12} />}
                         {txn.paymentMethod === "CARD" && <CreditCard size={12} />}
                         {txn.paymentMethod}
@@ -449,19 +449,19 @@ export default function OverviewPage() {
                       <span
                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                           txn.paymentStatus === "PAID"
-                            ? "text-emerald-400 bg-emerald-400/10"
+                            ? "text-success bg-success/10"
                             : txn.paymentStatus === "PENDING"
-                            ? "text-amber-400 bg-amber-400/10"
-                            : "text-red-400 bg-red-400/10"
+                            ? "text-warning bg-warning/10"
+                            : "text-destructive bg-destructive/10"
                         }`}
                       >
                         {txn.paymentStatus}
                       </span>
                     </td>
-                    <td className="py-3 text-right font-semibold text-emerald-400">
+                    <td className="py-3 text-right font-semibold text-success">
                       {formatCurrency(txn.netAmount)}
                     </td>
-                    <td className="py-3 text-right text-gray-500 text-xs">{txn.createdAt}</td>
+                    <td className="py-3 text-right text-muted-foreground text-xs">{txn.createdAt}</td>
                   </tr>
                 ))}
               </tbody>

@@ -109,19 +109,19 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Workspace Slug</FormLabel>
-              <FormControl>
-                <div className="relative flex items-center">
-                  <Input 
-                    placeholder="DEMO" 
-                    className="rounded-r-none font-mono uppercase focus-visible:z-10 relative" 
-                    {...field} 
+              <div className="relative flex items-center">
+                <FormControl>
+                  <Input
+                    placeholder="DEMO"
+                    className="rounded-r-none font-mono uppercase focus-visible:z-10 relative"
+                    {...field}
                     disabled={isLoading}
                   />
-                  <div className="bg-muted border border-l-0 px-3 py-2 text-sm text-muted-foreground rounded-r-md">
-                    .lumora.com
-                  </div>
+                </FormControl>
+                <div className="bg-muted border border-l-0 px-3 py-2 text-sm text-muted-foreground rounded-r-md">
+                  .lumora.com
                 </div>
-              </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -132,17 +132,17 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="admin@demo.lumora.com" 
-                    className="pl-10" 
-                    {...field} 
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input
+                    placeholder="admin@demo.lumora.com"
+                    className="pl-10"
+                    {...field}
                     disabled={isLoading}
                   />
-                </div>
-              </FormControl>
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -153,18 +153,18 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    className="pl-10" 
-                    {...field} 
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10"
+                    {...field}
                     disabled={isLoading}
                   />
-                </div>
-              </FormControl>
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}

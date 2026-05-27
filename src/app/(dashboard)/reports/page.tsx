@@ -55,62 +55,62 @@ export default function ReportsPage() {
       </div>
 
       <Tabs defaultValue="sales" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex flex-wrap h-auto gap-1 justify-start bg-gray-900/50 p-1 border border-gray-800">
-          <TabsTrigger value="sales" className="gap-2 px-2 sm:px-3">
+        <TabsList className="flex flex-wrap h-auto gap-1 justify-start bg-card border border-border p-1 print:hidden">
+          <TabsTrigger value="sales" className="gap-2 px-3">
             <TrendingUp size={16} />
-            <span className={activeTab === "sales" ? "inline" : "hidden sm:inline"}>Sales History</span>
+            <span>Sales History</span>
           </TabsTrigger>
           <FeatureGuard feature="RETURNS">
-            <TabsTrigger value="returns" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="returns" className="gap-2 px-3">
               <RotateCcw size={16} />
-              <span className={activeTab === "returns" ? "inline" : "hidden sm:inline"}>Returns History</span>
+              <span>Returns History</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="INVENTORY">
-            <TabsTrigger value="inventory" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="inventory" className="gap-2 px-3">
               <PieChart size={16} />
-              <span className={activeTab === "inventory" ? "inline" : "hidden sm:inline"}>Inventory Valuation</span>
+              <span>Inventory Valuation</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="EMPLOYEES">
-            <TabsTrigger value="employees" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="employees" className="gap-2 px-3">
               <Users size={16} />
-              <span className={activeTab === "employees" ? "inline" : "hidden sm:inline"}>Employee Performance</span>
+              <span>Employee Performance</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="CUSTOMERS">
-            <TabsTrigger value="customers" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="customers" className="gap-2 px-3">
               <Star size={16} />
-              <span className={activeTab === "customers" ? "inline" : "hidden sm:inline"}>Top Customers</span>
+              <span>Top Customers</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="TAX_CONFIG">
-            <TabsTrigger value="tax" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="tax" className="gap-2 px-3">
               <Receipt size={16} />
-              <span className={activeTab === "tax" ? "inline" : "hidden sm:inline"}>Tax Summary</span>
+              <span>Tax Summary</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="ADVANCED_ANALYTICS">
-            <TabsTrigger value="profitability" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="profitability" className="gap-2 px-3">
               <BarChart3 size={16} />
-              <span className={activeTab === "profitability" ? "inline" : "hidden sm:inline"}>Profitability</span>
+              <span>Profitability</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="INVENTORY">
-            <TabsTrigger value="supplier-sales" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="supplier-sales" className="gap-2 px-3">
               <Truck size={16} />
-              <span className={activeTab === "supplier-sales" ? "inline" : "hidden sm:inline"}>Supplier Sales</span>
+              <span>Supplier Sales</span>
             </TabsTrigger>
           </FeatureGuard>
           <FeatureGuard feature="INVENTORY">
-            <TabsTrigger value="stock-variance" className="gap-2 px-2 sm:px-3">
+            <TabsTrigger value="stock-variance" className="gap-2 px-3">
               <AlertTriangle size={16} />
-              <span className={activeTab === "stock-variance" ? "inline" : "hidden sm:inline"}>Stock Variance</span>
+              <span>Stock Variance</span>
             </TabsTrigger>
           </FeatureGuard>
-          <TabsTrigger value="cash-reconciliation" className="gap-2 px-2 sm:px-3">
+          <TabsTrigger value="cash-reconciliation" className="gap-2 px-3">
             <Wallet size={16} />
-            <span className={activeTab === "cash-reconciliation" ? "inline" : "hidden sm:inline"}>Cash Reconciliation</span>
+            <span>Cash Reconciliation</span>
           </TabsTrigger>
         </TabsList>
 

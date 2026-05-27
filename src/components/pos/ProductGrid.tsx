@@ -54,11 +54,16 @@ export function ProductGrid({
           return (
           <Card
             key={product.id}
+            data-product-card=""
+            data-product-name={product.name}
+            data-product-sku={product.sku}
+            data-price={product.basePrice.toFixed(2)}
+            data-disabled={outOfStock || atLimit ? 'true' : 'false'}
             className={
               outOfStock
                 ? 'bg-gray-900/50 border-gray-800 opacity-60 cursor-not-allowed'
                 : atLimit
-                ? 'bg-gray-900 border-amber-500/40 cursor-not-allowed'
+                ? 'bg-gray-900 border-warning/40 cursor-not-allowed'
                 : 'bg-gray-900 border-gray-800 hover:border-primary/50 hover:bg-gray-800/50 transition-all cursor-pointer group active:scale-[0.98]'
             }
             onClick={outOfStock || atLimit ? undefined : () => onProductClick(product)}
@@ -82,7 +87,7 @@ export function ProductGrid({
                 }>
                   {product.name}
                 </h3>
-                <p className="text-xs text-gray-500 mb-2">{product.sku}</p>
+                <p className="text-xs text-gray-400 mb-2">{product.sku}</p>
                 <div className="flex justify-between items-center">
                   <span className={outOfStock ? 'text-gray-500 font-bold' : 'text-primary font-bold'}>
                     {CURRENCY.symbol} {product.basePrice.toFixed(2)}
@@ -92,15 +97,15 @@ export function ProductGrid({
                       Out of stock
                     </span>
                   ) : atLimit ? (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/10 text-warning">
                       {cartQty} / {displayStock} max
                     </span>
                   ) : (
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded ${
                         displayStock < 10
-                          ? 'bg-red-500/10 text-red-500'
-                          : 'bg-emerald-500/10 text-emerald-500'
+                          ? 'bg-destructive/10 text-destructive'
+                          : 'bg-success/10 text-success'
                       }`}
                     >
                       {displayStock} in stock

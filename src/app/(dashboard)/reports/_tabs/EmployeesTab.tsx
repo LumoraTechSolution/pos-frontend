@@ -53,23 +53,23 @@ export function EmployeesTab({ dateRange, onDateChange }: Props) {
   };
 
   return (
-    <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+    <Card className="bg-card/50 border-border backdrop-blur-sm">
       <CardHeader className="space-y-3 pb-3">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <CardTitle>Employee Performance</CardTitle>
             <CardDescription>Cashier revenue, transaction count, and averages for the selected period.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV} disabled={isExporting}>
+          <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV} disabled={isExporting}>
             <Download size={14} /> {isExporting ? "Exporting…" : "CSV"}
           </Button>
         </div>
         <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border border-gray-800 bg-gray-900/40">
+        <div className="rounded-md border border-border bg-card/40">
           <Table>
-            <TableHeader className="bg-gray-800/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Employee</TableHead>
                 <TableHead className="text-center">Transactions</TableHead>
@@ -89,24 +89,24 @@ export function EmployeesTab({ dateRange, onDateChange }: Props) {
                 </TableRow>
               ) : (
                 data.content.map((emp, i) => (
-                  <TableRow key={emp.userId} className="hover:bg-gray-800/50">
+                  <TableRow key={emp.userId} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
                           {i + 1}
                         </div>
                         <div>
-                          <div className="font-medium text-white">{emp.employeeName}</div>
-                          <div className="text-xs text-gray-500">{emp.email}</div>
+                          <div className="font-medium text-foreground">{emp.employeeName}</div>
+                          <div className="text-xs text-muted-foreground">{emp.email}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="outline" className="border-gray-600">{emp.transactionCount}</Badge>
+                      <Badge variant="outline" className="border-border">{emp.transactionCount}</Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold text-emerald-400">{fc(emp.totalRevenue)}</TableCell>
-                    <TableCell className="text-right text-gray-300">{fc(emp.avgTransactionValue)}</TableCell>
-                    <TableCell className="text-right text-amber-400">{fc(emp.totalDiscount)}</TableCell>
+                    <TableCell className="text-right font-bold text-success">{fc(emp.totalRevenue)}</TableCell>
+                    <TableCell className="text-right text-foreground">{fc(emp.avgTransactionValue)}</TableCell>
+                    <TableCell className="text-right text-warning">{fc(emp.totalDiscount)}</TableCell>
                   </TableRow>
                 ))
               )}

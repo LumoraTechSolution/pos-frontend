@@ -5,6 +5,8 @@ import { inventoryService } from "@/services/inventoryService";
 import ProductForm from "@/components/inventory/ProductForm";
 import { useParams } from "next/navigation";
 import { Suspense } from "react";
+import { Breadcrumbs } from "@/components/ui/breadcrumbs";
+import { DashboardHeaderSlot } from "@/components/layout/DashboardHeaderSlot";
 
 export default function EditProductPage() {
   const { id } = useParams();
@@ -16,12 +18,20 @@ export default function EditProductPage() {
   });
 
   if (isLoading) {
-    return <div className="p-8 text-center text-gray-400">Loading product details...</div>;
+    return <div className="p-8 text-center text-muted-foreground">Loading product details...</div>;
   }
 
   return (
-    <div className="bg-black min-h-screen">
-      <Suspense fallback={<div className="p-8 text-center text-gray-400">Loading form...</div>}>
+    <div className="bg-background min-h-screen">
+      <DashboardHeaderSlot>
+        <Breadcrumbs
+          items={[
+            { label: 'Products', href: '/inventory/products' },
+            { label: productData?.name ?? 'Edit product' },
+          ]}
+        />
+      </DashboardHeaderSlot>
+      <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Loading form...</div>}>
         <ProductForm initialData={productData} />
       </Suspense>
     </div>

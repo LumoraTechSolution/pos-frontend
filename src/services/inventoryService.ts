@@ -72,6 +72,9 @@ export const inventoryService = {
   
   toggleStatus: (id: string) =>
     api.patch<ApiResponse<Product>>(`/products/${id}/status`).then(res => res.data.data),
+
+  bulkSetStatus: (ids: string[], active: boolean) =>
+    api.post<ApiResponse<number>>(`/products/bulk-status`, { ids, active }).then(res => res.data.data),
   
   createProduct: (data: ProductRequest) => 
     api.post<ApiResponse<Product>>("/products", data).then(res => res.data.data),

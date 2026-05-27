@@ -159,7 +159,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-gray-950 border-gray-800 text-gray-200">
+      <DialogContent className="sm:max-w-[600px] bg-background border-border text-foreground">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded bg-primary/10 flex items-center justify-center text-primary">
@@ -167,7 +167,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
             </div>
             <div>
               <DialogTitle className="text-xl">Inventory Management</DialogTitle>
-              <DialogDescription className="text-gray-400">
+              <DialogDescription className="text-muted-foreground">
                 Adjust stock levels or transfer items for <span className="text-primary font-semibold">{product.name}</span>
               </DialogDescription>
             </div>
@@ -175,14 +175,14 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-gray-800 p-1 mb-6">
-            <TabsTrigger value="adjust" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
+          <TabsList className="grid w-full grid-cols-3 bg-card border border-border p-1 mb-6">
+            <TabsTrigger value="adjust" className="gap-2 data-[state=active]:bg-muted data-[state=active]:text-primary">
               <PackagePlus size={16} /> Adjust
             </TabsTrigger>
-            <TabsTrigger value="transfer" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
+            <TabsTrigger value="transfer" className="gap-2 data-[state=active]:bg-muted data-[state=active]:text-primary">
               <ArrowLeftRight size={16} /> Transfer
             </TabsTrigger>
-            <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-gray-800 data-[state=active]:text-primary">
+            <TabsTrigger value="history" className="gap-2 data-[state=active]:bg-muted data-[state=active]:text-primary">
               <History size={16} /> History
             </TabsTrigger>
           </TabsList>
@@ -199,7 +199,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                         <FormLabel>Target Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                            className="w-full h-10 px-3 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Branch</option>
@@ -220,7 +220,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                         <FormLabel>Adjustment Type</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                            className="w-full h-10 px-3 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="RECONCILIATION">Reconciliation (Set Value)</option>
@@ -243,7 +243,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter amount" className="bg-gray-900 border-gray-800" {...field} />
+                        <Input type="number" placeholder="Enter amount" className="bg-card border-border" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -258,7 +258,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                       <FormLabel>Reason (Optional)</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                          className="w-full min-h-[80px] px-3 py-2 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                           placeholder="Why is this adjustment being made?"
                           {...field}
                         />
@@ -291,7 +291,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                         <FormLabel>From Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                            className="w-full h-10 px-3 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Source</option>
@@ -312,7 +312,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                         <FormLabel>To Branch</FormLabel>
                         <FormControl>
                           <select 
-                            className="w-full h-10 px-3 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                            className="w-full h-10 px-3 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                             {...field}
                           >
                             <option value="">Select Destination</option>
@@ -334,7 +334,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                     <FormItem>
                       <FormLabel>Transfer Quantity</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter amount" className="bg-gray-900 border-gray-800" {...field} />
+                        <Input type="number" placeholder="Enter amount" className="bg-card border-border" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -349,7 +349,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                       <FormLabel>Note</FormLabel>
                       <FormControl>
                         <textarea 
-                          className="w-full min-h-[80px] px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                          className="w-full min-h-[80px] px-3 py-2 bg-card border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
                           placeholder="Describe the transfer..."
                           {...field}
                         />
@@ -377,19 +377,19 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
 
           <TabsContent value="history" className="h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-800">
             {isHistoryLoading ? (
-              <div className="flex h-full items-center justify-center text-gray-500 flex-col gap-2">
+              <div className="flex h-full items-center justify-center text-muted-foreground flex-col gap-2">
                 <Loader2 className="animate-spin" />
                 <p className="text-sm">Fetching audit logs...</p>
               </div>
             ) : history && history.length > 0 ? (
               <div className="space-y-4 pb-4">
                 {history.map((log) => (
-                  <div key={log.id} className="p-4 bg-gray-900/50 border border-gray-800 rounded-xl flex items-start justify-between gap-4">
+                  <div key={log.id} className="p-4 bg-card/50 border border-border rounded-xl flex items-start justify-between gap-4">
                     <div className="flex gap-3">
                       <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center",
-                        log.type.includes('IN') || log.type === 'RETURN' ? "bg-emerald-500/10 text-emerald-400" :
-                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "bg-red-500/10 text-red-400" :
+                        log.type.includes('IN') || log.type === 'RETURN' ? "bg-success/10 text-success" :
+                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "bg-destructive/10 text-destructive" :
                         "bg-primary/10 text-primary"
                       )}>
                         {log.type.includes('IN') || log.type === 'RETURN' ? <ArrowUpRight size={16} /> :
@@ -397,29 +397,29 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                          <RefreshCw size={16} />}
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-white">
+                        <div className="text-sm font-semibold text-foreground">
                           {log.type.replace(/_/g, ' ')}
                         </div>
-                        <div className="text-[10px] text-gray-500 font-mono uppercase">
+                        <div className="text-[10px] text-muted-foreground font-mono uppercase">
                           {log.branchName} • {format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}
                         </div>
                         {log.reason && (
-                          <p className="text-xs text-gray-400 mt-1 italic">&quot;{log.reason}&quot;</p>
+                          <p className="text-xs text-muted-foreground mt-1 italic">&quot;{log.reason}&quot;</p>
                         )}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className={cn(
                         "text-sm font-bold",
-                        log.type.includes('IN') || log.type === 'RETURN' ? "text-emerald-400" :
-                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "text-red-400" :
+                        log.type.includes('IN') || log.type === 'RETURN' ? "text-success" :
+                        log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? "text-destructive" :
                         "text-primary"
                       )}>
                         {log.type.includes('IN') || log.type === 'RETURN' ? '+' :
                          log.type.includes('OUT') || log.type === 'DAMAGE' || log.type === 'SALE' ? '-' : ''}
                         {log.quantity}
                       </div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-[10px] text-muted-foreground">
                          {log.previousQuantity} → {log.newQuantity}
                       </div>
                     </div>
@@ -427,7 +427,7 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
                 ))}
               </div>
             ) : (
-              <div className="flex h-full items-center justify-center text-gray-500 flex-col gap-2">
+              <div className="flex h-full items-center justify-center text-muted-foreground flex-col gap-2">
                 <History className="opacity-20" size={48} />
                 <p className="text-sm font-medium">No adjustment history found.</p>
               </div>

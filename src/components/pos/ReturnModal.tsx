@@ -131,9 +131,9 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
             <Loader2 className="animate-spin text-primary" size={32} />
           </div>
         ) : !sale ? (
-          <div className="py-8 text-center text-red-400">Sale not found.</div>
+          <div className="py-8 text-center text-destructive">Sale not found.</div>
         ) : !canRefundSale ? (
-          <div className="py-8 text-center text-amber-400 space-y-2">
+          <div className="py-8 text-center text-warning space-y-2">
             <p>This sale cannot be refunded.</p>
             <p className="text-sm opacity-80">Current status: {sale.paymentStatus}</p>
           </div>
@@ -165,7 +165,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                             {remaining === 0 ? (
                               <Badge variant="outline" className="text-gray-500 border-gray-700">Returned</Badge>
                             ) : (
-                              <span className="text-emerald-400 font-medium">{remaining}</span>
+                              <span className="text-success font-medium">{remaining}</span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -208,7 +208,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-400">Return Reason <span className="text-red-500">*</span></label>
+                <label className="text-sm text-gray-400">Return Reason <span className="text-destructive">*</span></label>
                 <select
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
@@ -222,7 +222,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                   <option value="Other">Other</option>
                 </select>
                 {reason === "Defective / Damaged" && (
-                    <p className="text-xs text-amber-500 mt-2 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                    <p className="text-xs text-warning mt-2 bg-warning/10 p-2 rounded border border-warning/20">
                       ⚠ Items will not be restored to inventory (Written Off).
                     </p>
                 )}
@@ -259,7 +259,7 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
                 <Button 
                   onClick={handleReturn}
                   disabled={returnMutation.isPending || !reason || totalReturnItems === 0}
-                  className={reason === 'Exchange' ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-red-600 hover:bg-red-700 text-white"}
+                  className={reason === 'Exchange' ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-destructive hover:bg-red-700 text-white"}
                 >
                   {returnMutation.isPending ? "Processing..." : reason === 'Exchange' ? "Continue to Exchange" : "Process Return"}
                 </Button>

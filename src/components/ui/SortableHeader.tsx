@@ -36,7 +36,7 @@ export function SortableHeader({
 
   return (
     <TableHead
-      className={`text-gray-400 font-semibold cursor-pointer select-none hover:text-white transition-colors group ${className}`}
+      className={`text-muted-foreground font-semibold cursor-pointer select-none hover:text-foreground transition-colors group ${className}`}
       onClick={handleClick}
     >
       <div className="flex items-center gap-1.5">

@@ -55,19 +55,19 @@ export function SupplierSalesTab({ dateRange, onDateChange }: Props) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Revenue", value: fc(data?.totalRevenue ?? 0), cls: "text-white" },
-          { label: "Units Sold", value: (data?.totalUnitsSold ?? 0).toLocaleString(), cls: "text-gray-200" },
-          { label: "Gross Profit", value: fc(data?.totalProfit ?? 0), cls: "text-emerald-400" },
-          { label: "Overall Margin", value: `${data?.overallMarginPct ?? 0}%`, cls: "text-amber-400" },
+          { label: "Total Revenue", value: fc(data?.totalRevenue ?? 0), cls: "text-foreground" },
+          { label: "Units Sold", value: (data?.totalUnitsSold ?? 0).toLocaleString(), cls: "text-foreground" },
+          { label: "Gross Profit", value: fc(data?.totalProfit ?? 0), cls: "text-success" },
+          { label: "Overall Margin", value: `${data?.overallMarginPct ?? 0}%`, cls: "text-warning" },
         ].map(stat => (
-          <Card key={stat.label} className="bg-gray-900/50 border-gray-800 p-3">
+          <Card key={stat.label} className="bg-card/50 border-border p-3">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</p>
             <p className={`text-xl font-bold ${stat.cls}`}>{isLoading ? "..." : stat.value}</p>
           </Card>
         ))}
       </div>
 
-      <Card className="bg-gray-900/50 border-gray-800 backdrop-blur-sm">
+      <Card className="bg-card/50 border-border backdrop-blur-sm">
         <CardHeader className="space-y-3 pb-3">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
@@ -77,16 +77,16 @@ export function SupplierSalesTab({ dateRange, onDateChange }: Props) {
                 Products without a PO history appear under &quot;(Unassigned)&quot;.
               </CardDescription>
             </div>
-            <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 gap-1" onClick={exportCSV}>
+            <Button variant="outline" size="sm" className="border-border text-foreground gap-1" onClick={exportCSV}>
               <Download size={14} /> CSV
             </Button>
           </div>
           <DateRangePicker value={dateRange} onChange={onDateChange} onRangeChange={() => setPage(0)} />
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-gray-800 bg-gray-900/40">
+          <div className="rounded-md border border-border bg-card/40">
             <Table>
-              <TableHeader className="bg-gray-800/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
                   <TableHead className="w-10" />
                   <TableHead>Supplier</TableHead>
@@ -117,53 +117,53 @@ export function SupplierSalesTab({ dateRange, onDateChange }: Props) {
                     return (
                       <Fragment key={rowKey}>
                         <TableRow
-                          className="hover:bg-gray-800/50 cursor-pointer"
+                          className="hover:bg-muted/50 cursor-pointer"
                           onClick={() => toggle(rowKey)}
                         >
                           <TableCell className="w-10 px-3">
                             {expanded[rowKey]
                               ? <ChevronDown size={16} className="text-primary" />
-                              : <ChevronRight size={16} className="text-gray-500" />}
+                              : <ChevronRight size={16} className="text-muted-foreground" />}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span className={`font-medium ${isUnassigned ? "text-gray-400 italic" : "text-white"}`}>
+                              <span className={`font-medium ${isUnassigned ? "text-muted-foreground italic" : "text-foreground"}`}>
                                 {sup.supplierName}
                               </span>
                               {isUnassigned && (
-                                <Badge variant="outline" className="border-gray-700 text-gray-500 text-[10px] uppercase tracking-wider">
+                                <Badge variant="outline" className="border-border text-muted-foreground text-[10px] uppercase tracking-wider">
                                   No PO history
                                 </Badge>
                               )}
                               {!isUnassigned && !sup.supplierActive && (
-                                <Badge variant="outline" className="border-amber-800 text-amber-500 bg-amber-500/5 text-[10px] uppercase tracking-wider">
+                                <Badge variant="outline" className="border-amber-800 text-warning bg-warning/5 text-[10px] uppercase tracking-wider">
                                   Inactive
                                 </Badge>
                               )}
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Badge variant="outline" className="border-gray-600">{sup.productCount}</Badge>
+                            <Badge variant="outline" className="border-border">{sup.productCount}</Badge>
                           </TableCell>
-                          <TableCell className="text-center text-gray-300">{sup.totalUnitsSold.toLocaleString()}</TableCell>
-                          <TableCell className="text-right font-bold text-gray-100">{fc(sup.totalRevenue)}</TableCell>
-                          <TableCell className="text-right text-emerald-400">{fc(sup.grossProfit)}</TableCell>
+                          <TableCell className="text-center text-foreground">{sup.totalUnitsSold.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-bold text-foreground">{fc(sup.totalRevenue)}</TableCell>
+                          <TableCell className="text-right text-success">{fc(sup.grossProfit)}</TableCell>
                           <TableCell className="text-right">
-                            <span className={`font-bold ${sup.marginPct >= 30 ? "text-emerald-400" : sup.marginPct >= 15 ? "text-amber-400" : "text-red-400"}`}>
+                            <span className={`font-bold ${sup.marginPct >= 30 ? "text-success" : sup.marginPct >= 15 ? "text-warning" : "text-destructive"}`}>
                               {sup.marginPct}%
                             </span>
                           </TableCell>
                         </TableRow>
                         {expanded[rowKey] && (
                           <TableRow>
-                            <TableCell colSpan={7} className="p-0 border-b border-gray-800">
-                              <div className="bg-gray-950/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-gray-800/50">
-                                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                            <TableCell colSpan={7} className="p-0 border-b border-border">
+                              <div className="bg-background/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-border/50">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                   Products sold for this supplier
                                 </h4>
                                 <table className="w-full text-sm">
                                   <thead>
-                                    <tr className="text-gray-500 text-xs uppercase">
+                                    <tr className="text-muted-foreground text-xs uppercase">
                                       <th className="text-left pb-2 pr-4">Product</th>
                                       <th className="text-left pb-2 pr-4">SKU</th>
                                       <th className="text-center pb-2 pr-4">Units</th>
@@ -175,15 +175,15 @@ export function SupplierSalesTab({ dateRange, onDateChange }: Props) {
                                   </thead>
                                   <tbody>
                                     {sup.items.map(item => (
-                                      <tr key={item.productId} className="border-t border-gray-800/30">
-                                        <td className="py-2 pr-4 text-gray-200 font-medium">{item.productName}</td>
-                                        <td className="py-2 pr-4 text-gray-400 font-mono text-xs">{item.sku || "—"}</td>
-                                        <td className="py-2 pr-4 text-center text-gray-300">{item.unitsSold}</td>
-                                        <td className="py-2 pr-4 text-right text-gray-200">{fc(item.revenue)}</td>
-                                        <td className="py-2 pr-4 text-right text-red-400">{fc(item.cogs)}</td>
-                                        <td className="py-2 pr-4 text-right font-semibold text-emerald-400">{fc(item.grossProfit)}</td>
+                                      <tr key={item.productId} className="border-t border-border/30">
+                                        <td className="py-2 pr-4 text-foreground font-medium">{item.productName}</td>
+                                        <td className="py-2 pr-4 text-muted-foreground font-mono text-xs">{item.sku || "—"}</td>
+                                        <td className="py-2 pr-4 text-center text-foreground">{item.unitsSold}</td>
+                                        <td className="py-2 pr-4 text-right text-foreground">{fc(item.revenue)}</td>
+                                        <td className="py-2 pr-4 text-right text-destructive">{fc(item.cogs)}</td>
+                                        <td className="py-2 pr-4 text-right font-semibold text-success">{fc(item.grossProfit)}</td>
                                         <td className="py-2 text-right">
-                                          <span className={`font-bold ${item.marginPct >= 30 ? "text-emerald-400" : item.marginPct >= 15 ? "text-amber-400" : "text-red-400"}`}>
+                                          <span className={`font-bold ${item.marginPct >= 30 ? "text-success" : item.marginPct >= 15 ? "text-warning" : "text-destructive"}`}>
                                             {item.marginPct}%
                                           </span>
                                         </td>

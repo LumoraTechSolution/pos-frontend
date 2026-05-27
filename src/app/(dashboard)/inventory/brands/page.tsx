@@ -14,6 +14,7 @@ import { useState, useMemo, useCallback } from "react";
 import BrandForm from "@/components/inventory/BrandForm";
 import { SortableHeader, SortDirection } from "@/components/ui/SortableHeader";
 import { Brand } from "@/types/inventory";
+import { useConfirmDialog } from "@/components/super-admin/ConfirmDialog";
 
 export default function BrandsPage() {
   const queryClient = useQueryClient();
@@ -23,6 +24,7 @@ export default function BrandsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
@@ -68,10 +70,14 @@ export default function BrandsPage() {
     }
   });
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this brand?")) {
-      deleteMutation.mutate(id);
-    }
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: "Delete this brand?",
+      description: "Products under this brand will become unbranded. This cannot be undone.",
+      confirmLabel: "Delete brand",
+      variant: "destructive",
+    });
+    if (ok) deleteMutation.mutate(id);
   };
 
   const handleEdit = (brand: Brand) => {
@@ -91,6 +97,7 @@ export default function BrandsPage() {
 
   return (
     <div className="p-8 space-y-6">
+      {confirmDialog}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Brands</h1>
@@ -102,29 +109,29 @@ export default function BrandsPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="flex gap-4 items-center bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+      <div className="flex gap-4 items-center bg-card/50 p-4 rounded-xl border border-border">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <Input 
             placeholder="Search brands by name..." 
-            className="pl-10 bg-gray-950 border-gray-800"
+            className="pl-10 bg-background border-border"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           {sortedBrands.length} {sortedBrands.length === 1 ? 'brand' : 'brands'}
         </div>
       </div>
 
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="bg-card border-border">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-10 text-center text-gray-400">Loading brands...</div>
+            <div className="py-10 text-center text-muted-foreground">Loading brands...</div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-gray-800 hover:bg-transparent bg-gray-800/20">
+                <TableRow className="border-border hover:bg-transparent bg-muted/20">
                   <SortableHeader
                     label="Name"
                     sortKey="name"
@@ -165,8 +172,8 @@ export default function BrandsPage() {
               </TableHeader>
               <TableBody>
                 {sortedBrands.map((brand: Brand) => (
-                  <TableRow key={brand.id} className="border-gray-800 hover:bg-gray-800/50 transition-colors">
-                    <TableCell className="font-medium text-white">{brand.name}</TableCell>
+                  <TableRow key={brand.id} className="border-border hover:bg-muted/50 transition-colors">
+                    <TableCell className="font-medium text-foreground">{brand.name}</TableCell>
                     <TableCell className="text-primary">
                       {brand.website ? (
                         <a href={brand.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
@@ -174,27 +181,31 @@ export default function BrandsPage() {
                         </a>
                       ) : '-'}
                     </TableCell>
-                    <TableCell className="text-gray-400 truncate max-w-[250px]">
+                    <TableCell className="text-muted-foreground truncate max-w-[250px]">
                       {brand.description || '-'}
                     </TableCell>
-                    <TableCell className="text-gray-400">
+                    <TableCell className="text-muted-foreground">
                       {new Date(brand.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${brand.name}`}
+                          title="Edit"
                           onClick={() => handleEdit(brand)}
                           className="hover:bg-primary/20 hover:text-primary"
                         >
                           <Pencil size={16} />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${brand.name}`}
+                          title="Delete"
                           onClick={() => handleDelete(brand.id)}
-                          className="hover:bg-red-500/20 hover:text-red-400"
+                          className="hover:bg-destructive/20 hover:text-destructive"
                         >
                           <Trash2 size={16} />
                         </Button>
@@ -204,7 +215,7 @@ export default function BrandsPage() {
                 ))}
                 {sortedBrands.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                       No brands found.
                     </TableCell>
                   </TableRow>
@@ -217,7 +228,7 @@ export default function BrandsPage() {
 
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-           <Card className="w-full max-w-md bg-gray-900 border-gray-800 shadow-2xl">
+           <Card className="w-full max-w-md bg-card border-border shadow-2xl">
               <CardHeader>
                 <CardTitle>{editingBrand ? 'Edit Brand' : 'Create Brand'}</CardTitle>
               </CardHeader>

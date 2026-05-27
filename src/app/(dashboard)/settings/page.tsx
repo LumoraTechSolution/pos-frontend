@@ -234,7 +234,7 @@ export default function SettingsPage() {
       {/* Tab layout — sections stay scoped per tab so the page stays scannable
           even as more settings (receipt, hardware, advanced) get added. */}
       <Tabs defaultValue="business" orientation="vertical" className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 items-start">
-        <TabsList className="flex lg:flex-col h-auto bg-gray-900/50 border border-gray-800 p-1 gap-1 w-full overflow-x-auto">
+        <TabsList className="flex lg:flex-col h-auto bg-card/50 border border-border p-1 gap-1 w-full overflow-x-auto">
           <TabsTrigger value="business" className="lg:w-full lg:justify-start gap-2">
             <Building2 size={14} /> Business
           </TabsTrigger>
@@ -253,17 +253,17 @@ export default function SettingsPage() {
         <TabsContent value="business" className="space-y-4 mt-0">
         <div className="flex items-center gap-2">
           <Building2 className="text-primary" size={20} />
-          <h2 className="text-xl font-semibold text-white">Business Info</h2>
+          <h2 className="text-xl font-semibold text-foreground">Business Info</h2>
           {!isAdmin && (
-            <Badge variant="outline" className="bg-gray-800 text-gray-400 border-gray-700 ml-2">
+            <Badge variant="outline" className="bg-muted text-muted-foreground border-border ml-2">
               Read-only
             </Badge>
           )}
         </div>
 
-        <Card className="bg-gray-950 border-gray-800">
+        <Card className="bg-background border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold text-gray-300">
+            <CardTitle className="text-base font-semibold text-foreground">
               Receipt header details
             </CardTitle>
             <CardDescription>
@@ -272,20 +272,20 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             {tenantLoading ? (
-              <div className="flex items-center gap-2 text-gray-500 py-4">
+              <div className="flex items-center gap-2 text-muted-foreground py-4">
                 <Loader2 className="animate-spin" size={18} /> Loading business info...
               </div>
             ) : (
               <form onSubmit={handleSaveBusinessInfo} className="space-y-4 max-w-2xl">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
-                    Store Name <span className="text-red-400">*</span>
+                  <label className="text-sm font-medium text-foreground">
+                    Store Name <span className="text-destructive">*</span>
                   </label>
                   <Input
                     value={bizName}
                     onChange={(e) => setBizName(e.target.value)}
                     placeholder="e.g. Lumora Grocery"
-                    className="bg-gray-900 border-gray-800"
+                    className="bg-card border-border"
                     maxLength={255}
                     required
                     disabled={!isAdmin}
@@ -294,27 +294,27 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">
+                    <label className="text-sm font-medium text-foreground">
                       Address Line 1
                     </label>
                     <Input
                       value={bizAddress1}
                       onChange={(e) => setBizAddress1(e.target.value)}
                       placeholder="123 Business Avenue"
-                      className="bg-gray-900 border-gray-800"
+                      className="bg-card border-border"
                       maxLength={255}
                       disabled={!isAdmin}
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">
+                    <label className="text-sm font-medium text-foreground">
                       Address Line 2
                     </label>
                     <Input
                       value={bizAddress2}
                       onChange={(e) => setBizAddress2(e.target.value)}
                       placeholder="Colombo 05, Sri Lanka"
-                      className="bg-gray-900 border-gray-800"
+                      className="bg-card border-border"
                       maxLength={255}
                       disabled={!isAdmin}
                     />
@@ -322,37 +322,37 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Phone</label>
+                  <label className="text-sm font-medium text-foreground">Phone</label>
                   <Input
                     value={bizPhone}
                     onChange={(e) => setBizPhone(e.target.value)}
                     placeholder="011-2345678"
-                    className="bg-gray-900 border-gray-800 max-w-xs"
+                    className="bg-card border-border max-w-xs"
                     maxLength={50}
                     disabled={!isAdmin}
                   />
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-muted-foreground">
                     Displayed on receipts as &ldquo;Phone: {bizPhone || "011-2345678"}&rdquo;
                   </p>
                 </div>
 
                 {isAdmin && (
                   <>
-                    <div className="border-t border-gray-800 pt-4">
-                      <p className="text-sm font-semibold text-gray-300 mb-3">Branding</p>
+                    <div className="border-t border-border pt-4">
+                      <p className="text-sm font-semibold text-foreground mb-3">Branding</p>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-300">Receipt Footer</label>
+                      <label className="text-sm font-medium text-foreground">Receipt Footer</label>
                       <textarea
                         value={bizReceiptFooter}
                         onChange={(e) => setBizReceiptFooter(e.target.value)}
                         placeholder="Return within 7 days with receipt."
-                        className="w-full rounded-md bg-gray-900 border border-gray-800 text-sm text-white px-3 py-2 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                        className="w-full rounded-md bg-card border border-border text-sm text-foreground px-3 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                         rows={3}
                         maxLength={500}
                       />
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-[11px] text-muted-foreground">
                         Printed at the bottom of every receipt. Leave blank to use the default message.
                       </p>
                     </div>
@@ -386,17 +386,17 @@ export default function SettingsPage() {
         fallback={
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Percent className="text-gray-600" size={20} />
-              <h2 className="text-xl font-semibold text-gray-500">Tax Configuration</h2>
+              <Percent className="text-muted-foreground" size={20} />
+              <h2 className="text-xl font-semibold text-muted-foreground">Tax Configuration</h2>
               <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 ml-2">Premium</Badge>
             </div>
-            <Card className="bg-gray-950 border-gray-800 border-dashed border-2">
+            <Card className="bg-background border-border border-dashed border-2">
               <CardContent className="h-64 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center mb-4">
-                  <Lock className="text-gray-600" size={32} />
+                <div className="w-16 h-16 rounded-full bg-card flex items-center justify-center mb-4">
+                  <Lock className="text-muted-foreground" size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">Feature Locked</h3>
-                <p className="text-gray-400 text-sm max-w-sm mb-6">
+                <h3 className="text-lg font-bold text-foreground mb-2">Feature Locked</h3>
+                <p className="text-muted-foreground text-sm max-w-sm mb-6">
                   Advanced tax configuration, category mapping, and multi-layered taxation are available in the <strong>Medium Business</strong> and <strong>Enterprise</strong> plans.
                 </p>
                 <Button className="bg-primary hover:bg-primary/90">
@@ -411,7 +411,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Percent className="text-primary" size={20} />
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-xl font-semibold text-foreground">
                 Tax Configuration
               </h2>
             </div>
@@ -441,46 +441,46 @@ export default function SettingsPage() {
 
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-gray-950 border-gray-800">
+            <Card className="bg-background border-border">
               <CardContent className="p-5 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                   <Percent className="text-primary" size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Total Rates
                   </p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-2xl font-bold text-foreground">
                     {taxRates?.length || 0}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-950 border-gray-800">
+            <Card className="bg-background border-border">
               <CardContent className="p-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <Shield className="text-emerald-400" size={22} />
+                <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                  <Shield className="text-success" size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Active Rates
                   </p>
-                  <p className="text-2xl font-bold text-white">{activeCount}</p>
+                  <p className="text-2xl font-bold text-foreground">{activeCount}</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-950 border-gray-800">
+            <Card className="bg-background border-border">
               <CardContent className="p-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <Star className="text-amber-400" size={22} />
+                <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                  <Star className="text-warning" size={22} />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Default Rate
                   </p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-2xl font-bold text-foreground">
                     {defaultRate
                       ? `${defaultRate.ratePercent}%`
                       : "Not Set"}
@@ -491,32 +491,32 @@ export default function SettingsPage() {
           </div>
 
           {/* Tax Rates Table */}
-          <Card className="bg-gray-950 border-gray-800 overflow-hidden">
-            <CardHeader className="bg-gray-900/30 border-b border-gray-800 pb-4">
-              <CardTitle className="text-base font-semibold text-gray-300">
+          <Card className="bg-background border-border overflow-hidden">
+            <CardHeader className="bg-card/30 border-b border-border pb-4">
+              <CardTitle className="text-base font-semibold text-foreground">
                 Tax Rates Registry
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-black/20">
-                  <TableRow className="border-gray-800 hover:bg-transparent">
-                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest pl-6">
+                <TableHeader className="bg-muted/40">
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest pl-6">
                       Name
                     </TableHead>
-                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
                       Rate
                     </TableHead>
-                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
                       Description
                     </TableHead>
-                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
                       Status
                     </TableHead>
-                    <TableHead className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
                       Type
                     </TableHead>
-                    <TableHead className="text-right text-gray-400 font-bold uppercase text-[10px] tracking-widest pr-6">
+                    <TableHead className="text-right text-muted-foreground font-bold uppercase text-[10px] tracking-widest pr-6">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -525,7 +525,7 @@ export default function SettingsPage() {
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-48 text-center">
-                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <Loader2
                             className="animate-spin text-primary"
                             size={28}
@@ -539,7 +539,7 @@ export default function SettingsPage() {
                   ) : !taxRates || taxRates.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="h-48 text-center">
-                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
                           <Percent size={40} className="opacity-10" />
                           <p className="text-sm font-medium">
                             No tax rates configured yet
@@ -558,7 +558,7 @@ export default function SettingsPage() {
                     taxRates.map((rate) => (
                       <TableRow
                         key={rate.id}
-                        className="border-gray-800 hover:bg-white/5 transition-colors group"
+                        className="border-border hover:bg-foreground/5 transition-colors group"
                       >
                         <TableCell className="py-4 pl-6">
                           <div className="flex items-center gap-3">
@@ -567,12 +567,12 @@ export default function SettingsPage() {
                                 "w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold",
                                 rate.isActive
                                   ? "bg-primary/10 text-primary"
-                                  : "bg-gray-800 text-gray-500"
+                                  : "bg-muted text-muted-foreground"
                               )}
                             >
                               %
                             </div>
-                            <span className="font-semibold text-white">
+                            <span className="font-semibold text-foreground">
                               {rate.name}
                             </span>
                           </div>
@@ -583,7 +583,7 @@ export default function SettingsPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             {rate.description || "—"}
                           </span>
                         </TableCell>
@@ -591,8 +591,8 @@ export default function SettingsPage() {
                           <Badge
                             className={cn(
                               rate.isActive
-                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                : "bg-gray-800 text-gray-400"
+                                ? "bg-success/10 text-success border-success/20"
+                                : "bg-muted text-muted-foreground"
                             )}
                           >
                             {rate.isActive ? "Active" : "Inactive"}
@@ -600,11 +600,11 @@ export default function SettingsPage() {
                         </TableCell>
                         <TableCell>
                           {rate.isDefault ? (
-                            <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
+                            <Badge className="bg-warning/10 text-warning border-warning/20 gap-1">
                               <Star size={12} fill="currentColor" /> Default
                             </Badge>
                           ) : (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground">
                               Standard
                             </span>
                           )}
@@ -614,6 +614,8 @@ export default function SettingsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Edit tax rate"
+                              title="Edit"
                               className="h-8 w-8 text-primary hover:bg-primary/10"
                               onClick={() => openEdit(rate)}
                             >
@@ -623,7 +625,9 @@ export default function SettingsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-gray-500 hover:text-red-400 hover:bg-red-500/10"
+                                aria-label="Delete tax rate"
+                                title="Delete"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => setDeleteConfirm(rate)}
                               >
                                 <Trash2 size={15} />
@@ -645,11 +649,11 @@ export default function SettingsPage() {
         <TabsContent value="receipt" className="space-y-4 mt-0">
           <div className="flex items-center gap-2">
             <ReceiptIcon className="text-primary" size={20} />
-            <h2 className="text-xl font-semibold text-white">Receipt</h2>
+            <h2 className="text-xl font-semibold text-foreground">Receipt</h2>
           </div>
-          <Card className="bg-gray-950 border-gray-800">
+          <Card className="bg-background border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold text-gray-300">Live preview</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Live preview</CardTitle>
               <CardDescription>
                 Preview of a receipt printed with your current Business Info. Edits in the Business
                 tab show up here immediately — save them to apply to real sales.
@@ -669,9 +673,9 @@ export default function SettingsPage() {
         <TabsContent value="hardware" className="space-y-4 mt-0">
           <div className="flex items-center gap-2">
             <Cpu className="text-primary" size={20} />
-            <h2 className="text-xl font-semibold text-white">Hardware</h2>
+            <h2 className="text-xl font-semibold text-foreground">Hardware</h2>
           </div>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Connect and configure physical store peripherals such as barcode scanners,
             thermal printers, and cash drawers.
           </p>
@@ -682,12 +686,12 @@ export default function SettingsPage() {
 
       {/* Create/Edit Modal */}
       <Dialog open={isModalOpen} onOpenChange={closeModal}>
-        <DialogContent className="sm:max-w-[425px] bg-gray-950 border-gray-800 text-gray-200">
+        <DialogContent className="sm:max-w-[425px] bg-background border-border text-foreground">
           <DialogHeader>
             <DialogTitle>
               {editingRate ? "Edit Tax Rate" : "Create Tax Rate"}
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-muted-foreground">
               {editingRate
                 ? "Update the tax rate details below."
                 : "Define a new tax rate for your business."}
@@ -696,8 +700,8 @@ export default function SettingsPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
-                Name <span className="text-red-400">*</span>
+              <label className="text-sm font-medium text-foreground">
+                Name <span className="text-destructive">*</span>
               </label>
               <Input
                 value={formName}
@@ -705,14 +709,14 @@ export default function SettingsPage() {
                   setFormName(e.target.value)
                 }
                 placeholder="e.g. GST, VAT, Sales Tax"
-                className="bg-gray-900 border-gray-800"
+                className="bg-card border-border"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
-                Rate (%) <span className="text-red-400">*</span>
+              <label className="text-sm font-medium text-foreground">
+                Rate (%) <span className="text-destructive">*</span>
               </label>
               <div className="relative">
                 <Input
@@ -725,20 +729,20 @@ export default function SettingsPage() {
                     setFormRate(e.target.value)
                   }
                   placeholder="e.g. 10"
-                  className="bg-gray-900 border-gray-800 pr-10"
+                  className="bg-card border-border pr-10"
                   required
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-muted-foreground">
                 Enter as percentage. e.g. 10 for 10%, 5.5 for 5.5%.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">
+              <label className="text-sm font-medium text-foreground">
                 Description
               </label>
               <Input
@@ -747,16 +751,16 @@ export default function SettingsPage() {
                   setFormDescription(e.target.value)
                 }
                 placeholder="Optional description"
-                className="bg-gray-900 border-gray-800"
+                className="bg-card border-border"
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-800 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
               <div className="space-y-0.5">
-                <label className="text-sm font-medium text-gray-200">
+                <label className="text-sm font-medium text-foreground">
                   Default Rate
                 </label>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Applied when a product&apos;s category has no specific tax rate.
                 </p>
               </div>
@@ -768,12 +772,12 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-800 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
               <div className="space-y-0.5">
-                <label className="text-sm font-medium text-gray-200">
+                <label className="text-sm font-medium text-foreground">
                   Active
                 </label>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   Inactive tax rates won&apos;t be applied to any sales.
                 </p>
               </div>
@@ -814,14 +818,14 @@ export default function SettingsPage() {
         open={!!deleteConfirm}
         onOpenChange={() => setDeleteConfirm(null)}
       >
-        <DialogContent className="sm:max-w-[400px] bg-gray-950 border-gray-800 text-gray-200">
+        <DialogContent className="sm:max-w-[400px] bg-background border-border text-foreground">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-400">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle size={20} /> Delete Tax Rate
             </DialogTitle>
-            <DialogDescription className="text-gray-400 pt-2">
+            <DialogDescription className="text-muted-foreground pt-2">
               Are you sure you want to delete{" "}
-              <span className="text-white font-semibold">
+              <span className="text-foreground font-semibold">
                 {deleteConfirm?.name}
               </span>
               ? This action cannot be undone. Products using this rate will fall
@@ -842,7 +846,7 @@ export default function SettingsPage() {
                 deleteConfirm && deleteMutation.mutate(deleteConfirm.id)
               }
               disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-red-700"
             >
               {deleteMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -890,7 +894,7 @@ function ReceiptPreview({ businessName, addressLine1, addressLine2, phone }: Rec
   };
 
   return (
-    <div className="flex justify-center bg-gray-900/60 border border-gray-800 rounded-lg p-6">
+    <div className="flex justify-center bg-card/60 border border-border rounded-lg p-6">
       <div className="shadow-2xl">
         <Receipt
           sale={demoSale}

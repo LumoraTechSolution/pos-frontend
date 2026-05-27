@@ -68,7 +68,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px] bg-gray-900 border-gray-800 text-white">
+      <DialogContent className="sm:max-w-[425px] bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
@@ -84,7 +84,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="bg-gray-950 border-gray-800 focus-visible:ring-primary"
+              className="bg-background border-border focus-visible:ring-primary"
             />
           </div>
 
@@ -95,7 +95,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
                 id="contactPerson"
                 value={formData.contactPerson}
                 onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                className="bg-gray-950 border-gray-800 focus-visible:ring-primary"
+                className="bg-background border-border focus-visible:ring-primary"
               />
             </div>
             <div className="space-y-2">
@@ -104,7 +104,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="bg-gray-950 border-gray-800 focus-visible:ring-primary"
+                className="bg-background border-border focus-visible:ring-primary"
               />
             </div>
           </div>
@@ -116,7 +116,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="bg-gray-950 border-gray-800 focus-visible:ring-primary"
+              className="bg-background border-border focus-visible:ring-primary"
             />
           </div>
 
@@ -126,7 +126,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               id="address"
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="bg-gray-950 border-gray-800 focus-visible:ring-primary min-h-[80px]"
+              className="bg-background border-border focus-visible:ring-primary min-h-[80px]"
             />
           </div>
 
@@ -135,7 +135,7 @@ export function SupplierModal({ isOpen, onClose, supplier }: SupplierModalProps)
               type="button"
               variant="outline"
               onClick={onClose}
-              className="border-gray-700 hover:bg-gray-800"
+              className="border-border hover:bg-muted"
             >
               Cancel
             </Button>
