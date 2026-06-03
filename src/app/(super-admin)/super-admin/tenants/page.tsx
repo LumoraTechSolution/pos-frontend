@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { superAdminTenantService } from '@/services/superAdminTenantService';
 import { PagedTenantResponse, TenantSummaryResponse } from '@/types/superAdmin';
 import { 
-  Building2, 
-  Search, 
-  MoreVertical, 
-  ShieldAlert, 
+  Building2,
+  Search,
+  SlidersHorizontal,
+  ShieldAlert,
   CheckCircle2, 
   XCircle, 
   ChevronLeft, 
@@ -211,25 +211,15 @@ export default function SuperAdminTenantsPage() {
                       </button>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="relative inline-block group">
-                        <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                          <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border shadow-xl rounded-xl overflow-hidden hidden group-hover:block z-20 origin-top-right">
-                          <button 
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-muted transition-colors text-muted-foreground font-medium"
-                            onClick={() => router.push(`/super-admin/tenants/${t.id}`)}
-                          >
-                            View Configuration
-                          </button>
-                          <button 
-                            onClick={() => handleToggleStatus(t.id, t.isActive)}
-                            className={`w-full text-left px-4 py-3 text-sm font-medium transition-colors ${t.isActive ? 'text-destructive hover:bg-red-50' : 'text-success hover:bg-emerald-50'}`}
-                          >
-                            {t.isActive ? 'Suspend Access' : 'Restore Access'}
-                          </button>
-                        </div>
-                      </div>
+                      <button
+                        onClick={() => router.push(`/super-admin/tenants/${t.id}`)}
+                        aria-label={`View configuration for ${t.name}`}
+                        title="View configuration"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        View Config
+                      </button>
                     </td>
                   </tr>
                 ))
