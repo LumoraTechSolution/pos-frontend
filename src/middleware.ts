@@ -9,6 +9,15 @@ const PUBLIC_ROUTES = [
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Static assets (brand logos, manifest, fonts…) are not pages — never run the
+  // auth redirect on them, or public files like /storex-*.svg get 307'd to
+  // /login and fail to load. (The matcher below also excludes them, but that
+  // config doesn't hot-reload in dev, so guard here too.)
+  if (/\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|txt|xml|woff2?|ttf|map)$/i.test(pathname)) {
+    return NextResponse.next();
+  }
+
   const isSuperAdminRoute = pathname.startsWith('/super-admin');
   // Super-admin pages are gated by a separate cookie so super-admin and
   // tenant-user sessions can coexist and don't invalidate each other.
@@ -73,7 +82,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - any static asset by extension (svg/png/etc.) so public files like the
+     *   brand logos aren't auth-redirected to /login (which broke the <img>).
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json|txt|xml)$).*)',
   ],
 };
