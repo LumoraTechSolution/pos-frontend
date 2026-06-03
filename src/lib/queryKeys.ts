@@ -8,6 +8,7 @@ export const QK = {
   tenantInfo: ['tenant-info'] as const,
   taxRatesActive: ['tax-rates-active'] as const,
   cashSessionActive: ['cash-session-active'] as const,
+  currentSessionSales: ['current-session-sales'] as const,
   categories: ['categories'] as const,
   brands: ['brands'] as const,
   superAdmin: {

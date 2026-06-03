@@ -38,6 +38,10 @@ export interface SaleResponse {
   netAmount: number;
   paymentStatus: string;
   paymentMethod: string;
+  /** Gross cash the customer handed over (CASH/SPLIT). Null/absent for card/online. */
+  amountTendered?: number | null;
+  /** Change given back = amountTendered − netAmount, floored at 0. */
+  changeDue?: number | null;
   createdAt: string;
   cashierName?: string;
   customerId?: string;
@@ -56,16 +60,30 @@ export interface SalesSummaryResponse {
   salesByPaymentMethod: Record<string, number>;
 }
 
+export interface PaymentCorrectionRequest {
+  paymentMethod?: 'CASH' | 'CARD' | 'ONLINE' | 'SPLIT' | 'CREDIT';
+  cashTendered?: number;
+  managerPin?: string;
+}
+
 export const salesService = {
-  createSale: (data: SaleRequest) => 
+  createSale: (data: SaleRequest) =>
     api.post<ApiResponse<SaleResponse>>("/sales", data).then(res => res.data.data),
-  
-  getSale: (id: string) => 
+
+  getSale: (id: string) =>
     api.get<ApiResponse<SaleResponse>>(`/sales/${id}`).then(res => res.data.data),
+
+  /** Sales from the current cashier's open shift, newest first — the candidate
+   *  list for the payment-correction picker. Empty when no shift is open. */
+  getCurrentSessionSales: () =>
+    api.get<ApiResponse<SaleResponse[]>>("/sales/session/current").then(res => res.data.data),
 
   getSalesByCustomer: (customerId: string, page: number = 0, size: number = 10) =>
     api.get<ApiResponse<{ content: SaleResponse[]; totalElements: number; totalPages: number }>>(`/sales/customer/${customerId}?page=${page}&size=${size}&sort=createdAt,desc`).then(res => res.data.data),
 
   getDailySummary: () =>
     api.get<ApiResponse<SalesSummaryResponse>>("/sales/summary/daily").then(res => res.data.data),
+
+  correctPayment: (id: string, data: PaymentCorrectionRequest) =>
+    api.patch<ApiResponse<SaleResponse>>(`/sales/${id}/payment-correction`, data).then(res => res.data.data),
 };

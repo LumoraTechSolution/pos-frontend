@@ -14,6 +14,7 @@ export interface PosKeyboardActions {
   charge: () => void;
   cyclePayment: () => void;
   printLastReceipt: () => void;
+  correctLastPayment: () => void;
   hold: () => void;
   discard: () => void;
   showHelp: () => void;
@@ -88,6 +89,7 @@ export function usePosKeyboard(props: UsePosKeyboardProps) {
         case 'F4': e.preventDefault(); p.actions.cyclePayment(); return;
         case 'F5': e.preventDefault(); p.actions.hold(); return;
         case 'F6': e.preventDefault(); if (p.activeRegion === 'cart') p.actions.discountFocusedCart(); return;
+        case 'F7': e.preventDefault(); p.actions.correctLastPayment(); return;
         case 'F8': e.preventDefault(); p.actions.discard(); return;
         case 'F9': e.preventDefault(); p.actions.charge(); return;
         case 'F12': e.preventDefault(); p.actions.printLastReceipt(); return;
@@ -150,5 +152,6 @@ export const HOTKEY_LEGEND: { key: string; label: string }[] = [
   { key: 'F2', label: 'Search' },
   { key: 'F3', label: 'Customer' },
   { key: 'F9', label: 'Charge' },
+  { key: 'F7', label: 'Correct payment' },
   { key: 'F1', label: 'Shortcuts' },
 ];

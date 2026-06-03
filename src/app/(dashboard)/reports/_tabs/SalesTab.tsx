@@ -55,11 +55,12 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
       const all = await fetchAllPages(
         (p, s) => reportService.getSalesReport(dateRange.start, dateRange.end, p, s),
       );
-      const headers = ["Invoice #", "Date", "Customer", "Cashier", "Payment", "Status", "Total", "Tax", "Net"];
+      const headers = ["Invoice #", "Date", "Customer", "Cashier", "Payment", "Status", "Total", "Tax", "Net", "Cash Tendered", "Change Given"];
       const rows = all.map(s => [
         s.invoiceNumber, format(new Date(s.createdAt), "yyyy-MM-dd HH:mm"),
         s.customerName, s.cashierName, s.paymentMethod,
         s.paymentStatus, s.totalAmount, s.taxAmount, s.netAmount,
+        s.amountTendered ?? "", s.amountTendered != null ? (s.changeDue ?? 0) : "",
       ]);
       downloadCsv(`report-sales-${format(new Date(), "yyyyMMdd")}.csv`, headers, rows);
     } catch {
@@ -221,6 +222,30 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
                         <TableRow key={`${sale.saleId}-items`}>
                           <TableCell colSpan={9} className="p-0 border-b border-border">
                             <div className="bg-background/80 px-6 py-4 ml-8 mr-4 my-2 rounded-lg border border-border/50">
+                              {/* Cash handling — only meaningful when physical cash
+                                  changed hands (CASH/SPLIT). Net cancels out the change,
+                                  so this is for audit / drawer-variance tracing, not revenue. */}
+                              {sale.amountTendered != null && (
+                                <div className="mb-4">
+                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                                    Cash Handling
+                                  </h4>
+                                  <div className="grid grid-cols-3 gap-4 max-w-md">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Net Amount</p>
+                                      <p className="text-sm font-semibold text-foreground">{fc(sale.netAmount)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Cash Tendered</p>
+                                      <p className="text-sm font-semibold text-foreground">{fc(sale.amountTendered)}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Change Given</p>
+                                      <p className="text-sm font-semibold text-foreground">{fc(sale.changeDue ?? 0)}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                 Items in this Transaction
                               </h4>

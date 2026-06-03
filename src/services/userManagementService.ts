@@ -8,6 +8,8 @@ export interface UserResponse {
   lastName: string;
   phone: string;
   active: boolean;
+  /** Whether the user has a 4-digit PIN set (required for manager POS overrides). */
+  hasPin: boolean;
   lastLoginAt: string | null;
   createdAt: string;
   roles: string[];
@@ -28,6 +30,8 @@ export interface UpdateUserRequest {
   lastName?: string;
   phone?: string;
   roleNames?: string[];
+  /** Set/replace the 4-digit PIN. Omit (or leave blank) to keep the existing PIN. */
+  pin?: string;
 }
 
 export const userManagementService = {

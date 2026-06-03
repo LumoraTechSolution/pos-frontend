@@ -28,6 +28,9 @@ import { ProductGrid } from '@/components/pos/ProductGrid';
 import { CartItemCard } from '@/components/pos/CartItemCard';
 import { CartSummary } from '@/components/pos/CartSummary';
 import { TenderOverlay } from '@/components/pos/TenderOverlay';
+import { CorrectPaymentModal } from '@/components/pos/CorrectPaymentModal';
+import { CorrectSalePickerModal } from '@/components/pos/CorrectSalePickerModal';
+import { ReturnModal } from '@/components/pos/ReturnModal';
 import { ShortcutsOverlay } from '@/components/pos/ShortcutsOverlay';
 import { CustomerSelector } from '@/components/pos/CustomerSelector';
 import { Receipt } from '@/components/pos/Receipt';
@@ -46,6 +49,11 @@ export default function TerminalPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [lastSale, setLastSale] = useState<SaleResponse | null>(null);
+  // F7 → picker lists this shift's sales; choosing one sets correctSale, which
+  // opens the correction modal for that specific sale (not just the last one).
+  const [correctPickerOpen, setCorrectPickerOpen] = useState(false);
+  const [correctSale, setCorrectSale] = useState<SaleResponse | null>(null);
+  const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   // Drives the "Fix stock" recovery action on checkout-time OOS errors.
@@ -333,46 +341,65 @@ export default function TerminalPage() {
     });
   };
 
-  // F12 — re-print the most recent completed sale. Builds the same ReceiptData
-  // payload the success path uses so the printer service path stays one branch.
+  // F7 — open the "correct a sale" picker listing this shift's sales. Choosing
+  // one opens the correction modal for that sale; cashiers self-serve recent
+  // sales, older ones prompt for a manager PIN (enforced server-side).
+  const handleCorrectLastPayment = () => {
+    setCorrectPickerOpen(true);
+  };
+
+  // Builds the thermal-printer payload for a completed sale. Pulls the real
+  // gross tendered / change off the sale (persisted on the server) so reprints —
+  // and receipts reprinted after a payment correction — show the correct
+  // Cash/Change lines instead of defaulting to an exact tender.
+  const buildReceiptData = (sale: SaleResponse): ReceiptData => ({
+    tenantName: tenantInfo?.name || 'StoreX',
+    tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
+    tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
+    tenantPhone: tenantInfo?.phone ?? undefined,
+    branchName: selectedBranch?.name || 'Main Branch',
+    showBranch: branches.length > 1,
+    cashierName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
+    transactionId: sale.invoiceNumber,
+    createdAt: sale.createdAt ? new Date(sale.createdAt) : new Date(),
+    items: (sale.items ?? []).map((it) => ({
+      name: it.productName,
+      quantity: Number(it.quantity),
+      price: Number(it.unitPrice),
+      total: Number(it.totalAmount),
+    })),
+    subtotal: Number(sale.totalAmount),
+    tax: Number(sale.taxAmount),
+    taxLabel,
+    discount: Number(sale.discountAmount),
+    total: Number(sale.netAmount),
+    paymentMethod: sale.paymentMethod as 'CASH' | 'CARD' | 'ONLINE',
+    tendered: Number(sale.amountTendered ?? sale.netAmount),
+    change: Number(sale.changeDue ?? 0),
+    receiptFooter: tenantInfo?.receiptFooter ?? undefined,
+  });
+
+  // F12 — re-print the most recent completed sale.
   const handlePrintLastReceipt = () => {
     if (!lastSale) {
       toast.info('No recent sale to reprint');
       return;
     }
-    const receiptData: ReceiptData = {
-      tenantName: tenantInfo?.name || 'StoreX',
-      tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
-      tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
-      tenantPhone: tenantInfo?.phone ?? undefined,
-      branchName: selectedBranch?.name || 'Main Branch',
-      showBranch: branches.length > 1,
-      cashierName: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim(),
-      transactionId: lastSale.invoiceNumber,
-      createdAt: lastSale.createdAt ? new Date(lastSale.createdAt) : new Date(),
-      items: (lastSale.items ?? []).map((it) => ({
-        name: it.productName,
-        quantity: Number(it.quantity),
-        price: Number(it.unitPrice),
-        total: Number(it.totalAmount),
-      })),
-      subtotal: Number(lastSale.totalAmount),
-      tax: Number(lastSale.taxAmount),
-      taxLabel,
-      discount: Number(lastSale.discountAmount),
-      total: Number(lastSale.netAmount),
-      paymentMethod: lastSale.paymentMethod as 'CASH' | 'CARD' | 'ONLINE',
-      tendered: Number(lastSale.netAmount),
-      change: 0,
-      receiptFooter: tenantInfo?.receiptFooter ?? undefined,
-    };
-    receiptPrinterService.processHardwareCheckoutActions(receiptData);
+    receiptPrinterService.processHardwareCheckoutActions(buildReceiptData(lastSale));
   };
 
   usePosKeyboard({
     // Disabled while a blocking surface owns the keyboard: the tender overlay
-    // handles its own keys; Stock Fix / Shift Summary / Shortcuts are modals.
-    disabled: tenderOpen || helpOpen || !!stockFixProduct || showSummary,
+    // handles its own keys; Stock Fix / Shift Summary / Shortcuts / Correct /
+    // Return are modals.
+    disabled:
+      tenderOpen
+      || helpOpen
+      || !!stockFixProduct
+      || showSummary
+      || correctPickerOpen
+      || !!correctSale
+      || !!returnSaleId,
     activeRegion,
     setActiveRegion,
     productCount: filteredProducts.length,
@@ -402,6 +429,7 @@ export default function TerminalPage() {
       charge: openTender,
       cyclePayment: cyclePaymentMethod,
       printLastReceipt: handlePrintLastReceipt,
+      correctLastPayment: handleCorrectLastPayment,
       hold: () => {},
       discard: handleDiscard,
       showHelp: () => setHelpOpen(true),
@@ -554,6 +582,35 @@ export default function TerminalPage() {
       />
 
       <ShortcutsOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      <CorrectSalePickerModal
+        open={correctPickerOpen}
+        onClose={() => setCorrectPickerOpen(false)}
+        onPick={(sale) => {
+          setCorrectPickerOpen(false);
+          setCorrectSale(sale);
+        }}
+      />
+
+      <CorrectPaymentModal
+        open={!!correctSale}
+        sale={correctSale}
+        onClose={() => setCorrectSale(null)}
+        onCorrected={(updated) => {
+          // Keep lastSale in sync only when it's the one that changed.
+          setLastSale((prev) => (prev && prev.id === updated.id ? updated : prev));
+          // Cash-tender / method changes shift the drawer's expected balance, so
+          // refresh the active session and the picker list in lockstep.
+          queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
+          queryClient.invalidateQueries({ queryKey: QK.currentSessionSales });
+          // Hand the customer a corrected receipt reflecting the new tender/method.
+          receiptPrinterService.processHardwareCheckoutActions(buildReceiptData(updated));
+          toast.success('Corrected receipt sent to printer');
+        }}
+        onRequestReturn={(s) => setReturnSaleId(s.id)}
+      />
+
+      <ReturnModal saleId={returnSaleId} onClose={() => setReturnSaleId(null)} />
 
       {/* Stock Fix modal — opened from the checkout error toast's action */}
       {stockFixProduct && (

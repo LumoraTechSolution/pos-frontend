@@ -35,7 +35,7 @@ export function QuickTenderButtons({
 
   return (
     <div
-      className={cn('grid grid-cols-3 gap-2', className)}
+      className={cn('grid grid-cols-2 gap-2', className)}
       role="group"
       aria-label="Quick tender presets"
     >
