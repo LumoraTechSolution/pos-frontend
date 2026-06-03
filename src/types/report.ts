@@ -14,6 +14,10 @@ export interface SalesReportRecord {
   netAmount: number;
   paymentMethod: string;
   paymentStatus: string;
+  /** Gross cash the customer handed over (CASH/SPLIT). Null for card/online. */
+  amountTendered?: number | null;
+  /** Change given back = amountTendered − netAmount, floored at 0. */
+  changeDue?: number | null;
   items: SalesReportItemRecord[];
 }
 

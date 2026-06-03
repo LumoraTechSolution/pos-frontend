@@ -121,11 +121,11 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
         <div className="mt-1">
           <p className="flex justify-between">
             <span>Cash:</span>
-            <span>{fmt(tendered ?? sale.netAmount)}</span>
+            <span>{fmt(tendered ?? sale.amountTendered ?? sale.netAmount)}</span>
           </p>
           <p className="flex justify-between">
             <span>Change:</span>
-            <span>{fmt(change ?? 0)}</span>
+            <span>{fmt(change ?? sale.changeDue ?? 0)}</span>
           </p>
         </div>
       ) : (
