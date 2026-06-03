@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { PinPad } from "@/components/auth/PinPad";
-import { Store } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,12 +26,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-muted/40 p-4">
       <div className="w-full max-w-[450px] space-y-8">
-        <div className="flex flex-col items-center space-y-2 text-center">
-          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground mb-4">
-            <Store className="h-8 w-8" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">StoreX </h1>
-          <p className="text-muted-foreground">powerd by Lumora Tech</p>
+        <div className="flex flex-col items-center text-center">
+          {/* Mark + StoreX wordmark (no tagline). Vector, so it stays crisp and
+              adapts to light/dark — "Store" follows the foreground color. */}
+          <Logo variant="full" layout="stacked" size={104} />
         </div>
 
         <Card className="border-none shadow-xl">
