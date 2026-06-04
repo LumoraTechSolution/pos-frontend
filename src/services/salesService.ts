@@ -2,7 +2,10 @@ import api from "./api";
 import { ApiResponse } from "@/types/common";
 
 export interface SaleItemRequest {
-  productId: string;
+  /** Catalog product id; null/omitted for a custom/open line (then itemName is set). */
+  productId: string | null;
+  /** Typed name for a custom/open line; omit for catalog products. */
+  itemName?: string;
   quantity: number;
   unitPrice: number;
   discountAmount: number;
@@ -20,7 +23,7 @@ export interface SaleRequest {
 
 export interface SaleItemResponse {
   id: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   quantity: number;
   unitPrice: number;

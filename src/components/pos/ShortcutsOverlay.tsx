@@ -33,6 +33,7 @@ const GROUPS: { title: string; rows: [string, string][] }[] = [
       ['F3', 'Add customer'],
       ['F4', 'Cycle payment'],
       ['F5', 'Hold sale'],
+      ['F10', 'Add custom item'],
       ['F7', 'Correct a sale'],
       ['F8', 'Discard sale'],
       ['F9', 'Charge'],

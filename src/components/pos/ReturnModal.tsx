@@ -81,13 +81,13 @@ export function ReturnModal({ saleId, onClose, onExchange }: ReturnModalProps) {
     const items: ReturnRequest['items'] = Object.entries(quantities)
       .filter(([, qty]) => qty > 0)
       .map(([itemId, qty]) => {
-        const saleItem = sale.items.find((si: { id: string; productId: string }) => si.id === itemId);
-        return {
-          saleItemId: itemId,
-          productId: saleItem!.productId,
-          quantity: qty
-        };
-      });
+        const saleItem = sale.items.find((si) => si.id === itemId);
+        // Custom/open lines have no productId and cannot be returned — skip them.
+        return saleItem && saleItem.productId
+          ? { saleItemId: itemId, productId: saleItem.productId, quantity: qty }
+          : null;
+      })
+      .filter((i): i is ReturnRequest['items'][number] => i !== null);
 
     if (items.length === 0) {
       toast.error("Please select at least one item to return");
