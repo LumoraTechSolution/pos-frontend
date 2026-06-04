@@ -29,7 +29,9 @@ export type Feature =
   | 'TAX_CONFIG'
   | 'TIME_CLOCK'
   | 'ADVANCED_ANALYTICS'
-  | 'API_ACCESS';
+  | 'API_ACCESS'
+  | 'EXPENSES'
+  | 'FINANCIAL_REPORTS';
 
 // ──────────────────────────────────────────────
 // Tenant Summary (used in list view)

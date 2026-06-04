@@ -110,6 +110,34 @@ function KPICard({
 }
 
 // ————————————————————————————————————————
+// Finance KPI Card (month-to-date financial snapshot)
+// ————————————————————————————————————————
+function FinanceCard({
+  title, value, subtitle, tone, icon: Icon,
+}: {
+  title: string;
+  value: string;
+  subtitle?: string;
+  tone: "success" | "destructive" | "warning" | "default";
+  icon: React.ElementType;
+}) {
+  const toneCls =
+    tone === "success" ? "text-success"
+      : tone === "destructive" ? "text-destructive"
+        : tone === "warning" ? "text-warning"
+          : "text-foreground";
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+        <Icon size={16} /> {title}
+      </div>
+      <div className={`text-2xl font-bold tracking-tight tabular-nums ${toneCls}`}>{value}</div>
+      {subtitle && <div className="text-xs text-muted-foreground mt-1">{subtitle}</div>}
+    </div>
+  );
+}
+
+// ————————————————————————————————————————
 // Custom Tooltip for Charts
 // ————————————————————————————————————————
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
@@ -220,6 +248,30 @@ export default function OverviewPage() {
           gradient="from-violet-500 to-violet-600"
         />
       </div>
+
+      {/* Financial snapshot — only when the tenant has the finance features */}
+      {data.financials && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <FinanceCard
+            title="Net Profit (MTD)"
+            value={formatCurrency(data.financials.netProfitMtd ?? 0)}
+            subtitle="Revenue − COGS − expenses, this month"
+            tone={(data.financials.netProfitMtd ?? 0) >= 0 ? "success" : "destructive"}
+            icon={TrendingUp}
+          />
+          <FinanceCard
+            title="Cash Position (est.)"
+            value={formatCurrency(data.financials.cashPosition ?? 0)}
+            subtitle={
+              data.financials.runwayMonths != null
+                ? `~${data.financials.runwayMonths} months runway`
+                : "Cash-positive"
+            }
+            tone="default"
+            icon={Wallet}
+          />
+        </div>
+      )}
 
       {/* Charts Row 1: Sales Trend + Top Products */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
