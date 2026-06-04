@@ -13,6 +13,8 @@ interface ReceiptProps {
     phone?: string;
   };
   branch?: { name: string } | null;
+  /** Store logo as a data URI, rendered above the store name when provided. */
+  logoUrl?: string;
   /** Whether to show the Branch line — generally only in multi-branch setups. */
   showBranch?: boolean;
   tendered?: number;
@@ -24,7 +26,7 @@ interface ReceiptProps {
 const ITEM_NAME_MAX = 18; // thermal width constraint
 
 export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt(
-  { sale, tenant, branch, showBranch = false, tendered, change, taxLabel },
+  { sale, tenant, branch, logoUrl, showBranch = false, tendered, change, taxLabel },
   ref,
 ) {
   if (!sale) return null;
@@ -44,6 +46,10 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
     >
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="text-center">
+        {logoUrl && (
+          /* eslint-disable-next-line @next/next/no-img-element -- print/standalone HTML, not a Next route */
+          <img src={logoUrl} alt={storeName} className="mx-auto mb-1 max-h-16 w-auto object-contain" />
+        )}
         <h1 className="font-bold uppercase text-[16px] tracking-wide">{storeName}</h1>
         {tenant?.addressLine1 && <p>{tenant.addressLine1}</p>}
         {tenant?.addressLine2 && <p>{tenant.addressLine2}</p>}

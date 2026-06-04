@@ -44,6 +44,8 @@ import {
   Building2,
   Receipt as ReceiptIcon,
   Cpu,
+  Image as ImageIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -71,6 +73,8 @@ export default function SettingsPage() {
   const [bizAddress2, setBizAddress2] = useState("");
   const [bizPhone, setBizPhone] = useState("");
   const [bizReceiptFooter, setBizReceiptFooter] = useState("");
+  const [bizLogoUrl, setBizLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const { data: tenantInfo, isLoading: tenantLoading } = useQuery({
     queryKey: QK.tenantInfo,
@@ -84,6 +88,7 @@ export default function SettingsPage() {
       setBizAddress2(tenantInfo.addressLine2 ?? "");
       setBizPhone(tenantInfo.phone ?? "");
       setBizReceiptFooter(tenantInfo.receiptFooter ?? "");
+      setBizLogoUrl(tenantInfo.logoUrl ?? "");
     }
   }, [tenantInfo]);
 
@@ -109,7 +114,26 @@ export default function SettingsPage() {
       addressLine2: bizAddress2.trim() || null,
       phone: bizPhone.trim() || null,
       receiptFooter: bizReceiptFooter.trim() || null,
+      logoUrl: bizLogoUrl || null,
     });
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file after a remove
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const dataUri = await tenantService.uploadLogo(file);
+      setBizLogoUrl(dataUri);
+    } catch (error) {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+          "Failed to upload logo"
+      );
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   const bizDirty =
@@ -118,7 +142,8 @@ export default function SettingsPage() {
       bizAddress1.trim() !== (tenantInfo.addressLine1 ?? "") ||
       bizAddress2.trim() !== (tenantInfo.addressLine2 ?? "") ||
       bizPhone.trim() !== (tenantInfo.phone ?? "") ||
-      bizReceiptFooter.trim() !== (tenantInfo.receiptFooter ?? ""));
+      bizReceiptFooter.trim() !== (tenantInfo.receiptFooter ?? "") ||
+      bizLogoUrl !== (tenantInfo.logoUrl ?? ""));
 
   const { data: taxRates, isLoading } = useQuery({
     queryKey: ["tax-rates"],
@@ -340,6 +365,58 @@ export default function SettingsPage() {
                   <>
                     <div className="border-t border-border pt-4">
                       <p className="text-sm font-semibold text-foreground mb-3">Branding</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Store Logo</label>
+                      <div className="flex items-center gap-4">
+                        <div className="h-20 w-20 shrink-0 rounded-lg border border-border bg-card flex items-center justify-center overflow-hidden">
+                          {bizLogoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- user-supplied data URI, not a Next route
+                            <img src={bizLogoUrl} alt="Store logo" className="max-h-full max-w-full object-contain" />
+                          ) : (
+                            <ImageIcon className="text-muted-foreground" size={24} />
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <label
+                              className={cn(
+                                "inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium cursor-pointer hover:bg-foreground/5 transition-colors",
+                                logoUploading && "opacity-60 pointer-events-none"
+                              )}
+                            >
+                              {logoUploading ? (
+                                <Loader2 className="animate-spin" size={14} />
+                              ) : (
+                                <ImageIcon size={14} />
+                              )}
+                              {bizLogoUrl ? "Replace logo" : "Upload logo"}
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/gif,image/webp"
+                                className="hidden"
+                                onChange={handleLogoChange}
+                                disabled={logoUploading}
+                              />
+                            </label>
+                            {bizLogoUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setBizLogoUrl("")}
+                                className="text-muted-foreground hover:text-destructive gap-1"
+                              >
+                                <X size={14} /> Remove
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            PNG, JPEG, GIF, or WebP. Max 512 KB. Printed at the top of every receipt.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -665,6 +742,7 @@ export default function SettingsPage() {
                 addressLine1={bizAddress1 || tenantInfo?.addressLine1 || undefined}
                 addressLine2={bizAddress2 || tenantInfo?.addressLine2 || undefined}
                 phone={bizPhone || tenantInfo?.phone || undefined}
+                logoUrl={bizLogoUrl || tenantInfo?.logoUrl || undefined}
               />
             </CardContent>
           </Card>
@@ -870,9 +948,10 @@ interface ReceiptPreviewProps {
   addressLine1?: string;
   addressLine2?: string;
   phone?: string;
+  logoUrl?: string;
 }
 
-function ReceiptPreview({ businessName, addressLine1, addressLine2, phone }: ReceiptPreviewProps) {
+function ReceiptPreview({ businessName, addressLine1, addressLine2, phone, logoUrl }: ReceiptPreviewProps) {
   // Demo sale — three line items, mixed payment, fixed timestamp so the preview
   // is stable across renders (don't re-roll on every keystroke).
   const demoSale: SaleResponse = {
@@ -904,6 +983,7 @@ function ReceiptPreview({ businessName, addressLine1, addressLine2, phone }: Rec
             addressLine2,
             phone,
           }}
+          logoUrl={logoUrl}
           tendered={1600}
           change={5}
           taxLabel="Tax (10%)"

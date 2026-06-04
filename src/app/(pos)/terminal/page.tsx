@@ -225,6 +225,7 @@ export default function TerminalPage() {
       // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
       const receiptData: ReceiptData = {
         tenantName: tenantInfo?.name || "StoreX",
+        logoUrl: tenantInfo?.logoUrl ?? undefined,
         tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
         tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
         tenantPhone: tenantInfo?.phone ?? undefined,
@@ -354,6 +355,7 @@ export default function TerminalPage() {
   // Cash/Change lines instead of defaulting to an exact tender.
   const buildReceiptData = (sale: SaleResponse): ReceiptData => ({
     tenantName: tenantInfo?.name || 'StoreX',
+    logoUrl: tenantInfo?.logoUrl ?? undefined,
     tenantAddressLine1: tenantInfo?.addressLine1 ?? undefined,
     tenantAddressLine2: tenantInfo?.addressLine2 ?? undefined,
     tenantPhone: tenantInfo?.phone ?? undefined,
@@ -637,6 +639,7 @@ export default function TerminalPage() {
               addressLine2: tenantInfo?.addressLine2 ?? undefined,
               phone: tenantInfo?.phone ?? undefined,
             }}
+            logoUrl={tenantInfo?.logoUrl ?? undefined}
             branch={selectedBranch}
             showBranch={branches.length > 1}
             taxLabel={taxLabel}
