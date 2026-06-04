@@ -21,6 +21,15 @@ export interface DashboardData {
   // Alerts & Activity
   lowStockAlerts: LowStockAlert[];
   recentTransactions: RecentTransaction[];
+
+  // Financial snapshot — null when the tenant lacks the finance features
+  financials?: FinancialSnapshot | null;
+}
+
+export interface FinancialSnapshot {
+  netProfitMtd: number | null;
+  cashPosition: number | null;
+  runwayMonths: number | null;
 }
 
 export interface DailySalesTrend {

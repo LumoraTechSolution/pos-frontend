@@ -15,6 +15,9 @@ import {
   Building2,
   Truck,
   ArrowRightLeft,
+  Wallet,
+  TrendingUp,
+  Activity,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,9 +41,14 @@ const ALL_ITEMS: NavItem[] = [
   { label: 'Stock Transfers', href: '/inventory/stock-transfers', icon: ArrowRightLeft, requiredFeature: 'STOCK_TRANSFERS' },
   { label: 'Employees', href: '/employees', icon: UserSquare2, requiredFeature: 'EMPLOYEES' },
   { label: 'Reports', href: '/reports', icon: BarChart3, requiredFeature: 'REPORTS' },
+  { label: 'Expenses', href: '/finance/expenses', icon: Wallet, requiredFeature: 'EXPENSES' },
+  { label: 'Cash Flow', href: '/finance/cash-flow', icon: Activity, requiredFeature: 'FINANCIAL_REPORTS' },
+  { label: 'Profit & Loss', href: '/finance/profit-loss', icon: TrendingUp, requiredFeature: 'FINANCIAL_REPORTS' },
   { label: 'Branches', href: '/branches', icon: Store },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
+
+const FINANCE_LABELS = ['Expenses', 'Cash Flow', 'Profit & Loss'];
 
 type SidebarNavProps = {
   /** When true, render icon-only (collapsed) form. */
@@ -57,7 +65,7 @@ export function SidebarNav({ collapsed = false, onNavigate, className }: Sidebar
   const items = ALL_ITEMS.filter((item) => {
     if (item.requiredFeature && !hasFeature(item.requiredFeature)) return false;
 
-    if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches'].includes(item.label)) {
+    if (['Overview', 'Employees', 'Settings', 'Reports', 'Branches', ...FINANCE_LABELS].includes(item.label)) {
       return user?.roles?.includes('ADMIN') || user?.roles?.includes('MANAGER');
     }
     if (['Suppliers', 'Purchase Orders', 'Stock Transfers'].includes(item.label)) {
@@ -78,7 +86,16 @@ export function SidebarNav({ collapsed = false, onNavigate, className }: Sidebar
   });
 
   return (
-    <nav className={cn('flex-1 p-3 space-y-1 overflow-y-auto', className)} aria-label="Main navigation">
+    <nav
+      className={cn(
+        'flex-1 space-y-1 overflow-y-auto overflow-x-hidden py-3',
+        // Tighter horizontal padding when collapsed so the 44px icon buttons +
+        // the vertical scrollbar still fit inside the 64px rail (no horizontal scroll).
+        collapsed ? 'px-1.5' : 'px-3',
+        className
+      )}
+      aria-label="Main navigation"
+    >
       {items.map((item) => {
         const isActive = pathname.startsWith(item.href);
         return (

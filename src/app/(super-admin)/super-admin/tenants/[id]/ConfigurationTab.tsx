@@ -23,6 +23,8 @@ import {
   Save,
   Loader2,
   ChevronDown,
+  Wallet,
+  TrendingUp,
 } from 'lucide-react';
 
 // ── Plan tier presets ──
@@ -37,13 +39,13 @@ const PLAN_DEFAULTS: Record<PlanTier, { maxLocations: number; maxUsers: number; 
     maxLocations: 3,
     maxUsers: 15,
     maxProducts: 5000,
-    features: ['SALES', 'INVENTORY', 'REPORTS', 'CUSTOMERS', 'EMPLOYEES', 'PURCHASE_ORDERS', 'STOCK_TRANSFERS', 'RETURNS'],
+    features: ['SALES', 'INVENTORY', 'REPORTS', 'CUSTOMERS', 'EMPLOYEES', 'PURCHASE_ORDERS', 'RETURNS', 'TAX_CONFIG', 'EXPENSES', 'FINANCIAL_REPORTS'],
   },
   ENTERPRISE: {
     maxLocations: 999,
     maxUsers: 999,
-    maxProducts: 99999,
-    features: ['SALES', 'INVENTORY', 'REPORTS', 'CUSTOMERS', 'EMPLOYEES', 'PURCHASE_ORDERS', 'STOCK_TRANSFERS', 'RETURNS', 'TAX_CONFIG', 'TIME_CLOCK', 'ADVANCED_ANALYTICS', 'API_ACCESS'],
+    maxProducts: 999999,
+    features: ['SALES', 'INVENTORY', 'REPORTS', 'CUSTOMERS', 'EMPLOYEES', 'PURCHASE_ORDERS', 'STOCK_TRANSFERS', 'RETURNS', 'TAX_CONFIG', 'TIME_CLOCK', 'ADVANCED_ANALYTICS', 'API_ACCESS', 'EXPENSES', 'FINANCIAL_REPORTS'],
   },
 };
 
@@ -61,6 +63,8 @@ const ALL_FEATURES: { key: Feature; label: string; description: string; icon: Re
   { key: 'TIME_CLOCK', label: 'Time Clock', description: 'Employee clock-in/out', icon: <Clock className="w-4 h-4" />, tier: 'enterprise' },
   { key: 'ADVANCED_ANALYTICS', label: 'Advanced Analytics', description: 'Profitability and deep insights', icon: <LineChart className="w-4 h-4" />, tier: 'enterprise' },
   { key: 'API_ACCESS', label: 'API Access', description: 'Third-party integrations', icon: <Plug className="w-4 h-4" />, tier: 'enterprise' },
+  { key: 'EXPENSES', label: 'Expenses', description: 'Operating expense tracking', icon: <Wallet className="w-4 h-4" />, tier: 'advanced' },
+  { key: 'FINANCIAL_REPORTS', label: 'Financial Reports', description: 'Net P&L and cash flow', icon: <TrendingUp className="w-4 h-4" />, tier: 'advanced' },
 ];
 
 interface Props {

@@ -11,6 +11,10 @@ export const QK = {
   currentSessionSales: ['current-session-sales'] as const,
   categories: ['categories'] as const,
   brands: ['brands'] as const,
+  expenses: ['expenses'] as const,
+  expenseCategories: ['expense-categories'] as const,
+  financePnl: ['finance', 'profit-loss'] as const,
+  financeCashFlow: ['finance', 'cash-flow'] as const,
   superAdmin: {
     me: ['super-admin', 'me'] as const,
   },

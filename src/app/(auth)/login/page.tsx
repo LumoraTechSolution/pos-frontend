@@ -29,7 +29,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center">
           {/* Mark + StoreX wordmark (no tagline). Vector, so it stays crisp and
               adapts to light/dark — "Store" follows the foreground color. */}
-          <Logo variant="full" layout="stacked" size={104} />
+          <Logo variant="full" layout="stacked" size={60} />
         </div>
 
         <Card className="border-none shadow-xl">
