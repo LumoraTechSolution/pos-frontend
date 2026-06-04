@@ -23,11 +23,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  headers();
+  const nonce = headers().get('x-nonce') ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <QueryProvider>
             {children}
           </QueryProvider>

@@ -9,12 +9,12 @@ import { cashSessionService } from '@/services/cashSessionService';
 import { tenantService } from '@/services/tenantService';
 import { SaleResponse, salesService, SaleRequest, SalesSummaryResponse } from '@/services/salesService';
 import { useCart, TaxContext } from '@/hooks/useCart';
-import { ShoppingCart, Loader2 } from 'lucide-react';
+import { ShoppingCart, Loader2, Plus } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useBarcodeScanner } from '@/hooks/useBarcodeScanner';
-import { usePosKeyboard, HOTKEY_LEGEND, type PosRegion } from '@/hooks/usePosKeyboard';
+import { usePosKeyboard, HOTKEY_LEGEND, POS_CUSTOM_ITEM_BUTTON_ID, type PosRegion } from '@/hooks/usePosKeyboard';
 import { receiptPrinterService, ReceiptData } from '@/services/receiptPrinterService';
 import { Customer } from '@/services/customerService';
 import { performLogout } from '@/lib/performLogout';
@@ -36,6 +36,7 @@ import { CustomerSelector } from '@/components/pos/CustomerSelector';
 import { Receipt } from '@/components/pos/Receipt';
 import { ShiftSummary } from '@/components/pos/ShiftSummary';
 import { StartShiftModal } from '@/components/pos/StartShiftModal';
+import { CustomItemModal } from '@/components/pos/CustomItemModal';
 import InventoryAdjustmentModal from '@/components/inventory/InventoryAdjustmentModal';
 import { Product } from '@/types/inventory';
 
@@ -133,6 +134,7 @@ export default function TerminalPage() {
   const {
     items,
     addToCart,
+    addCustomItem,
     updateQuantity,
     removeFromCart,
     setItemDiscount,
@@ -182,6 +184,9 @@ export default function TerminalPage() {
     setCartIndex((i) => Math.min(i, Math.max(0, items.length - 1)));
   }, [items.length]);
 
+  // Custom / open line item (for products not in the catalog).
+  const [customItemOpen, setCustomItemOpen] = useState(false);
+
   // Duplicate scan protection — prevents double-fire within 500ms
   const lastScanRef = useRef<{ code: string; time: number }>({ code: '', time: 0 });
 
@@ -201,7 +206,12 @@ export default function TerminalPage() {
         toast.success(`Scanned: ${product.name}`);
       } catch (err: unknown) {
         const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || `Barcode not found: ${barcode}`;
-        toast.error(message);
+        toast.error(message, {
+          action: {
+            label: 'Add custom item',
+            onClick: () => setCustomItemOpen(true),
+          },
+        });
       }
     }
   });
@@ -299,7 +309,8 @@ export default function TerminalPage() {
         ? cashTendered
         : undefined,
       items: items.map(item => ({
-        productId: item.id,
+        productId: item.isCustom ? null : item.id,
+        itemName: item.isCustom ? item.name : undefined,
         quantity: item.cartQuantity,
         unitPrice: item.basePrice,
         discountAmount: item.discountAmount,
@@ -476,6 +487,16 @@ export default function TerminalPage() {
           onLogout={handleLogout}
         />
         <ProductSearch search={search} onSearchChange={setSearch} />
+        <div className="px-4 -mt-2 pb-2 bg-black shrink-0">
+          <button
+            type="button"
+            id={POS_CUSTOM_ITEM_BUTTON_ID}
+            onClick={() => setCustomItemOpen(true)}
+            className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-primary transition-colors"
+          >
+            <Plus size={16} /> Add custom item <span className="text-xs text-gray-600">(F10)</span>
+          </button>
+        </div>
         <div className="flex-1 min-h-0 overflow-auto">
           <ProductGrid
             products={filteredProducts}
@@ -613,6 +634,12 @@ export default function TerminalPage() {
       />
 
       <ReturnModal saleId={returnSaleId} onClose={() => setReturnSaleId(null)} />
+
+      <CustomItemModal
+        open={customItemOpen}
+        onClose={() => setCustomItemOpen(false)}
+        onAdd={(name, price, qty) => addCustomItem(name, price, qty)}
+      />
 
       {/* Stock Fix modal — opened from the checkout error toast's action */}
       {stockFixProduct && (

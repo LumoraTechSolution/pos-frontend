@@ -83,9 +83,13 @@ export function CartItemCard({ item, onUpdateQuantity, onRemove, onSetDiscount, 
             <h4 className="text-sm font-medium text-foreground truncate" title={item.name}>
               {item.name}
             </h4>
-            {identifier && (
+            {item.isCustom ? (
+              <span className="inline-block text-[10px] font-semibold rounded px-1.5 py-0.5 bg-primary/15 text-primary uppercase tracking-wide">
+                Custom
+              </span>
+            ) : identifier ? (
               <p className="text-[11px] text-muted-foreground font-mono truncate">{identifier}</p>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center justify-between gap-2">

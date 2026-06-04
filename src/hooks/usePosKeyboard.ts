@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 export const POS_SEARCH_INPUT_ID = 'pos-search-input';
 export const POS_ADD_CUSTOMER_BUTTON_ID = 'pos-add-customer-button';
+export const POS_CUSTOM_ITEM_BUTTON_ID = 'pos-custom-item-button';
 
 export type PosRegion = 'grid' | 'cart';
 
@@ -87,6 +88,11 @@ export function usePosKeyboard(props: UsePosKeyboardProps) {
           return;
         }
         case 'F4': e.preventDefault(); p.actions.cyclePayment(); return;
+        case 'F10': {
+          e.preventDefault();
+          (document.getElementById(POS_CUSTOM_ITEM_BUTTON_ID) as HTMLButtonElement | null)?.click();
+          return;
+        }
         case 'F5': e.preventDefault(); p.actions.hold(); return;
         case 'F6': e.preventDefault(); if (p.activeRegion === 'cart') p.actions.discountFocusedCart(); return;
         case 'F7': e.preventDefault(); p.actions.correctLastPayment(); return;
@@ -151,6 +157,7 @@ export const HOTKEY_LEGEND: { key: string; label: string }[] = [
   { key: '↑↓←→', label: 'Move' },
   { key: 'F2', label: 'Search' },
   { key: 'F3', label: 'Customer' },
+  { key: 'F10', label: 'Custom item' },
   { key: 'F9', label: 'Charge' },
   { key: 'F7', label: 'Correct payment' },
   { key: 'F1', label: 'Shortcuts' },

@@ -8,6 +8,8 @@ export interface CartItem extends Product {
   cartQuantity: number;
   /** Per-line discount amount in tenant currency. Default 0. Capped at line subtotal. */
   discountAmount: number;
+  /** True for an open/custom line not in the catalog (no productId, no stock). */
+  isCustom?: boolean;
 }
 
 export interface TaxContext {
@@ -80,6 +82,27 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
     });
   }, [selectedBranchId]);
 
+  /** Adds an open/custom line (item not in the catalog) — no stock, no productId. */
+  const addCustomItem = useCallback((name: string, price: number, quantity: number = 1) => {
+    setItems((prevItems) => [
+      ...prevItems,
+      {
+        id: `custom-${crypto.randomUUID()}`,
+        name: name.trim(),
+        sku: '',
+        basePrice: price,
+        stockQuantity: Number.MAX_SAFE_INTEGER,
+        lowStockThreshold: 0,
+        isActive: true,
+        createdAt: '',
+        updatedAt: '',
+        cartQuantity: quantity,
+        discountAmount: 0,
+        isCustom: true,
+      },
+    ]);
+  }, []);
+
   const removeFromCart = useCallback((productId: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== productId));
   }, []);
@@ -93,7 +116,7 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
     setItems((prevItems) => {
       const item = prevItems.find(i => i.id === productId);
       if (!item) return prevItems;
-      const branchStock = stockForBranch(item, selectedBranchId);
+      const branchStock = item.isCustom ? Number.MAX_SAFE_INTEGER : stockForBranch(item, selectedBranchId);
       if (quantity > branchStock) {
         toast.error(`Only ${branchStock} in stock at this branch`);
         return prevItems;
@@ -190,6 +213,7 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
   return {
     items,
     addToCart,
+    addCustomItem,
     removeFromCart,
     updateQuantity,
     setItemDiscount,
