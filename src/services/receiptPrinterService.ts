@@ -1,4 +1,6 @@
 import { hardwareService } from './hardwareService';
+import { qzTrayService } from './qzTrayService';
+import { buildReceiptCommands } from './escposBuilder';
 import { format } from 'date-fns';
 
 export interface ReceiptItem {
@@ -10,6 +12,8 @@ export interface ReceiptItem {
 
 export interface ReceiptData {
   tenantName: string;
+  /** Store logo as a data URI, rendered above the store name when provided. */
+  logoUrl?: string;
   tenantAddressLine1?: string;
   tenantAddressLine2?: string;
   tenantPhone?: string;
@@ -97,6 +101,7 @@ export const receiptPrinterService = {
             .bold { font-weight: bold; }
             .uppercase { text-transform: uppercase; }
             .store-name { font-size: 16px; letter-spacing: 1px; }
+            .logo { display: block; margin: 0 auto 4px; max-height: 64px; max-width: 100%; height: auto; object-fit: contain; }
             .sep { border-top: 1px dashed black; margin: 8px 0; }
             .row { display: flex; justify-content: space-between; }
             table { width: 100%; border-collapse: collapse; }
@@ -112,6 +117,7 @@ export const receiptPrinterService = {
         </head>
         <body>
           <!-- Header -->
+          ${data.logoUrl ? `<img class="logo" src="${escape(data.logoUrl)}" alt="${escape(data.tenantName)}" />` : ''}
           <div class="center bold uppercase store-name">${escape(data.tenantName)}</div>
           ${data.tenantAddressLine1 ? `<div class="center">${escape(data.tenantAddressLine1)}</div>` : ''}
           ${data.tenantAddressLine2 ? `<div class="center">${escape(data.tenantAddressLine2)}</div>` : ''}
@@ -184,8 +190,22 @@ export const receiptPrinterService = {
 
           <script>
             window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
+              // Wait for images (e.g. the logo data URI) to finish decoding before
+              // printing — otherwise the logo prints blank. Fallback timeout guards
+              // against an image that never fires load/error.
+              var imgs = Array.prototype.slice.call(document.images);
+              var done = false;
+              var go = function() {
+                if (done) return;
+                done = true;
+                window.print();
+                setTimeout(function() { window.close(); }, 500);
+              };
+              Promise.all(imgs.map(function(img) {
+                return img.complete ? Promise.resolve()
+                  : new Promise(function(r) { img.onload = img.onerror = r; });
+              })).then(go);
+              setTimeout(go, 2000);
             };
           </script>
         </body>
@@ -198,10 +218,30 @@ export const receiptPrinterService = {
 
   /**
    * Final checkout trigger — handles drawer kick + print in one call.
+   *
+   * In `qz_tray` mode this prints native ESC/POS (logo + drawer kick + paper cut
+   * in a single job). Any QZ failure (not installed, not connected) falls back to
+   * browser printing so a completed sale is never blocked.
    */
   async processHardwareCheckoutActions(data: ReceiptData) {
     const config = hardwareService.getConfig();
 
+    if (config.printerMode === 'qz_tray') {
+      try {
+        const commands = buildReceiptCommands(data, {
+          paperWidth: config.paperWidth,
+          drawerKick: config.cashDrawerKick,
+          kickCode: config.kickCode,
+        });
+        await qzTrayService.printRaw(config.printerTarget, commands);
+        return;
+      } catch (err) {
+        console.error('QZ Tray print failed — falling back to browser print.', err);
+        // fall through to the browser path below
+      }
+    }
+
+    // browser_print (and the qz fallback): the drawer kick can only be simulated.
     if (config.cashDrawerKick) {
       hardwareService.kickCashDrawer();
     }

@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { hardwareService, HardwareConfig } from '@/services/hardwareService';
-import { Printer, Usb, Keyboard, Save, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { qzTrayService } from '@/services/qzTrayService';
+import { Printer, Usb, Keyboard, Save, CheckCircle2, AlertTriangle, Wifi, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
@@ -16,12 +17,54 @@ import { toast } from 'sonner';
 export function HardwareSettings() {
   const [config, setConfig] = useState<HardwareConfig | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [printers, setPrinters] = useState<string[]>([]);
+  const [qzConnected, setQzConnected] = useState(false);
+  const [qzBusy, setQzBusy] = useState(false);
 
   useEffect(() => {
     setConfig(hardwareService.getConfig());
   }, []);
 
   if (!config) return null;
+  const cfg = config; // non-null alias for handlers below
+
+  const refreshPrinters = async () => {
+    setQzBusy(true);
+    try {
+      const list = await qzTrayService.listPrinters();
+      setPrinters(list);
+      setQzConnected(true);
+      toast.success('Connected to QZ Tray', { description: `${list.length} printer(s) found.` });
+    } catch {
+      setQzConnected(false);
+      toast.error('QZ Tray not reachable', {
+        description: 'Make sure the QZ Tray app is installed and running on this machine.',
+      });
+    } finally {
+      setQzBusy(false);
+    }
+  };
+
+  const handleTestPrint = async () => {
+    setQzBusy(true);
+    try {
+      await qzTrayService.printRaw(cfg.printerTarget, [
+        '\x1B\x40',
+        '\x1B\x61\x01',
+        '\x1B\x45\x01',
+        'Lumora POS\n',
+        '\x1B\x45\x00',
+        'QZ Tray test print\n',
+        `${new Date().toLocaleString()}\n`,
+        '\n\n\n\x1D\x56\x42\x00',
+      ]);
+      toast.success('Test sent to printer');
+    } catch {
+      toast.error('Test print failed', { description: 'Check QZ Tray and the selected printer.' });
+    } finally {
+      setQzBusy(false);
+    }
+  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -34,9 +77,13 @@ export function HardwareSettings() {
     }, 500);
   };
 
-  const handleTestCashDrawer = () => {
-    hardwareService.kickCashDrawer();
-    toast.info('Test Signal Sent', { description: 'Check if the Cash Drawer opened.' });
+  const handleTestCashDrawer = async () => {
+    try {
+      await hardwareService.kickCashDrawer();
+      toast.info('Test Signal Sent', { description: 'Check if the Cash Drawer opened.' });
+    } catch {
+      toast.error('Could not send kick', { description: 'QZ Tray not reachable.' });
+    }
   };
 
   return (
@@ -61,11 +108,13 @@ export function HardwareSettings() {
                 className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
               >
                 <option value="browser_print">Standard Browser Print (Recommended)</option>
+                <option value="qz_tray">QZ Tray (Native ESC/POS)</option>
                 <option value="raw_usb" disabled>Native WebUSB ESC/POS — Coming Soon</option>
-                <option value="qz_tray" disabled>QZ Tray Utility — Coming Soon</option>
               </select>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Native ESC/POS printing (WebUSB / QZ Tray) is on the roadmap. Only browser print is active today.
+                {config.printerMode === 'qz_tray'
+                  ? 'Native ESC/POS via the QZ Tray app: silent print, paper cut, and real cash-drawer kick. Requires QZ Tray installed on this machine (shows a one-time trust prompt until signing is configured).'
+                  : 'Renders the receipt as HTML and uses the browser print dialog. Works with any OS-installed printer.'}
               </p>
             </div>
 
@@ -83,16 +132,66 @@ export function HardwareSettings() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">Target Interface / IP</label>
-                <input
-                  type="text"
-                  value={config.printerTarget}
-                  onChange={(e) => setConfig({ ...config, printerTarget: e.target.value })}
-                  placeholder="e.g. 192.168.1.100 or 'default'"
-                  className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  {config.printerMode === 'qz_tray' ? 'Printer' : 'Target Interface / IP'}
+                </label>
+                {config.printerMode === 'qz_tray' ? (
+                  <select
+                    value={config.printerTarget}
+                    onChange={(e) => setConfig({ ...config, printerTarget: e.target.value })}
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="default">System default</option>
+                    {printers.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                    {config.printerTarget &&
+                      config.printerTarget !== 'default' &&
+                      !printers.includes(config.printerTarget) && (
+                        <option value={config.printerTarget}>{config.printerTarget}</option>
+                      )}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={config.printerTarget}
+                    onChange={(e) => setConfig({ ...config, printerTarget: e.target.value })}
+                    placeholder="e.g. 192.168.1.100 or 'default'"
+                    className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-indigo-500 outline-none"
+                  />
+                )}
               </div>
             </div>
+
+            {config.printerMode === 'qz_tray' && (
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  onClick={refreshPrinters}
+                  disabled={qzBusy}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60"
+                >
+                  {qzBusy ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
+                  {qzConnected ? 'Refresh printers' : 'Connect to QZ Tray'}
+                </button>
+                <button
+                  onClick={handleTestPrint}
+                  disabled={qzBusy}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-60"
+                >
+                  <RefreshCw size={16} /> Test print
+                </button>
+                <span className="inline-flex items-center gap-1.5 text-xs">
+                  {qzConnected ? (
+                    <>
+                      <CheckCircle2 size={14} className="text-success" />
+                      <span className="text-success">Connected</span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">Not connected</span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

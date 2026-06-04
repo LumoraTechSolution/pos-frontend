@@ -48,19 +48,21 @@ export const hardwareService = {
   },
 
   /**
-   * Simulates opening the cash drawer if true hardware is not connected during development
+   * Opens the cash drawer. In `qz_tray` mode this sends the real ESC/POS kick
+   * buffer to the printer via QZ Tray; otherwise (browser print) it can only be
+   * simulated since the browser cannot send raw bytes to the device.
    */
-  kickCashDrawer(): void {
+  async kickCashDrawer(): Promise<void> {
     const config = this.getConfig();
     if (!config.cashDrawerKick) return;
 
-    if (config.printerMode === 'browser_print') {
-        console.warn("💳 Cash Drawer Kick Simulated [Browser Print Mode]");
-        return;
+    if (config.printerMode === 'qz_tray') {
+      const { qzTrayService } = await import('./qzTrayService');
+      const raw = String.fromCharCode(...Array.from(this.getCashDrawerKickBuffer(config)));
+      await qzTrayService.printRaw(config.printerTarget, [raw]);
+      return;
     }
 
-    // In a real WebUSB environment, we would do:
-    // navigator.usb.requestDevice(...).then(device => device.transferOut(1, this.getCashDrawerKickBuffer(config)));
-    console.warn(`📡 Sending ESC/POS Kick Signal to ${config.printerTarget}`);
+    console.warn('💳 Cash Drawer Kick Simulated [Browser Print Mode]');
   }
 };
