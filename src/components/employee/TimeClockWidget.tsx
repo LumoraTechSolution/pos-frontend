@@ -20,9 +20,12 @@ interface TimeClockWidgetProps {
    * this mode because the page-level gate owns Start Shift.
    */
   shiftMode?: 'simple' | 'cash-drawer';
+  /** Called after the End Shift modal successfully closes the drawer (cash-drawer
+   *  mode). Lets the host (POS terminal) log the user out and return to login. */
+  onShiftEnded?: () => void;
 }
 
-export function TimeClockWidget({ variant = 'sidebar', shiftMode = 'simple' }: TimeClockWidgetProps) {
+export function TimeClockWidget({ variant = 'sidebar', shiftMode = 'simple', onShiftEnded }: TimeClockWidgetProps) {
   const queryClient = useQueryClient();
   const [elapsed, setElapsed] = useState<string>("");
   const [endShiftOpen, setEndShiftOpen] = useState(false);
@@ -175,7 +178,11 @@ export function TimeClockWidget({ variant = 'sidebar', shiftMode = 'simple' }: T
           )}
         </div>
         {isCashDrawerMode && (
-          <EndShiftModal open={endShiftOpen} onClose={() => setEndShiftOpen(false)} />
+          <EndShiftModal
+            open={endShiftOpen}
+            onClose={() => setEndShiftOpen(false)}
+            onEnded={onShiftEnded}
+          />
         )}
       </>
     );

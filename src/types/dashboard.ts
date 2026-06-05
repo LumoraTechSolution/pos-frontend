@@ -28,8 +28,7 @@ export interface DashboardData {
 
 export interface FinancialSnapshot {
   netProfitMtd: number | null;
-  cashPosition: number | null;
-  runwayMonths: number | null;
+  cashSalesToday: number | null;
 }
 
 export interface DailySalesTrend {

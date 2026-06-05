@@ -260,13 +260,9 @@ export default function OverviewPage() {
             icon={TrendingUp}
           />
           <FinanceCard
-            title="Cash Position (est.)"
-            value={formatCurrency(data.financials.cashPosition ?? 0)}
-            subtitle={
-              data.financials.runwayMonths != null
-                ? `~${data.financials.runwayMonths} months runway`
-                : "Cash-positive"
-            }
+            title="Cash Sales (Today)"
+            value={formatCurrency(data.financials.cashSalesToday ?? 0)}
+            subtitle="Cash-method sales since midnight"
             tone="default"
             icon={Wallet}
           />

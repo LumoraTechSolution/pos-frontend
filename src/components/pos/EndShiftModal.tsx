@@ -54,6 +54,10 @@ export function EndShiftModal({ open, onClose, onEnded }: EndShiftModalProps) {
       } else {
         toast.warning(`Shift closed. Drawer short by ${formatCurrency(Math.abs(variance))}.`);
       }
+      // Flip the cached session to null synchronously so the terminal gate and
+      // the logout "drawer still open" warning immediately see a closed drawer,
+      // rather than waiting on the async refetch from invalidateQueries.
+      queryClient.setQueryData(QK.cashSessionActive, null);
       queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
       queryClient.invalidateQueries({ queryKey: ["time-clock-status"] });
       onEnded?.(session);

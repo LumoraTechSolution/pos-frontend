@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Package, ShoppingBag, LogOut, Store, ChevronDown, Unlock } from 'lucide-react';
+import { Package, ShoppingBag, LogOut, Store, ChevronDown, Unlock, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Branch } from '@/services/branchService';
 import { cn } from '@/lib/utils';
@@ -15,17 +15,25 @@ interface POSHeaderProps {
   selectedBranch: Branch | null;
   onBranchChange: (branch: Branch) => void;
   onShiftSummary: () => void;
+  /** Opens the End Shift / drawer-count flow. Admins reach it from here since
+   *  the TimeClockWidget (which owns End Shift for staff) is hidden for them. */
+  onEndShift: () => void;
+  /** Fired after a shift is successfully ended (from staff's TimeClockWidget) so
+   *  the page can log the user out and return to login. */
+  onShiftEnded: () => void;
   onLogout: () => void;
 }
 
-export function POSHeader({ 
-  userName, 
-  userRole, 
-  branches, 
-  selectedBranch, 
-  onBranchChange, 
-  onShiftSummary, 
-  onLogout 
+export function POSHeader({
+  userName,
+  userRole,
+  branches,
+  selectedBranch,
+  onBranchChange,
+  onShiftSummary,
+  onEndShift,
+  onShiftEnded,
+  onLogout
 }: POSHeaderProps) {
   const [isBranchMenuOpen, setIsBranchMenuOpen] = useState(false);
 
@@ -91,10 +99,23 @@ export function POSHeader({
       <div className="flex items-center gap-4">
         {userRole !== 'ADMIN' && (
           <FeatureGuard feature="TIME_CLOCK">
-            <TimeClockWidget variant="header" shiftMode="cash-drawer" />
+            <TimeClockWidget variant="header" shiftMode="cash-drawer" onShiftEnded={onShiftEnded} />
           </FeatureGuard>
         )}
-        
+
+        {/* Admins have no TimeClockWidget, so they get a dedicated End Shift
+            control to count down and close the cash drawer they opened. */}
+        {userRole === 'ADMIN' && (
+          <Button
+            variant="outline"
+            onClick={onEndShift}
+            className="hidden md:flex bg-gray-950 border-gray-800 hover:bg-gray-800 text-gray-400 hover:text-destructive gap-2 h-9 rounded-lg"
+            title="End shift and count the cash drawer"
+          >
+            <Square size={16} /> End Shift
+          </Button>
+        )}
+
         <Button
           variant="outline"
           onClick={async () => {

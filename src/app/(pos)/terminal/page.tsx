@@ -36,6 +36,8 @@ import { CustomerSelector } from '@/components/pos/CustomerSelector';
 import { Receipt } from '@/components/pos/Receipt';
 import { ShiftSummary } from '@/components/pos/ShiftSummary';
 import { StartShiftModal } from '@/components/pos/StartShiftModal';
+import { EndShiftModal } from '@/components/pos/EndShiftModal';
+import { LogoutShiftWarningDialog } from '@/components/pos/LogoutShiftWarningDialog';
 import { CustomItemModal } from '@/components/pos/CustomItemModal';
 import InventoryAdjustmentModal from '@/components/inventory/InventoryAdjustmentModal';
 import { Product } from '@/types/inventory';
@@ -57,6 +59,10 @@ export default function TerminalPage() {
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [summary, setSummary] = useState<SalesSummaryResponse | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  // Admin-facing End Shift flow (staff reach it via the header TimeClockWidget).
+  const [endShiftOpen, setEndShiftOpen] = useState(false);
+  // Warn before logging out with an open drawer instead of silently auto-closing.
+  const [logoutWarnOpen, setLogoutWarnOpen] = useState(false);
   // Drives the "Fix stock" recovery action on checkout-time OOS errors.
   const [stockFixProduct, setStockFixProduct] = useState<Product | null>(null);
 
@@ -80,11 +86,16 @@ export default function TerminalPage() {
     }
   }, [user, router]);
 
-  // Cash session gate — terminal is unusable without an open drawer.
+  // Cash session gate — terminal is unusable without an open drawer. Always
+  // re-check on mount (staleTime 0 + refetchOnMount) so arriving at the terminal
+  // never shows a stale cached session — otherwise the global 30s staleTime could
+  // skip the Start Shift prompt until a manual refresh.
   const { data: activeSession, isLoading: sessionLoading } = useQuery({
     queryKey: QK.cashSessionActive,
     queryFn: () => cashSessionService.getActive(),
     enabled: !!user && (user.roles || []).some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER'),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   // Data Fetching
@@ -318,10 +329,39 @@ export default function TerminalPage() {
     });
   };
 
-  const handleLogout = async () => {
+  const doLogout = async () => {
+    // Wipe cached queries so the next user to log in on this terminal can't see
+    // the previous user's cash session / data flash before refetch.
+    queryClient.clear();
     await performLogout();
     router.push('/login');
   };
+
+  const handleLogout = async () => {
+    // Don't let someone walk away from an uncounted drawer without a heads-up —
+    // logging out auto-closes the shift server-side, but we warn first so they
+    // can reconcile instead of losing the count silently.
+    if (activeSession) {
+      setLogoutWarnOpen(true);
+      return;
+    }
+    await doLogout();
+  };
+
+  // Ending the drawer shift ends the user's till session: clear the now-closed
+  // session from cache and send them back to the login screen. Shared by the
+  // admin (header button) and staff (TimeClockWidget) End Shift paths so every
+  // role behaves identically.
+  const handleShiftEnded = async () => {
+    queryClient.setQueryData(QK.cashSessionActive, null);
+    await doLogout();
+  };
+
+  // Expected cash in the open drawer, for the logout warning copy.
+  const drawerExpected =
+    (activeSession?.openingBalance ?? 0) +
+    (activeSession?.cashSalesTotal ?? 0) -
+    (activeSession?.cashRefundsTotal ?? 0);
 
   const handleFetchSummary = async () => {
     try {
@@ -484,6 +524,8 @@ export default function TerminalPage() {
           selectedBranch={selectedBranch}
           onBranchChange={setSelectedBranch}
           onShiftSummary={handleFetchSummary}
+          onEndShift={() => setEndShiftOpen(true)}
+          onShiftEnded={handleShiftEnded}
           onLogout={handleLogout}
         />
         <ProductSearch search={search} onSearchChange={setSearch} />
@@ -605,6 +647,26 @@ export default function TerminalPage() {
       />
 
       <ShortcutsOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      <EndShiftModal
+        open={endShiftOpen}
+        onClose={() => setEndShiftOpen(false)}
+        onEnded={handleShiftEnded}
+      />
+
+      <LogoutShiftWarningDialog
+        open={logoutWarnOpen}
+        expectedAmount={drawerExpected}
+        onCancel={() => setLogoutWarnOpen(false)}
+        onEndShift={() => {
+          setLogoutWarnOpen(false);
+          setEndShiftOpen(true);
+        }}
+        onLogoutAnyway={() => {
+          setLogoutWarnOpen(false);
+          void doLogout();
+        }}
+      />
 
       <CorrectSalePickerModal
         open={correctPickerOpen}
