@@ -1,6 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  // When BACKEND_URL is set (production on Vercel/AWS), proxy the API through
+  // this same origin so frontend and backend are same-origin: the backend's
+  // auth cookies (sa-auth-token / auth-token) come back first-party and the
+  // Next.js middleware can read them. Scoped to /api/v1/* so it never clobbers
+  // the internal Next route handlers (/api/logout, /api/super-admin-logout).
+  // Left unset in local dev, where the browser hits NEXT_PUBLIC_API_URL directly.
+  async rewrites() {
+    const target = process.env.BACKEND_URL;
+    if (!target) return [];
+    return [{ source: '/api/v1/:path*', destination: `${target}/api/v1/:path*` }];
+  },
   // Security headers (CSP with per-request nonce, X-Frame-Options, etc.) are
   // applied in middleware.ts so they can carry a fresh nonce on every request.
   images: {

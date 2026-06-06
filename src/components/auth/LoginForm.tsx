@@ -48,7 +48,9 @@ export function LoginForm() {
   });
 
   async function resolveTenant(domain: string): Promise<string> {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+    // `??`: empty string = same-origin relative /api/v1 (prod proxy); only
+    // unset falls back to the local-dev backend.
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
     const response = await fetch(`${API_BASE_URL}/api/v1/public/tenants/resolve?domain=${domain}`);
     const result = await response.json();
     if (!response.ok || !result.success) {

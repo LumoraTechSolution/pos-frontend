@@ -1,6 +1,11 @@
 import { NextResponse, NextRequest } from 'next/server';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+// Server-side route: must use an absolute backend URL (a relative path has no
+// origin on the server). Prefer BACKEND_URL (set in prod alongside the
+// same-origin proxy, where NEXT_PUBLIC_API_URL is empty); fall back to the
+// public var for local dev.
+const API_BASE_URL =
+  process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
 /**
  * Calls the backend's super-admin logout (which audits the event and
