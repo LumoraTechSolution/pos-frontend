@@ -1,7 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useSuperAdminStore } from '@/stores/superAdminStore';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+// `??` not `||`: an empty string means "same-origin, relative /api/v1" (prod
+// proxy); only unset/undefined falls back to the local-dev backend.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
 
 /**
  * Pre-configured Axios instance for Super Admin API calls.

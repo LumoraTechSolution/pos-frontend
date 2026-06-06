@@ -29,7 +29,9 @@ export function middleware(request: NextRequest) {
   // Generate a unique per-request nonce for script-src.
   // Next.js reads x-nonce from request headers and adds it to its own inline scripts.
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+  // `??`: empty string = same-origin (prod proxy), so CSP connect-src/img-src
+  // rely on 'self'; only unset falls back to the local-dev backend origin.
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
   // Allow unsafe-eval in development only (needed by Next.js HMR / React refresh).
   const scriptSrc = process.env.NODE_ENV === 'development'
     ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`

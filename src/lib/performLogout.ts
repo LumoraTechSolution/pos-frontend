@@ -23,7 +23,8 @@ export async function performLogout(): Promise<void> {
       // Fire-and-forget: if the backend is down, we still want to proceed locally.
       const { token } = useAuthStore.getState();
       if (token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+        // `??`: empty string = same-origin relative /api/v1 (prod proxy).
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
         fetch(`${apiUrl}/api/v1/auth/logout`, {
           method: 'POST',
           credentials: 'include',
