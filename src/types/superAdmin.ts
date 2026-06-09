@@ -83,6 +83,13 @@ export interface TenantDetailResponse {
   slug: string;
   createdAt: string;
 
+  // Business profile (set by the tenant under Settings)
+  addressLine1: string | null;
+  addressLine2: string | null;
+  phone: string | null;
+  logoUrl: string | null;
+  receiptFooter: string | null;
+
   // Status
   isActive: boolean;
   isSubscriptionExpired: boolean;
@@ -99,6 +106,22 @@ export interface TenantDetailResponse {
 
   // Live usage counters
   usage: TenantUsageStats;
+}
+
+// ──────────────────────────────────────────────
+// Tenant Users (detail → Users tab; also the "forgot email" lookup)
+// ──────────────────────────────────────────────
+export interface TenantUserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  active: boolean;
+  mustChangePassword: boolean;
+  roles: string[];
+  lastLoginAt: string | null;
+  createdAt: string;
 }
 
 // ──────────────────────────────────────────────

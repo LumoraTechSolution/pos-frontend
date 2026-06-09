@@ -14,11 +14,13 @@ import {
   Settings2,
   Loader2,
   AlertTriangle,
+  Users,
 } from 'lucide-react';
 import OverviewTab from './OverviewTab';
 import ConfigurationTab from './ConfigurationTab';
+import UsersTab from './UsersTab';
 
-type Tab = 'overview' | 'configuration';
+type Tab = 'overview' | 'users' | 'configuration';
 
 export default function TenantDetailPage() {
   const params = useParams();
@@ -100,6 +102,7 @@ export default function TenantDetailPage() {
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+    { key: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
     { key: 'configuration', label: 'Configuration', icon: <Settings2 className="w-4 h-4" /> },
   ];
 
@@ -190,6 +193,7 @@ export default function TenantDetailPage() {
         {/* Tab Content */}
         <div className="p-6">
           {activeTab === 'overview' && <OverviewTab tenant={tenant} />}
+          {activeTab === 'users' && <UsersTab tenantId={tenantId} />}
           {activeTab === 'configuration' && (
             <ConfigurationTab
               tenant={tenant}

@@ -34,6 +34,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setPendingPasswordChange = useAuthStore((state) => state.setPendingPasswordChange);
   const [isLoading, setIsLoading] = useState(false);
 
   // In a real multi-tenant app, domain would be extracted from Window location headers.
@@ -73,10 +74,20 @@ export function LoginForm() {
       };
 
       const response = await authService.login(reqPayload);
+
+      // First login after provisioning / admin reset: force a password change
+      // before granting a full session.
+      if (response.passwordChangeRequired) {
+        setPendingPasswordChange(response.user, response.accessToken);
+        toast.info("Please set a new password to continue.");
+        router.push('/change-password');
+        return;
+      }
+
       setAuth(response.user, response.accessToken, response.refreshToken);
-      
+
       toast.success("Welcome back!");
-      
+
       // Terminal is for people who actually ring up sales. Everyone else (including
       // INVENTORY_MANAGER) lands on the dashboard.
       const roles = response.user.roles || [];

@@ -6,6 +6,7 @@ import {
   TenantDetailResponse,
   TenantConfigurationRequest,
   CreateTenantRequest,
+  TenantUserResponse,
 } from '@/types/superAdmin';
 
 export const superAdminTenantService = {
@@ -67,5 +68,26 @@ export const superAdminTenantService = {
       payload
     );
     return response.data.data;
+  },
+
+  /**
+   * List a tenant's users (Users tab). Also the "forgot email" lookup surface.
+   */
+  getTenantUsers: async (tenantId: string): Promise<TenantUserResponse[]> => {
+    const response = await superAdminApi.get<ApiResponse<TenantUserResponse[]>>(
+      `/tenants/${tenantId}/users`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Reset a tenant user's password. The user must change it on next login.
+   */
+  resetTenantUserPassword: async (
+    tenantId: string,
+    userId: string,
+    newPassword: string
+  ): Promise<void> => {
+    await superAdminApi.post(`/tenants/${tenantId}/users/${userId}/reset-password`, { newPassword });
   },
 };

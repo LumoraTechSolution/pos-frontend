@@ -79,4 +79,8 @@ export const userManagementService = {
     api
       .patch<ApiResponse<UserResponse>>(`/users/${id}/primary-branch`, { primaryBranchId })
       .then((r) => r.data.data),
+
+  /** ADMIN resets a user's password. The user must change it on next login. */
+  resetPassword: (id: string, newPassword: string) =>
+    api.post<ApiResponse<void>>(`/users/${id}/reset-password`, { newPassword }).then((r) => r.data.data),
 };

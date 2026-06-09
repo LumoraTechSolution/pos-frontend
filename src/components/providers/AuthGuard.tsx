@@ -42,7 +42,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     });
 
     const checkAuth = async () => {
-      const { isAuthenticated, token } = useAuthStore.getState();
+      const { isAuthenticated, token, passwordChangeRequired } = useAuthStore.getState();
+
+      // A user mid-forced-password-change isn't fully authenticated yet — send
+      // them to the dedicated change-password screen rather than into the app.
+      if (passwordChangeRequired) {
+        if (isMounted) router.replace('/change-password');
+        return;
+      }
 
       // token is memory-only since P1 1.6 — it is always null after a page reload.
       // Only bail out here if we have no session at all; the getMe() call below

@@ -24,6 +24,7 @@ import {
   Ban,
   Building2,
   Star,
+  KeyRound,
 } from "lucide-react";
 import { branchService } from "@/services/branchService";
 import { Button } from "@/components/ui/button";
@@ -500,6 +501,98 @@ function ManageBranchesModal({
   );
 }
 
+// ─── Reset Password Modal ──────────────────────────────────────────────────────
+function ResetPasswordModal({
+  user,
+  onClose,
+}: {
+  user: UserResponse | null;
+  onClose: () => void;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: (pw: string) => userManagementService.resetPassword(user!.id, pw),
+    onSuccess: () => {
+      toast.success("Password reset. The user must change it on next login.");
+      setNewPassword("");
+      onClose();
+    },
+  });
+
+  if (!user) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-background border border-border rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
+            <KeyRound size={20} className="text-amber-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Reset Password</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Set a temporary password for {user.firstName} {user.lastName}.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1.5 block">Temporary Password *</label>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 8 characters"
+                className="bg-card border-border pr-10"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPassword((v) => !v)}
+              >
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-lg px-3 py-2">
+            Share this password with the employee. They&apos;ll be required to set their own
+            password the next time they sign in, and any active sessions will be signed out.
+          </p>
+
+          {error != null && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20">
+              {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to reset password."}
+            </p>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-8">
+          <Button variant="outline" className="flex-1 border-border" onClick={onClose} disabled={isPending}>Cancel</Button>
+          <Button
+            className="flex-1 bg-amber-600 hover:bg-amber-500"
+            onClick={() => {
+              if (newPassword.trim().length < 8) {
+                toast.error("Password must be at least 8 characters");
+                return;
+              }
+              mutate(newPassword);
+            }}
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <KeyRound size={16} className="mr-2" />}
+            Reset Password
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const router = useRouter();
@@ -511,6 +604,7 @@ export default function EmployeesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [managingBranches, setManagingBranches] = useState<UserResponse | null>(null);
+  const [resettingUser, setResettingUser] = useState<UserResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const canManage = !!currentUser?.roles?.includes("ADMIN");
@@ -852,6 +946,14 @@ export default function EmployeesPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          className="text-xs h-8 border-border hover:border-amber-500/50 hover:text-amber-500 hover:bg-amber-500/5 transition-all"
+                          onClick={() => setResettingUser(user)}
+                        >
+                          <KeyRound size={12} className="mr-1" /> Reset PW
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           className={`text-xs h-8 border-border transition-all ${
                             user.active
                               ? "hover:border-destructive/50 hover:text-destructive hover:bg-destructive/5"
@@ -879,6 +981,7 @@ export default function EmployeesPage() {
       {/* Modals */}
       <CreateUserModal open={showCreate} onClose={() => setShowCreate(false)} />
       <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />
+      <ResetPasswordModal user={resettingUser} onClose={() => setResettingUser(null)} />
       {branchRestrictions && (
         <ManageBranchesModal user={managingBranches} onClose={() => setManagingBranches(null)} />
       )}

@@ -18,6 +18,7 @@ import {
   Wallet,
   TrendingUp,
   Activity,
+  UserCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ const ALL_ITEMS: NavItem[] = [
   { label: 'Cash Flow', href: '/finance/cash-flow', icon: Activity, requiredFeature: 'FINANCIAL_REPORTS' },
   { label: 'Profit & Loss', href: '/finance/profit-loss', icon: TrendingUp, requiredFeature: 'FINANCIAL_REPORTS' },
   { label: 'Branches', href: '/branches', icon: Store },
+  { label: 'My Profile', href: '/profile', icon: UserCircle },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
