@@ -31,7 +31,8 @@ export type Feature =
   | 'ADVANCED_ANALYTICS'
   | 'API_ACCESS'
   | 'EXPENSES'
-  | 'FINANCIAL_REPORTS';
+  | 'FINANCIAL_REPORTS'
+  | 'BRANCH_RESTRICTIONS';
 
 // ──────────────────────────────────────────────
 // Tenant Summary (used in list view)

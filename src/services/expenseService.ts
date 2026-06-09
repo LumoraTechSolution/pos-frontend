@@ -18,6 +18,8 @@ export interface Expense {
   notes?: string | null;
   recurring: boolean;
   recurringInterval?: string | null;
+  branchId?: string | null;
+  branchName?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }
@@ -32,6 +34,7 @@ export interface ExpenseRequest {
   notes?: string | null;
   recurring?: boolean;
   recurringInterval?: string | null;
+  branchId?: string | null;
 }
 
 export interface ExpenseCategoryRequest {
@@ -50,7 +53,7 @@ export interface Page<T> {
 
 export const expenseService = {
   // ── Expenses ──
-  list: async (params?: { start?: string; end?: string; page?: number; size?: number }): Promise<Page<Expense>> => {
+  list: async (params?: { start?: string; end?: string; page?: number; size?: number; branchId?: string }): Promise<Page<Expense>> => {
     const res = await api.get<{ data: Page<Expense> }>('/expenses', { params });
     return res.data.data;
   },

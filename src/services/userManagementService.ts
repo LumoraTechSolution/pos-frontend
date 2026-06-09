@@ -1,6 +1,11 @@
 import api from "./api";
 import { ApiResponse } from "@/types/common";
 
+export interface BranchSummary {
+  id: string;
+  name: string;
+}
+
 export interface UserResponse {
   id: string;
   email: string;
@@ -13,6 +18,9 @@ export interface UserResponse {
   lastLoginAt: string | null;
   createdAt: string;
   roles: string[];
+  /** Branch-access assignment (relevant when BRANCH_RESTRICTIONS is enabled). */
+  primaryBranchId: string | null;
+  branches: BranchSummary[];
 }
 
 export interface CreateUserRequest {
@@ -23,6 +31,8 @@ export interface CreateUserRequest {
   pin?: string;
   phone?: string;
   roleNames: string[];
+  branchIds?: string[];
+  primaryBranchId?: string;
 }
 
 export interface UpdateUserRequest {
@@ -32,6 +42,13 @@ export interface UpdateUserRequest {
   roleNames?: string[];
   /** Set/replace the 4-digit PIN. Omit (or leave blank) to keep the existing PIN. */
   pin?: string;
+  branchIds?: string[];
+  primaryBranchId?: string;
+}
+
+export interface UpdateBranchesRequest {
+  branchIds: string[];
+  primaryBranchId?: string;
 }
 
 export const userManagementService = {
@@ -52,4 +69,14 @@ export const userManagementService = {
 
   bulkSetStatus: (ids: string[], active: boolean) =>
     api.post<ApiResponse<number>>("/users/bulk-status", { ids, active }).then((r) => r.data.data),
+
+  /** Replace a user's branch-access set + primary branch. ADMIN-only. */
+  updateBranches: (id: string, data: UpdateBranchesRequest) =>
+    api.put<ApiResponse<UserResponse>>(`/users/${id}/branches`, data).then((r) => r.data.data),
+
+  /** Set a user's primary branch (must already be in their assigned set). ADMIN-only. */
+  updatePrimaryBranch: (id: string, primaryBranchId: string) =>
+    api
+      .patch<ApiResponse<UserResponse>>(`/users/${id}/primary-branch`, { primaryBranchId })
+      .then((r) => r.data.data),
 };

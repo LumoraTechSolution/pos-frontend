@@ -14,10 +14,18 @@ vi.mock("@/services/cashSessionService", () => ({
   },
 }));
 
+vi.mock("@/services/branchService", () => ({
+  branchService: {
+    getMyBranches: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 const sampleSession: CashSession = {
   id: "s1",
   userId: "u1",
   userName: "Alex",
+  branchId: "b1",
+  branchName: "Main Branch",
   timeRecordId: "t1",
   clockInTime: "2026-04-29T09:00:00Z",
   clockOutTime: null,
@@ -64,7 +72,7 @@ describe("StartShiftModal", () => {
     await user.click(screen.getByRole("button", { name: /start shift/i }));
 
     await waitFor(() => {
-      expect(cashSessionService.start).toHaveBeenCalledWith(200, "all twenties");
+      expect(cashSessionService.start).toHaveBeenCalledWith(200, undefined, "all twenties");
     });
     expect(onStarted).toHaveBeenCalledWith(sampleSession);
     expect(toast.success).toHaveBeenCalled();

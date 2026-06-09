@@ -39,7 +39,6 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { QK } from "@/lib/queryKeys";
 
 const adjustmentSchema = z.object({
   branchId: z.string().uuid("Please select a branch"),
@@ -76,8 +75,8 @@ export default function InventoryAdjustmentModal({ product, isOpen, onClose, def
   const [activeTab, setActiveTab] = useState("adjust");
 
   const { data: branches } = useQuery({
-    queryKey: QK.branches,
-    queryFn: branchService.getAllBranches
+    queryKey: ["branches", "me"],
+    queryFn: branchService.getMyBranches
   });
 
   const { data: history, isLoading: isHistoryLoading } = useQuery({

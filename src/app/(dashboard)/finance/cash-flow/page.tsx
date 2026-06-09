@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { financeService } from "@/services/financeService";
 import { QK } from "@/lib/queryKeys";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, Loader2, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { PeriodPicker, type Period } from "../PeriodPicker";
+import { BranchFilter } from "@/components/reports/BranchFilter";
 import { cn } from "@/lib/utils";
 
 const money = (n: number) =>
@@ -21,10 +23,21 @@ function thisYearPeriod(): Period {
 export default function CashFlowPage() {
   // Default to the year so the monthly series and runway are meaningful.
   const [period, setPeriod] = useState<Period>(thisYearPeriod);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const branchId = searchParams.get("branch") ?? undefined;
+
+  const setBranchId = (id: string | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("branch", id);
+    else params.delete("branch");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  };
 
   const { data, isLoading } = useQuery({
-    queryKey: [...QK.financeCashFlow, period.start, period.end],
-    queryFn: () => financeService.getCashFlow(period.start, period.end),
+    queryKey: [...QK.financeCashFlow, period.start, period.end, branchId],
+    queryFn: () => financeService.getCashFlow(period.start, period.end, branchId),
   });
 
   const maxBar = data ? Math.max(1, ...data.series.map((s) => Math.max(s.inflow, s.outflow))) : 1;
@@ -39,7 +52,10 @@ export default function CashFlowPage() {
           </div>
           <p className="text-muted-foreground">Money in (sales) vs money out (expenses + inventory), by month.</p>
         </div>
-        <PeriodPicker value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-3 flex-wrap">
+          <BranchFilter value={branchId} onChange={setBranchId} />
+          <PeriodPicker value={period} onChange={setPeriod} />
+        </div>
       </div>
 
       {isLoading || !data ? (

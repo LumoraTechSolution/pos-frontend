@@ -18,14 +18,14 @@ const fc = (val: number) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
 interface DateRange { start: string; end: string }
-interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void }
+interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void; branchId?: string }
 
-export function StockVarianceTab({ dateRange, onDateChange }: Props) {
+export function StockVarianceTab({ dateRange, onDateChange, branchId }: Props) {
   const [page, setPage] = useState(0);
 
   const { data, isLoading } = useQuery<StockVarianceReport>({
-    queryKey: ["reports", "stock-variance", dateRange],
-    queryFn: () => reportService.getStockVariance(dateRange.start, dateRange.end),
+    queryKey: ["reports", "stock-variance", dateRange, branchId],
+    queryFn: () => reportService.getStockVariance(dateRange.start, dateRange.end, branchId),
   });
 
   const products = data?.products ?? [];

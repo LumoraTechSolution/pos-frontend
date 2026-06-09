@@ -4,6 +4,8 @@ export interface CashSession {
   id: string;
   userId: string;
   userName: string | null;
+  branchId: string | null;
+  branchName: string | null;
   timeRecordId: string;
   clockInTime: string;
   clockOutTime: string | null;
@@ -20,8 +22,8 @@ export interface CashSession {
 }
 
 export const cashSessionService = {
-  start: async (openingBalance: number, notes?: string) => {
-    const res = await api.post<{ data: CashSession }>('/cash-session/start', { openingBalance, notes });
+  start: async (openingBalance: number, branchId?: string, notes?: string) => {
+    const res = await api.post<{ data: CashSession }>('/cash-session/start', { openingBalance, branchId, notes });
     return res.data.data;
   },
 

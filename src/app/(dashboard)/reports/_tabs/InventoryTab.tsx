@@ -17,12 +17,12 @@ const PAGE_SIZE = 15;
 const fc = (val: number) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
-export function InventoryTab() {
+export function InventoryTab({ branchId }: { branchId?: string }) {
   const [page, setPage] = useState(0);
 
   const { data, isLoading } = useQuery<InventoryValuationReport>({
-    queryKey: ["reports", "valuation"],
-    queryFn: reportService.getInventoryValuation,
+    queryKey: ["reports", "valuation", branchId],
+    queryFn: () => reportService.getInventoryValuation(branchId),
   });
 
   const breakdown = data?.categoryBreakdown ?? [];

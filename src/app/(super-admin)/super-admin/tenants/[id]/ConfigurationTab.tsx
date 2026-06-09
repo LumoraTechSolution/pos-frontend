@@ -25,6 +25,7 @@ import {
   ChevronDown,
   Wallet,
   TrendingUp,
+  Building2,
 } from 'lucide-react';
 
 // ── Plan tier presets ──
@@ -65,6 +66,7 @@ const ALL_FEATURES: { key: Feature; label: string; description: string; icon: Re
   { key: 'API_ACCESS', label: 'API Access', description: 'Third-party integrations', icon: <Plug className="w-4 h-4" />, tier: 'enterprise' },
   { key: 'EXPENSES', label: 'Expenses', description: 'Operating expense tracking', icon: <Wallet className="w-4 h-4" />, tier: 'advanced' },
   { key: 'FINANCIAL_REPORTS', label: 'Financial Reports', description: 'Net P&L and cash flow', icon: <TrendingUp className="w-4 h-4" />, tier: 'advanced' },
+  { key: 'BRANCH_RESTRICTIONS', label: 'Branch Access Control', description: 'Limit staff to assigned branches', icon: <Building2 className="w-4 h-4" />, tier: 'advanced' },
 ];
 
 interface Props {

@@ -38,12 +38,16 @@ export interface CashFlowReport {
 }
 
 export const financeService = {
-  getProfitLoss: async (start: string, end: string): Promise<ProfitLossReport> => {
-    const res = await api.get<{ data: ProfitLossReport }>('/finance/profit-loss', { params: { start, end } });
+  getProfitLoss: async (start: string, end: string, branchId?: string): Promise<ProfitLossReport> => {
+    const res = await api.get<{ data: ProfitLossReport }>('/finance/profit-loss', {
+      params: { start, end, ...(branchId ? { branchId } : {}) },
+    });
     return res.data.data;
   },
-  getCashFlow: async (start: string, end: string): Promise<CashFlowReport> => {
-    const res = await api.get<{ data: CashFlowReport }>('/finance/cash-flow', { params: { start, end } });
+  getCashFlow: async (start: string, end: string, branchId?: string): Promise<CashFlowReport> => {
+    const res = await api.get<{ data: CashFlowReport }>('/finance/cash-flow', {
+      params: { start, end, ...(branchId ? { branchId } : {}) },
+    });
     return res.data.data;
   },
 };

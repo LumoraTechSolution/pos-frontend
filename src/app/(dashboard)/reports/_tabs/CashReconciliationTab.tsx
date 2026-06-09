@@ -20,15 +20,15 @@ const fc = (val: number) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
 interface DateRange { start: string; end: string }
-interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void }
+interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void; branchId?: string }
 
-export function CashReconciliationTab({ dateRange, onDateChange }: Props) {
+export function CashReconciliationTab({ dateRange, onDateChange, branchId }: Props) {
   const [page, setPage] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery<Page<CashReconciliationRecord>>({
-    queryKey: ["reports", "cash-reconciliation", dateRange, page],
-    queryFn: () => reportService.getCashReconciliation(dateRange.start, dateRange.end, page, PAGE_SIZE),
+    queryKey: ["reports", "cash-reconciliation", dateRange, page, branchId],
+    queryFn: () => reportService.getCashReconciliation(dateRange.start, dateRange.end, page, PAGE_SIZE, branchId),
   });
 
   const exportCSV = async () => {
@@ -36,7 +36,7 @@ export function CashReconciliationTab({ dateRange, onDateChange }: Props) {
     setIsExporting(true);
     try {
       const all = await fetchAllPages(
-        (p, s) => reportService.getCashReconciliation(dateRange.start, dateRange.end, p, s),
+        (p, s) => reportService.getCashReconciliation(dateRange.start, dateRange.end, p, s, branchId),
       );
       const headers = ["Cashier", "Opened", "Closed", "Opening", "Expected", "Counted", "Variance", "Notes"];
       const rows = all.map(r => [
