@@ -21,15 +21,15 @@ const fc = (val: number) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
 interface DateRange { start: string; end: string }
-interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void }
+interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void; branchId?: string }
 
-export function EmployeesTab({ dateRange, onDateChange }: Props) {
+export function EmployeesTab({ dateRange, onDateChange, branchId }: Props) {
   const [page, setPage] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery<Page<EmployeePerformanceRecord>>({
-    queryKey: ["reports", "employee-performance", dateRange, page],
-    queryFn: () => reportService.getEmployeePerformance(dateRange.start, dateRange.end, page, PAGE_SIZE),
+    queryKey: ["reports", "employee-performance", dateRange, page, branchId],
+    queryFn: () => reportService.getEmployeePerformance(dateRange.start, dateRange.end, page, PAGE_SIZE, branchId),
   });
 
   const exportCSV = async () => {
@@ -37,7 +37,7 @@ export function EmployeesTab({ dateRange, onDateChange }: Props) {
     setIsExporting(true);
     try {
       const all = await fetchAllPages(
-        (p, s) => reportService.getEmployeePerformance(dateRange.start, dateRange.end, p, s),
+        (p, s) => reportService.getEmployeePerformance(dateRange.start, dateRange.end, p, s, branchId),
       );
       const headers = ["Employee", "Email", "Transactions", "Revenue", "Avg Basket", "Discounts"];
       const rows = all.map(emp => [

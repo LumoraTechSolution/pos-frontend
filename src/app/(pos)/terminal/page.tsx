@@ -98,10 +98,11 @@ export default function TerminalPage() {
     refetchOnMount: 'always',
   });
 
-  // Data Fetching
+  // Data Fetching — only the branches this user may operate at (filtered server-side
+  // when branch restrictions are on). Distinct cache key from the full branch list.
   const { data: branchesData } = useQuery({
-    queryKey: QK.branches,
-    queryFn: () => branchService.getAllBranches(),
+    queryKey: ['branches', 'me'],
+    queryFn: () => branchService.getMyBranches(),
   });
 
   const branches = (branchesData || []).filter(b => b.isActive);
@@ -133,13 +134,13 @@ export default function TerminalPage() {
     };
   }, [activeTaxRates, categories]);
 
-  // Since we are using TanStack Query v5, handle side effects in useEffect
+  // The active drawer pins the branch for the whole shift — lock the terminal to the
+  // session's branch (a sale rung at a different branch is rejected server-side).
   useEffect(() => {
-    if (branches.length > 0 && !selectedBranch) {
-      const defaultBranch = branches.find(b => b.isDefault) || branches[0];
-      setSelectedBranch(defaultBranch);
-    }
-  }, [branches, selectedBranch]);
+    if (!activeSession || branches.length === 0) return;
+    const sessionBranch = branches.find(b => b.id === activeSession.branchId);
+    setSelectedBranch(sessionBranch || branches.find(b => b.isDefault) || branches[0]);
+  }, [branches, activeSession]);
 
   // Cart — branch-aware so add/update reads the right stockLevels row.
   const {
@@ -520,9 +521,7 @@ export default function TerminalPage() {
         <POSHeader
           userName={`${user?.firstName ?? ''} ${user?.lastName ?? ''}`}
           userRole={user?.roles?.[0] ?? ''}
-          branches={branches}
-          selectedBranch={selectedBranch}
-          onBranchChange={setSelectedBranch}
+          branchName={selectedBranch?.name ?? null}
           onShiftSummary={handleFetchSummary}
           onEndShift={() => setEndShiftOpen(true)}
           onShiftEnded={handleShiftEnded}

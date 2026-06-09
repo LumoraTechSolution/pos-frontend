@@ -30,6 +30,8 @@ import {
 import { Wallet, Plus, Edit2, Trash2, Loader2, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { ManageCategoriesDialog } from "./ManageCategoriesDialog";
+import { useAuthStore } from "@/stores/authStore";
+import { branchService } from "@/services/branchService";
 
 const PAYMENT_METHODS = ["CASH", "CARD", "BANK_TRANSFER", "CHEQUE", "OTHER"];
 
@@ -49,6 +51,8 @@ function monthRange() {
 
 export default function ExpensesPage() {
   const queryClient = useQueryClient();
+  const hasFeature = useAuthStore((s) => s.hasFeature);
+  const branchEnabled = hasFeature("BRANCH_RESTRICTIONS");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
@@ -163,6 +167,7 @@ export default function ExpensesPage() {
               <TableRow className="border-border hover:bg-transparent">
                 <TableHead className="pl-6">Date</TableHead>
                 <TableHead>Category</TableHead>
+                {branchEnabled && <TableHead>Branch</TableHead>}
                 <TableHead>Payee</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
@@ -172,13 +177,13 @@ export default function ExpensesPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center">
+                  <TableCell colSpan={branchEnabled ? 7 : 6} className="h-40 text-center">
                     <Loader2 className="animate-spin text-primary mx-auto" size={28} />
                   </TableCell>
                 </TableRow>
               ) : expenses.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center">
+                  <TableCell colSpan={branchEnabled ? 7 : 6} className="h-40 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Wallet size={40} className="opacity-10" />
                       <p className="text-sm font-medium">No expenses this month</p>
@@ -193,6 +198,11 @@ export default function ExpensesPage() {
                   <TableRow key={e.id} className="border-border hover:bg-foreground/5 group">
                     <TableCell className="pl-6">{e.expenseDate}</TableCell>
                     <TableCell className="font-medium text-foreground">{e.categoryName}</TableCell>
+                    {branchEnabled && (
+                      <TableCell className="text-muted-foreground">
+                        {e.branchName || <span className="italic opacity-70">Company-wide</span>}
+                      </TableCell>
+                    )}
                     <TableCell className="text-muted-foreground">{e.payee || "—"}</TableCell>
                     <TableCell className="text-muted-foreground">{e.paymentMethod || "—"}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">{money(e.amount)}</TableCell>
@@ -221,6 +231,7 @@ export default function ExpensesPage() {
         open={modalOpen}
         editing={editing}
         categories={categories ?? []}
+        branchEnabled={branchEnabled}
         submitting={saveMutation.isPending}
         onClose={closeModal}
         onSubmit={(data) => saveMutation.mutate({ id: editing?.id, data })}
@@ -256,12 +267,13 @@ interface ExpenseModalProps {
   open: boolean;
   editing: Expense | null;
   categories: { id: string; name: string; isActive: boolean }[];
+  branchEnabled: boolean;
   submitting: boolean;
   onClose: () => void;
   onSubmit: (data: ExpenseRequest) => void;
 }
 
-function ExpenseModal({ open, editing, categories, submitting, onClose, onSubmit }: ExpenseModalProps) {
+function ExpenseModal({ open, editing, categories, branchEnabled, submitting, onClose, onSubmit }: ExpenseModalProps) {
   const today = new Date().toISOString().slice(0, 10);
   const [categoryId, setCategoryId] = useState("");
   const [amount, setAmount] = useState("");
@@ -270,6 +282,13 @@ function ExpenseModal({ open, editing, categories, submitting, onClose, onSubmit
   const [method, setMethod] = useState("CASH");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [branchId, setBranchId] = useState("");
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ["myBranches"],
+    queryFn: branchService.getMyBranches,
+    enabled: branchEnabled && open,
+  });
 
   // Reset form whenever the modal opens (for create) or target changes (for edit).
   useEffect(() => {
@@ -281,6 +300,7 @@ function ExpenseModal({ open, editing, categories, submitting, onClose, onSubmit
     setMethod(editing?.paymentMethod ?? "CASH");
     setReference(editing?.reference ?? "");
     setNotes(editing?.notes ?? "");
+    setBranchId(editing?.branchId ?? "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editing]);
 
@@ -299,6 +319,7 @@ function ExpenseModal({ open, editing, categories, submitting, onClose, onSubmit
       paymentMethod: method || null,
       reference: reference.trim() || null,
       notes: notes.trim() || null,
+      branchId: branchId || null,
     });
   };
 
@@ -346,6 +367,20 @@ function ExpenseModal({ open, editing, categories, submitting, onClose, onSubmit
               </select>
             </div>
           </div>
+          {branchEnabled && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Branch</label>
+              <select className={selectCls} value={branchId} onChange={(ev) => setBranchId(ev.target.value)}>
+                <option value="">Company-wide (no branch)</option>
+                {branches.map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Tag this cost to a branch for per-branch P&amp;L, or leave company-wide for shared overhead.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <label className="text-sm font-medium">Payee</label>
             <Input className={inputCls} value={payee} onChange={(e) => setPayee(e.target.value)}

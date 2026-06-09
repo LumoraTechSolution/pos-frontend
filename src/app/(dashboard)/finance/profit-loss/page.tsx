@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { financeService } from "@/services/financeService";
 import { QK } from "@/lib/queryKeys";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { PeriodPicker, thisMonth, type Period } from "../PeriodPicker";
+import { BranchFilter } from "@/components/reports/BranchFilter";
 import { cn } from "@/lib/utils";
 
 const money = (n: number) =>
@@ -14,10 +16,21 @@ const money = (n: number) =>
 
 export default function ProfitLossPage() {
   const [period, setPeriod] = useState<Period>(thisMonth);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const branchId = searchParams.get("branch") ?? undefined;
+
+  const setBranchId = (id: string | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("branch", id);
+    else params.delete("branch");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  };
 
   const { data, isLoading } = useQuery({
-    queryKey: [...QK.financePnl, period.start, period.end],
-    queryFn: () => financeService.getProfitLoss(period.start, period.end),
+    queryKey: [...QK.financePnl, period.start, period.end, branchId],
+    queryFn: () => financeService.getProfitLoss(period.start, period.end, branchId),
   });
 
   return (
@@ -30,7 +43,10 @@ export default function ProfitLossPage() {
           </div>
           <p className="text-muted-foreground">Revenue minus cost of goods and operating expenses.</p>
         </div>
-        <PeriodPicker value={period} onChange={setPeriod} />
+        <div className="flex items-center gap-3 flex-wrap">
+          <BranchFilter value={branchId} onChange={setBranchId} />
+          <PeriodPicker value={period} onChange={setPeriod} />
+        </div>
       </div>
 
       {isLoading || !data ? (

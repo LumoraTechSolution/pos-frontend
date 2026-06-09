@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cashSessionService, CashSession } from "@/services/cashSessionService";
+import { branchService } from "@/services/branchService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,9 +24,25 @@ export function StartShiftModal({ open, onCancel, onStarted }: StartShiftModalPr
   const queryClient = useQueryClient();
   const [openingBalance, setOpeningBalance] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const [branchId, setBranchId] = useState<string>("");
+
+  // Branches this user may open a drawer at. With one branch the picker is hidden
+  // and that branch is used automatically; with several the user chooses where.
+  const { data: myBranches } = useQuery({
+    queryKey: ["branches", "me"],
+    queryFn: () => branchService.getMyBranches(),
+  });
+
+  useEffect(() => {
+    if (myBranches && myBranches.length > 0 && !branchId) {
+      setBranchId((myBranches.find(b => b.isDefault) || myBranches[0]).id);
+    }
+  }, [myBranches, branchId]);
+
+  const multiBranch = (myBranches?.length ?? 0) > 1;
 
   const startMutation = useMutation({
-    mutationFn: () => cashSessionService.start(Number(openingBalance), notes || undefined),
+    mutationFn: () => cashSessionService.start(Number(openingBalance), branchId || undefined, notes || undefined),
     onSuccess: (session) => {
       toast.success("Shift started. Good luck out there.");
       queryClient.invalidateQueries({ queryKey: QK.cashSessionActive });
@@ -70,6 +87,23 @@ export function StartShiftModal({ open, onCancel, onStarted }: StartShiftModalPr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          {multiBranch && (
+            <div className="space-y-2">
+              <Label htmlFor="shiftBranch">Branch *</Label>
+              <select
+                id="shiftBranch"
+                value={branchId}
+                onChange={(e) => setBranchId(e.target.value)}
+                className="w-full rounded-md bg-gray-950 border border-gray-800 px-3 py-2 text-sm focus-visible:ring-primary focus-visible:outline-none"
+              >
+                {(myBranches ?? []).map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500">Your drawer is tied to this branch for the whole shift.</p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="openingBalance">Opening cash in drawer *</Label>
             <div className="relative">

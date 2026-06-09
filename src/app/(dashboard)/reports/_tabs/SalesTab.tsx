@@ -29,9 +29,10 @@ interface Props {
   dateRange: DateRange;
   onDateChange: (r: DateRange) => void;
   onReturn: (saleId: string) => void;
+  branchId?: string;
 }
 
-export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
+export function SalesTab({ dateRange, onDateChange, onReturn, branchId }: Props) {
   const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [isExporting, setIsExporting] = useState(false);
@@ -39,8 +40,8 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
   const { data, isLoading } = useQuery<Page<SalesReportRecord>>({
-    queryKey: ["reports", "sales", dateRange, page],
-    queryFn: () => reportService.getSalesReport(dateRange.start, dateRange.end, page, PAGE_SIZE),
+    queryKey: ["reports", "sales", dateRange, page, branchId],
+    queryFn: () => reportService.getSalesReport(dateRange.start, dateRange.end, page, PAGE_SIZE, branchId),
   });
 
   const chartData = (data?.content ?? [])
@@ -53,7 +54,7 @@ export function SalesTab({ dateRange, onDateChange, onReturn }: Props) {
     setIsExporting(true);
     try {
       const all = await fetchAllPages(
-        (p, s) => reportService.getSalesReport(dateRange.start, dateRange.end, p, s),
+        (p, s) => reportService.getSalesReport(dateRange.start, dateRange.end, p, s, branchId),
       );
       const headers = ["Invoice #", "Date", "Customer", "Cashier", "Payment", "Status", "Total", "Tax", "Net", "Cash Tendered", "Change Given"];
       const rows = all.map(s => [

@@ -19,6 +19,8 @@ function activeSession(overrides: Partial<CashSession> = {}): CashSession {
     id: "s1",
     userId: "u1",
     userName: "Alex",
+    branchId: "b1",
+    branchName: "Main Branch",
     timeRecordId: "t1",
     clockInTime: "2026-04-29T09:00:00Z",
     clockOutTime: null,

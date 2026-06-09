@@ -12,26 +12,31 @@ import {
   CashReconciliationRecord,
 } from "@/types/report";
 
+/** Only include branchId in the query string when a specific branch is selected. */
+const branchParam = (branchId?: string) => (branchId ? { branchId } : {});
+
 /**
  * Reporting service
  */
 export const reportService = {
-  getSalesReport: (start: string, end: string, page = 0, size = 20) =>
+  getSalesReport: (start: string, end: string, page = 0, size = 20, branchId?: string) =>
     api
       .get<ApiResponse<Page<SalesReportRecord>>>("/reports/sales", {
-        params: { start, end, page, size },
+        params: { start, end, page, size, ...branchParam(branchId) },
       })
       .then((res) => res.data.data),
 
-  getInventoryValuation: () =>
+  getInventoryValuation: (branchId?: string) =>
     api
-      .get<ApiResponse<InventoryValuationReport>>("/reports/inventory-valuation")
+      .get<ApiResponse<InventoryValuationReport>>("/reports/inventory-valuation", {
+        params: { ...branchParam(branchId) },
+      })
       .then((res) => res.data.data),
 
-  getEmployeePerformance: (start: string, end: string, page = 0, size = 20) =>
+  getEmployeePerformance: (start: string, end: string, page = 0, size = 20, branchId?: string) =>
     api
       .get<ApiResponse<Page<EmployeePerformanceRecord>>>("/reports/employee-performance", {
-        params: { start, end, page, size },
+        params: { start, end, page, size, ...branchParam(branchId) },
       })
       .then((res) => res.data.data),
 
@@ -49,10 +54,10 @@ export const reportService = {
       })
       .then((res) => res.data.data),
 
-  getProfitabilityReport: (start: string, end: string, page = 0, size = 20) =>
+  getProfitabilityReport: (start: string, end: string, page = 0, size = 20, branchId?: string) =>
     api
       .get<ApiResponse<ProfitabilityReport>>("/reports/profitability", {
-        params: { start, end, page, size },
+        params: { start, end, page, size, ...branchParam(branchId) },
       })
       .then((res) => res.data.data),
 
@@ -63,17 +68,17 @@ export const reportService = {
       })
       .then((res) => res.data.data),
 
-  getStockVariance: (start: string, end: string) =>
+  getStockVariance: (start: string, end: string, branchId?: string) =>
     api
       .get<ApiResponse<StockVarianceReport>>("/reports/stock-variance", {
-        params: { start, end },
+        params: { start, end, ...branchParam(branchId) },
       })
       .then((res) => res.data.data),
 
-  getCashReconciliation: (start: string, end: string, page = 0, size = 20) =>
+  getCashReconciliation: (start: string, end: string, page = 0, size = 20, branchId?: string) =>
     api
       .get<ApiResponse<Page<CashReconciliationRecord>>>("/reports/cash-reconciliation", {
-        params: { start, end, page, size },
+        params: { start, end, page, size, ...branchParam(branchId) },
       })
       .then((res) => res.data.data),
 };

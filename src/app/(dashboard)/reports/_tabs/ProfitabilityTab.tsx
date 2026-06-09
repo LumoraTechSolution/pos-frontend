@@ -23,15 +23,15 @@ const fc = (val: number) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(val);
 
 interface DateRange { start: string; end: string }
-interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void }
+interface Props { dateRange: DateRange; onDateChange: (r: DateRange) => void; branchId?: string }
 
-export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
+export function ProfitabilityTab({ dateRange, onDateChange, branchId }: Props) {
   const [page, setPage] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery<ProfitabilityReport>({
-    queryKey: ["reports", "profitability", dateRange, page],
-    queryFn: () => reportService.getProfitabilityReport(dateRange.start, dateRange.end, page, PAGE_SIZE),
+    queryKey: ["reports", "profitability", dateRange, page, branchId],
+    queryFn: () => reportService.getProfitabilityReport(dateRange.start, dateRange.end, page, PAGE_SIZE, branchId),
   });
 
   const chartData = (data?.products.content ?? []).slice(0, 10).map(p => ({
@@ -45,7 +45,7 @@ export function ProfitabilityTab({ dateRange, onDateChange }: Props) {
     setIsExporting(true);
     try {
       const all = await fetchAllPages(
-        async (p, s) => (await reportService.getProfitabilityReport(dateRange.start, dateRange.end, p, s)).products,
+        async (p, s) => (await reportService.getProfitabilityReport(dateRange.start, dateRange.end, p, s, branchId)).products,
       );
       const headers = ["Product", "SKU", "Category", "Units Sold", "Revenue", "COGS", "Profit", "Margin %"];
       const rows = all.map(p => [

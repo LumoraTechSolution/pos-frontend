@@ -19,9 +19,13 @@ export interface BranchRequest {
 }
 
 export const branchService = {
-  getAllBranches: () => 
+  getAllBranches: () =>
     api.get<ApiResponse<Branch[]>>("/branches").then(res => res.data.data),
-  
+
+  /** Branches the current user may operate at (filtered when branch restrictions are on). */
+  getMyBranches: () =>
+    api.get<ApiResponse<Branch[]>>("/branches/me").then(res => res.data.data),
+
   getBranch: (id: string) => 
     api.get<ApiResponse<Branch>>(`/branches/${id}`).then(res => res.data.data),
   

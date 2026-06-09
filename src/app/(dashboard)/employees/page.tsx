@@ -22,7 +22,10 @@ import {
   EyeOff,
   Download,
   Ban,
+  Building2,
+  Star,
 } from "lucide-react";
+import { branchService } from "@/services/branchService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -342,17 +345,176 @@ function EditUserModal({
   );
 }
 
+// ─── Manage Branches Modal ───────────────────────────────────────────────────
+function ManageBranchesModal({
+  user,
+  onClose,
+}: {
+  user: UserResponse | null;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [primaryId, setPrimaryId] = useState<string | null>(null);
+
+  const { data: branches = [], isLoading: branchesLoading } = useQuery({
+    queryKey: ["branches"],
+    queryFn: branchService.getAllBranches,
+    enabled: !!user,
+  });
+
+  // Hydrate selection from the user's current assignment whenever it opens.
+  useEffect(() => {
+    if (user) {
+      setSelected(new Set(user.branches.map((b) => b.id)));
+      setPrimaryId(user.primaryBranchId);
+    }
+  }, [user]);
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: (data: { branchIds: string[]; primaryBranchId?: string }) =>
+      userManagementService.updateBranches(user!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("Branch assignment updated");
+      onClose();
+    },
+    onError: (e: unknown) => {
+      toast.error(
+        (e as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "Failed to update branches"
+      );
+    },
+  });
+
+  if (!user) return null;
+
+  const toggleBranch = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        // Removing the current primary clears it; caller picks a new one.
+        if (primaryId === id) setPrimaryId(null);
+      } else {
+        next.add(id);
+        if (primaryId === null) setPrimaryId(id);
+      }
+      return next;
+    });
+  };
+
+  const handleSave = () => {
+    const branchIds = Array.from(selected);
+    if (branchIds.length > 0 && !primaryId) {
+      toast.error("Pick a primary branch");
+      return;
+    }
+    mutate({ branchIds, primaryBranchId: primaryId ?? undefined });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-background border border-border rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+            <Building2 size={20} className="text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Manage Branches</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Choose where {user.firstName} can operate. The starred branch is their primary.
+            </p>
+          </div>
+        </div>
+
+        {branchesLoading ? (
+          <div className="flex items-center justify-center py-10 text-muted-foreground">
+            <Loader2 size={18} className="animate-spin mr-2" /> Loading branches…
+          </div>
+        ) : branches.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-10">No branches found.</p>
+        ) : (
+          <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+            {branches.map((b) => {
+              const isSelected = selected.has(b.id);
+              const isPrimary = primaryId === b.id;
+              return (
+                <div
+                  key={b.id}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
+                    isSelected ? "border-primary/40 bg-primary/5" : "border-border"
+                  }`}
+                >
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleBranch(b.id)}
+                    aria-label={`Assign ${b.name}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-foreground truncate">
+                      {b.name}
+                      {b.isDefault && (
+                        <span className="ml-2 text-[10px] text-muted-foreground">(default)</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!isSelected}
+                    onClick={() => setPrimaryId(b.id)}
+                    title={isPrimary ? "Primary branch" : "Set as primary"}
+                    className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg border transition-all disabled:opacity-30 ${
+                      isPrimary
+                        ? "text-warning border-warning/40 bg-warning/10"
+                        : "text-muted-foreground border-border hover:text-foreground"
+                    }`}
+                  >
+                    <Star size={12} className={isPrimary ? "fill-warning" : ""} />
+                    {isPrimary ? "Primary" : "Set primary"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {error != null && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20 mt-4">
+            {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+              "Failed to update branches."}
+          </p>
+        )}
+
+        <div className="flex gap-3 mt-8">
+          <Button variant="outline" className="flex-1 border-border" onClick={onClose} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button className="flex-1 bg-primary hover:bg-primary" onClick={handleSave} disabled={isPending}>
+            {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Building2 size={16} className="mr-2" />}
+            Save Branches
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuthStore();
+  const hasFeature = useAuthStore((s) => s.hasFeature);
+  const branchRestrictions = hasFeature("BRANCH_RESTRICTIONS");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [managingBranches, setManagingBranches] = useState<UserResponse | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const canManage = !!currentUser?.roles?.includes("ADMIN");
+  const isAdmin = !!currentUser?.roles?.includes("ADMIN");
 
   const { data: users = [], isLoading } = useQuery<UserResponse[]>({
     queryKey: ["users"],
@@ -386,6 +548,9 @@ export default function EmployeesPage() {
 
   const allSelected = filtered.length > 0 && filtered.every((u) => selected.has(u.id));
   const someSelected = filtered.some((u) => selected.has(u.id));
+
+  // Employee, Contact, Roles, Last Login, Status + optional checkbox/branches/actions columns.
+  const colCount = 5 + (canManage ? 1 : 0) + (branchRestrictions ? 1 : 0) + (isAdmin ? 1 : 0);
 
   const toggleRow = (id: string, checked: boolean) => {
     setSelected((prev) => {
@@ -544,6 +709,9 @@ export default function EmployeesPage() {
               <TableHead className="text-muted-foreground font-medium">Employee</TableHead>
               <TableHead className="text-muted-foreground font-medium">Contact</TableHead>
               <TableHead className="text-muted-foreground font-medium">Roles</TableHead>
+              {branchRestrictions && (
+                <TableHead className="text-muted-foreground font-medium">Branches</TableHead>
+              )}
               <TableHead className="text-muted-foreground font-medium">Last Login</TableHead>
               <TableHead className="text-muted-foreground font-medium">Status</TableHead>
               {currentUser?.roles?.includes('ADMIN') && (
@@ -555,12 +723,12 @@ export default function EmployeesPage() {
             {isLoading ? (
               [...Array(4)].map((_, i) => (
                 <TableRow key={i} className="border-border">
-                  <TableCell colSpan={canManage ? 7 : 5}><div className="h-5 bg-muted rounded animate-pulse" /></TableCell>
+                  <TableCell colSpan={colCount}><div className="h-5 bg-muted rounded animate-pulse" /></TableCell>
                 </TableRow>
               ))
             ) : filtered.length === 0 ? (
               <TableRow className="border-border">
-                <TableCell colSpan={canManage ? 7 : 5} className="text-center py-12 text-muted-foreground">No employees found.</TableCell>
+                <TableCell colSpan={colCount} className="text-center py-12 text-muted-foreground">No employees found.</TableCell>
               </TableRow>
             ) : (
               filtered.map((user) => (
@@ -607,6 +775,36 @@ export default function EmployeesPage() {
                     </div>
                   </TableCell>
 
+                  {/* Branches (only when branch restrictions are enabled) */}
+                  {branchRestrictions && (
+                    <TableCell>
+                      {user.roles.includes("ADMIN") ? (
+                        <span className="text-[10px] text-muted-foreground italic">All branches</span>
+                      ) : user.branches.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.branches.map((b) => {
+                            const isPrimary = b.id === user.primaryBranchId;
+                            return (
+                              <span
+                                key={b.id}
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                                  isPrimary
+                                    ? "text-warning border-warning/40 bg-warning/10"
+                                    : "text-muted-foreground border-border bg-muted/40"
+                                }`}
+                              >
+                                {isPrimary && <Star size={9} className="fill-warning" />}
+                                {b.name}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-warning">Unassigned</span>
+                      )}
+                    </TableCell>
+                  )}
+
                   {/* Last Login */}
                   <TableCell className="text-muted-foreground text-sm">
                     {user.lastLoginAt ? (
@@ -633,6 +831,16 @@ export default function EmployeesPage() {
                   {currentUser?.roles?.includes('ADMIN') && (
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {branchRestrictions && !user.roles.includes("ADMIN") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 border-border hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all"
+                            onClick={() => setManagingBranches(user)}
+                          >
+                            <Building2 size={12} className="mr-1" /> Branches
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -671,6 +879,9 @@ export default function EmployeesPage() {
       {/* Modals */}
       <CreateUserModal open={showCreate} onClose={() => setShowCreate(false)} />
       <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />
+      {branchRestrictions && (
+        <ManageBranchesModal user={managingBranches} onClose={() => setManagingBranches(null)} />
+      )}
     </div>
   );
 }

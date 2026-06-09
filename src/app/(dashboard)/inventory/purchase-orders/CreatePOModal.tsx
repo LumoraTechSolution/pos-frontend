@@ -43,10 +43,10 @@ export function CreatePOModal({ isOpen, onClose }: CreatePOModalProps) {
     enabled: isOpen,
   });
 
-  // Fetch Branches
+  // Fetch the branches this user may order for (delivery branch is enforced server-side).
   const { data: branches } = useQuery({
-    queryKey: ["branches-all"],
-    queryFn: branchService.getAllBranches,
+    queryKey: ["branches", "me"],
+    queryFn: branchService.getMyBranches,
     enabled: isOpen,
   });
 

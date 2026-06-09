@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import {
   TrendingUp,
@@ -30,8 +31,22 @@ import { ProfitabilityTab } from "./_tabs/ProfitabilityTab";
 import { SupplierSalesTab } from "./_tabs/SupplierSalesTab";
 import { StockVarianceTab } from "./_tabs/StockVarianceTab";
 import { CashReconciliationTab } from "./_tabs/CashReconciliationTab";
+import { BranchFilter } from "@/components/reports/BranchFilter";
 
 export default function ReportsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const branchId = searchParams.get("branch") ?? undefined;
+
+  // Persist the selected branch in the URL so it survives reloads and is shareable.
+  const setBranchId = (id: string | undefined) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("branch", id);
+    else params.delete("branch");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  };
+
   const [activeTab, setActiveTab] = useState("sales");
   const [returnSaleId, setReturnSaleId] = useState<string | null>(null);
   const [exchangeData, setExchangeData] = useState<{
@@ -47,11 +62,14 @@ export default function ReportsPage() {
 
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1>
-        <p className="text-muted-foreground mt-2">
-          Analyze your business performance and inventory health.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Financial Reports</h1>
+          <p className="text-muted-foreground mt-2">
+            Analyze your business performance and inventory health.
+          </p>
+        </div>
+        <BranchFilter value={branchId} onChange={setBranchId} className="print:hidden" />
       </div>
 
       <Tabs defaultValue="sales" value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -119,6 +137,7 @@ export default function ReportsPage() {
             dateRange={dateRange}
             onDateChange={setDateRange}
             onReturn={setReturnSaleId}
+            branchId={branchId}
           />
         </TabsContent>
 
@@ -130,13 +149,13 @@ export default function ReportsPage() {
 
         <FeatureGuard feature="INVENTORY">
           <TabsContent value="inventory" className="space-y-6">
-            <InventoryTab />
+            <InventoryTab branchId={branchId} />
           </TabsContent>
         </FeatureGuard>
 
         <FeatureGuard feature="EMPLOYEES">
           <TabsContent value="employees" className="space-y-6">
-            <EmployeesTab dateRange={dateRange} onDateChange={setDateRange} />
+            <EmployeesTab dateRange={dateRange} onDateChange={setDateRange} branchId={branchId} />
           </TabsContent>
         </FeatureGuard>
 
@@ -154,7 +173,7 @@ export default function ReportsPage() {
 
         <FeatureGuard feature="ADVANCED_ANALYTICS">
           <TabsContent value="profitability" className="space-y-6">
-            <ProfitabilityTab dateRange={dateRange} onDateChange={setDateRange} />
+            <ProfitabilityTab dateRange={dateRange} onDateChange={setDateRange} branchId={branchId} />
           </TabsContent>
         </FeatureGuard>
 
@@ -166,12 +185,12 @@ export default function ReportsPage() {
 
         <FeatureGuard feature="INVENTORY">
           <TabsContent value="stock-variance" className="space-y-6">
-            <StockVarianceTab dateRange={dateRange} onDateChange={setDateRange} />
+            <StockVarianceTab dateRange={dateRange} onDateChange={setDateRange} branchId={branchId} />
           </TabsContent>
         </FeatureGuard>
 
         <TabsContent value="cash-reconciliation" className="space-y-6">
-          <CashReconciliationTab dateRange={dateRange} onDateChange={setDateRange} />
+          <CashReconciliationTab dateRange={dateRange} onDateChange={setDateRange} branchId={branchId} />
         </TabsContent>
       </Tabs>
 
