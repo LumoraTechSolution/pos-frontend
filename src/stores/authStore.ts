@@ -10,9 +10,15 @@ interface AuthState {
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** True when the user logged in but must rotate an admin-set password before
+   *  entering the app. While true, `token` is a change-password-scoped token and
+   *  `isAuthenticated` is false. */
+  passwordChangeRequired: boolean;
 
   // Actions
   setAuth: (user: User, token: string, refreshToken: string) => void;
+  /** Stash the change-password-scoped token + identity for the forced-change flow. */
+  setPendingPasswordChange: (user: User, token: string) => void;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
@@ -26,14 +32,19 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       refreshToken: null,
       isAuthenticated: false,
+      passwordChangeRequired: false,
 
       setAuth: (user: User, token: string, refreshToken: string) => {
-        set({ user, token, refreshToken, isAuthenticated: true });
+        set({ user, token, refreshToken, isAuthenticated: true, passwordChangeRequired: false });
         bindSentryUser(user);
       },
 
+      setPendingPasswordChange: (user: User, token: string) => {
+        set({ user, token, refreshToken: null, isAuthenticated: false, passwordChangeRequired: true });
+      },
+
       logout: () => {
-        set({ user: null, token: null, refreshToken: null, isAuthenticated: false });
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false, passwordChangeRequired: false });
         clearSentryUser();
       },
 
@@ -66,6 +77,7 @@ export const useAuthStore = create<AuthState>()(
         // same browser session (sessionStorage is cleared when the tab/window is closed).
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
+        passwordChangeRequired: state.passwordChangeRequired,
       }),
     }
   )

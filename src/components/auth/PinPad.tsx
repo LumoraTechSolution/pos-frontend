@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 export function PinPad() {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const setPendingPasswordChange = useAuthStore((state) => state.setPendingPasswordChange);
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,7 +40,14 @@ export function PinPad() {
         pin,
         tenantId: DEFAULT_TENANT_ID
       });
-      
+
+      if (response.passwordChangeRequired) {
+        setPendingPasswordChange(response.user, response.accessToken);
+        toast.info("Please set a new password to continue.");
+        router.push('/change-password');
+        return;
+      }
+
       setAuth(response.user, response.accessToken, response.refreshToken);
       toast.success("Login successful!");
       router.push('/terminal');

@@ -72,8 +72,49 @@ function UsageMeter({
 export default function OverviewTab({ tenant }: Props) {
   const { usage } = tenant;
 
+  const hasBusinessInfo =
+    tenant.addressLine1 || tenant.addressLine2 || tenant.phone || tenant.logoUrl || tenant.receiptFooter;
+
   return (
     <div className="space-y-8">
+      {/* Business Profile */}
+      <div>
+        <h3 className="text-base font-bold text-muted-foreground mb-4">Business Profile</h3>
+        <div className="bg-muted border border-border rounded-xl p-5 flex gap-5">
+          {tenant.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={tenant.logoUrl}
+              alt={`${tenant.name} logo`}
+              className="w-16 h-16 rounded-lg object-contain bg-background border border-border shrink-0"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-lg bg-background border border-border flex items-center justify-center text-muted-foreground shrink-0">
+              <MapPin className="w-6 h-6" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0 space-y-1.5 text-sm">
+            {hasBusinessInfo ? (
+              <>
+                {(tenant.addressLine1 || tenant.addressLine2) && (
+                  <p className="text-muted-foreground">
+                    {[tenant.addressLine1, tenant.addressLine2].filter(Boolean).join(', ')}
+                  </p>
+                )}
+                {tenant.phone && <p className="text-muted-foreground">{tenant.phone}</p>}
+                {tenant.receiptFooter && (
+                  <p className="text-xs text-muted-foreground italic">“{tenant.receiptFooter}”</p>
+                )}
+              </>
+            ) : (
+              <p className="text-muted-foreground italic">
+                The tenant hasn&apos;t set their business address, phone, or logo yet.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Resource Utilization Section */}
       <div>
         <h3 className="text-base font-bold text-muted-foreground mb-4">Resource Utilization</h3>

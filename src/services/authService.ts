@@ -1,5 +1,12 @@
 import api from './api';
-import { AuthResponse, LoginRequest, PinLoginRequest, RefreshTokenRequest } from '@/types/auth';
+import {
+  AuthResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  MyProfile,
+  PinLoginRequest,
+  RefreshTokenRequest,
+} from '@/types/auth';
 import { ApiResponse } from '@/types/common';
 
 /**
@@ -40,8 +47,30 @@ export const authService = {
   /**
    * Get current authenticated user profile.
    */
-  getMe: async (): Promise<AuthResponse['user']> => {
-    const response = await api.get<ApiResponse<AuthResponse['user']>>('/auth/me');
+  getMe: async (): Promise<MyProfile> => {
+    const response = await api.get<ApiResponse<MyProfile>>('/auth/me');
     return response.data.data;
+  },
+
+  /**
+   * Change the signed-in user's password. Used by the forced-first-login flow
+   * (scoped token) and by self-service rotations from the profile page.
+   */
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await api.post('/auth/change-password', data);
+  },
+
+  /**
+   * Self-service PIN change from the profile page (requires the current password).
+   */
+  changePin: async (data: { currentPassword: string; newPin: string }): Promise<void> => {
+    await api.post('/users/me/pin', data);
+  },
+
+  /**
+   * Self-service profile update (own name/phone).
+   */
+  updateMyProfile: async (data: { firstName: string; lastName: string; phone?: string }): Promise<void> => {
+    await api.put('/users/me', data);
   },
 };
