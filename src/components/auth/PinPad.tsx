@@ -16,8 +16,6 @@ export function PinPad() {
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const DEFAULT_TENANT_ID = "a0000000-0000-0000-0000-000000000001";
-
   const handleNumberClick = (num: number) => {
     if (pin.length < 4) {
       setPin(prev => prev + num);
@@ -36,10 +34,7 @@ export function PinPad() {
 
     setIsLoading(true);
     try {
-      const response = await authService.pinLogin({
-        pin,
-        tenantId: DEFAULT_TENANT_ID
-      });
+      const response = await authService.pinLogin({ pin });
 
       if (response.passwordChangeRequired) {
         setPendingPasswordChange(response.user, response.accessToken);
@@ -50,6 +45,7 @@ export function PinPad() {
 
       setAuth(response.user, response.accessToken, response.refreshToken);
       toast.success("Login successful!");
+      // PIN login is the at-the-register login: go straight to the POS terminal.
       router.push('/terminal');
     } catch (error: unknown) {
       toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Invalid PIN");
