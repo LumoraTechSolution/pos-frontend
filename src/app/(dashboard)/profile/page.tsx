@@ -224,10 +224,10 @@ function ChangePinCard({ hasPin, onSaved }: { hasPin: boolean; onSaved: () => vo
       <CardTitle
         icon={<KeyRound size={18} />}
         title={hasPin ? "Change PIN" : "Set PIN"}
-        subtitle="Your 4-digit PIN is used for quick terminal login and manager approvals."
+        subtitle="Your 4-digit PIN is used for quick terminal login and manager approvals. Confirm with your account password — not your PIN."
       />
       <div className="space-y-3 mt-4">
-        <Input type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+        <Input type="password" placeholder="Account password (not your PIN)" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
         <Input
           type="password"
           inputMode="numeric"

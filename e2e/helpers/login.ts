@@ -1,19 +1,20 @@
 import type { Page } from "@playwright/test";
 import { TEST_USER, TERMINAL_USER } from "../fixtures/test-credentials";
 
-type Credentials = { domain: string; email: string; password: string };
+type Credentials = { email: string; password: string };
 
 /**
  * Fills and submits the staff email/password form on /login with the given
  * credentials. Resolves once we've navigated away from /login. Does NOT assert a
  * particular destination — the post-login route depends on the user's roles
  * (CASHIER-only → /terminal, everyone else → /overview).
+ *
+ * One business per deployment, so there is no workspace/slug field — the backend
+ * resolves the tenant from the email itself.
  */
 export async function login(page: Page, creds: Credentials) {
   await page.goto("/login");
 
-  // Workspace slug is pre-filled with "DEMO"; clear and retype to be explicit.
-  await page.getByLabel(/workspace slug/i).fill(creds.domain);
   await page.getByLabel(/^email$/i).fill(creds.email);
   await page.getByLabel(/^password$/i).fill(creds.password);
   await page.getByRole("button", { name: /sign in/i }).click();

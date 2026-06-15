@@ -53,12 +53,10 @@ export interface ChangePasswordRequest {
 export interface LoginRequest {
   email: string;
   password?: string;
-  tenantId: string;
 }
 
 export interface PinLoginRequest {
   pin: string;
-  tenantId: string;
 }
 
 export interface RefreshTokenRequest {

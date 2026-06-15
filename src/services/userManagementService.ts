@@ -51,6 +51,19 @@ export interface UpdateBranchesRequest {
   primaryBranchId?: string;
 }
 
+/** A user caught up in a shared-PIN collision. The PIN value is never returned. */
+export interface PinConflictUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  branches: BranchSummary[];
+}
+
+/** A set of users that share the same PIN — they must be given distinct PINs. */
+export interface PinConflictGroup {
+  users: PinConflictUser[];
+}
+
 export const userManagementService = {
   getAll: () =>
     api.get<ApiResponse<UserResponse[]>>("/users").then((r) => r.data.data),
@@ -83,4 +96,8 @@ export const userManagementService = {
   /** ADMIN resets a user's password. The user must change it on next login. */
   resetPassword: (id: string, newPassword: string) =>
     api.post<ApiResponse<void>>(`/users/${id}/reset-password`, { newPassword }).then((r) => r.data.data),
+
+  /** Reports staff who share a PIN (pre-existing collisions). On-demand; heavy. ADMIN/MANAGER. */
+  findPinConflicts: () =>
+    api.get<ApiResponse<PinConflictGroup[]>>("/users/pin-conflicts").then((r) => r.data.data),
 };

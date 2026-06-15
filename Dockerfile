@@ -12,6 +12,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# NEXT_PUBLIC_* is inlined into the client bundle at build time; BACKEND_URL is
+# read by next.config rewrites() (frozen into the standalone server at build).
+# Set both here so a same-origin deploy (empty NEXT_PUBLIC_API_URL + a rewrite
+# target) bakes correctly. Empty/unset = direct cross-origin calls (legacy dev).
+ARG NEXT_PUBLIC_API_URL
+ARG BACKEND_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV BACKEND_URL=$BACKEND_URL
+
 RUN npm run build
 
 # Stage 3: Runner

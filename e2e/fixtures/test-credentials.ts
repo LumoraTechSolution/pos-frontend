@@ -6,7 +6,6 @@
  * tenant so accidental writes don't pollute shared dev data.
  */
 export const TEST_USER = {
-  domain: process.env.E2E_DOMAIN ?? "DEMO",
   email: process.env.E2E_EMAIL ?? "cashier@demo.lumora.com",
   password: process.env.E2E_PASSWORD ?? "Cashier123!",
 };
@@ -18,7 +17,6 @@ export const TEST_USER = {
  * Override via env for CI or a real cashier-only run.
  */
 export const TERMINAL_USER = {
-  domain: process.env.E2E_TERMINAL_DOMAIN ?? process.env.E2E_DOMAIN ?? "DEMO",
   email: process.env.E2E_TERMINAL_EMAIL ?? "admin@demo.lumora.com",
   password: process.env.E2E_TERMINAL_PASSWORD ?? "admin123",
 };

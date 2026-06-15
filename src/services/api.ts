@@ -23,6 +23,22 @@ const api = axios.create({
   },
 });
 
+/**
+ * The shop subdomain from the current host, e.g. "shopa" from
+ * shopa.localhost:3000 or shopa.yourpos.com. Returns null for bare hosts
+ * (localhost, www, apex domains). Used as X-Tenant-Domain so the backend can
+ * resolve the tenant for PIN login in shared-DB (multi-tenant) deployments;
+ * single-tenant deployments ignore it.
+ */
+const tenantSubdomain = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const labels = window.location.hostname.split('.');
+  if (labels.length < 2) return null; // bare "localhost" — no subdomain
+  const first = labels[0];
+  if (!first || first === 'www') return null;
+  return first;
+};
+
 // Request interceptor — attach JWT and tenant ID
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
@@ -34,6 +50,11 @@ api.interceptors.request.use(
 
     if (user?.tenantId) {
       config.headers['X-Tenant-ID'] = user.tenantId;
+    }
+
+    const subdomain = tenantSubdomain();
+    if (subdomain) {
+      config.headers['X-Tenant-Domain'] = subdomain;
     }
 
     return config;

@@ -3,19 +3,11 @@ import { API_URL, TEST_USER } from "../fixtures/test-credentials";
 
 const V1 = `${API_URL}/api/v1`;
 
-async function resolveTenantId(request: APIRequestContext, domain: string): Promise<string> {
-  const res = await request.get(`${V1}/public/tenants/resolve`, { params: { domain } });
-  const body = await res.json();
-  if (!res.ok() || !body?.success) {
-    throw new Error(`Tenant resolve failed for "${domain}": ${body?.message ?? res.status()}`);
-  }
-  return body.data.tenantId;
-}
-
 async function loginToken(request: APIRequestContext): Promise<string> {
-  const tenantId = await resolveTenantId(request, TEST_USER.domain);
+  // One business per deployment: login takes only email + password; the backend
+  // resolves the tenant from the user.
   const res = await request.post(`${V1}/auth/login`, {
-    data: { email: TEST_USER.email, password: TEST_USER.password, tenantId },
+    data: { email: TEST_USER.email, password: TEST_USER.password },
   });
   const body = await res.json();
   if (!res.ok() || !body?.success) {

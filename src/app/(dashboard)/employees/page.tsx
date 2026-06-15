@@ -25,6 +25,7 @@ import {
   Building2,
   Star,
   KeyRound,
+  ShieldAlert,
 } from "lucide-react";
 import { branchService } from "@/services/branchService";
 import { Button } from "@/components/ui/button";
@@ -593,6 +594,98 @@ function ResetPasswordModal({
   );
 }
 
+// ─── PIN Conflicts Modal ───────────────────────────────────────────────────────
+// On-demand report of staff who share a PIN. The lookup brute-forces the 4-digit
+// space server-side, so it's only fetched when the modal opens (never on page load).
+function PinConflictsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { data, isFetching, isError, refetch } = useQuery({
+    queryKey: ["pin-conflicts"],
+    queryFn: userManagementService.findPinConflicts,
+    enabled: open,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="bg-background border border-border rounded-2xl p-8 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-500/20">
+            <ShieldAlert size={20} className="text-amber-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">PIN Conflicts</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Staff who share a quick-login PIN. Each PIN must belong to one person.
+            </p>
+          </div>
+        </div>
+
+        <div className="min-h-[8rem]">
+          {isFetching ? (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2">
+              <Loader2 size={20} className="animate-spin" />
+              <span className="text-sm">Scanning PINs… this can take a moment.</span>
+            </div>
+          ) : isError ? (
+            <div className="text-center py-10 space-y-3">
+              <p className="text-sm text-destructive">Could not load PIN conflicts.</p>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>Try again</Button>
+            </div>
+          ) : (data?.length ?? 0) === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center gap-2">
+              <CheckCircle2 size={28} className="text-success" />
+              <p className="text-sm font-medium text-foreground">No PIN conflicts</p>
+              <p className="text-xs text-muted-foreground">Every staff PIN is unique.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-72 overflow-y-auto custom-scrollbar">
+              <p className="text-xs text-warning bg-warning/10 border border-warning/20 rounded-lg px-3 py-2">
+                {data!.length} PIN{data!.length === 1 ? "" : "s"} {data!.length === 1 ? "is" : "are"} shared.
+                Open <span className="font-semibold">Edit</span> on the affected staff and give each a distinct PIN.
+              </p>
+              {data!.map((group, i) => (
+                <div key={i} className="border border-border rounded-xl p-3 bg-card">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">
+                    Shared PIN — {group.users.length} users
+                  </div>
+                  <div className="space-y-1.5">
+                    {group.users.map((u) => (
+                      <div key={u.id} className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-foreground">
+                          {u.firstName} {u.lastName}
+                        </span>
+                        <span className="flex flex-wrap gap-1 justify-end">
+                          {u.branches.length > 0 ? (
+                            u.branches.map((b) => (
+                              <span key={b.id} className="text-[10px] text-muted-foreground border border-border bg-muted/40 rounded-full px-2 py-0.5">
+                                {b.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">No branch</span>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end mt-8">
+          <Button variant="outline" className="border-border" onClick={onClose}>Close</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function EmployeesPage() {
   const router = useRouter();
@@ -605,6 +698,7 @@ export default function EmployeesPage() {
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [managingBranches, setManagingBranches] = useState<UserResponse | null>(null);
   const [resettingUser, setResettingUser] = useState<UserResponse | null>(null);
+  const [showPinConflicts, setShowPinConflicts] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const canManage = !!currentUser?.roles?.includes("ADMIN");
@@ -695,6 +789,11 @@ export default function EmployeesPage() {
                 <Clock size={16} className="text-primary" /> View Timesheets
               </Button>
             </FeatureGuard>
+          )}
+          {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
+            <Button onClick={() => setShowPinConflicts(true)} variant="outline" className="border-border bg-card hover:bg-muted hover:text-foreground text-foreground gap-2 h-10 shadow-sm">
+              <ShieldAlert size={16} className="text-amber-500" /> Check PIN Conflicts
+            </Button>
           )}
           {(currentUser?.roles?.includes('ADMIN')) && (
             <div className="flex flex-col items-end gap-1">
@@ -980,6 +1079,7 @@ export default function EmployeesPage() {
 
       {/* Modals */}
       <CreateUserModal open={showCreate} onClose={() => setShowCreate(false)} />
+      <PinConflictsModal open={showPinConflicts} onClose={() => setShowPinConflicts(false)} />
       <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} />
       <ResetPasswordModal user={resettingUser} onClose={() => setResettingUser(null)} />
       {branchRestrictions && (
