@@ -50,6 +50,21 @@ const ROLE_COLORS: Record<string, string> = {
 
 const ALL_ROLES = ["ADMIN", "MANAGER", "CASHIER", "INVENTORY_MANAGER"];
 
+// Pulls a human-readable message out of an Axios error. The backend returns
+// field-level validation messages in `data.errors` ({ field: message }) but a
+// generic `data.message` of "Validation failed" — so prefer the per-field
+// messages and only fall back to the generic message when there are none.
+function extractApiError(error: unknown, fallback: string): string {
+  const data = (error as { response?: { data?: { message?: string; errors?: Record<string, string> } } })
+    ?.response?.data;
+  const fieldErrors = data?.errors;
+  if (fieldErrors && typeof fieldErrors === "object") {
+    const joined = Object.values(fieldErrors).filter(Boolean).join(" • ");
+    if (joined) return joined;
+  }
+  return data?.message ?? fallback;
+}
+
 const USER_CSV_COLUMNS: CsvColumn<UserResponse>[] = [
   { header: "First Name", value: (u) => u.firstName },
   { header: "Last Name", value: (u) => u.lastName },
@@ -170,7 +185,7 @@ function CreateUserModal({
 
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20">
-              {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to create user."}
+              {extractApiError(error, "Failed to create user.")}
             </p>
           )}
         </div>
@@ -179,8 +194,23 @@ function CreateUserModal({
           <Button
             className="flex-1 bg-primary hover:bg-primary"
             onClick={() => {
+              // Mirror the backend's validation rules client-side so the user gets a
+              // clear, specific message instead of a generic "Validation failed".
+              const email = form.email.trim();
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                toast.error("Enter a valid email address");
+                return;
+              }
+              if (form.password.length < 8) {
+                toast.error("Password must be at least 8 characters");
+                return;
+              }
+              if (form.roleNames.length === 0) {
+                toast.error("Assign at least one role");
+                return;
+              }
               const pin = (form.pin ?? "").trim();
-              if (pin && pin.length !== 4) {
+              if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
                 toast.error("PIN must be exactly 4 digits");
                 return;
               }
@@ -189,7 +219,7 @@ function CreateUserModal({
               const payload: CreateUserRequest = {
                 firstName: form.firstName.trim(),
                 lastName: form.lastName.trim(),
-                email: form.email.trim(),
+                email,
                 password: form.password,
                 roleNames: form.roleNames,
               };
@@ -323,7 +353,7 @@ function EditUserModal({
 
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg border border-destructive/20">
-              {(error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to update user."}
+              {extractApiError(error, "Failed to update user.")}
             </p>
           )}
         </div>
