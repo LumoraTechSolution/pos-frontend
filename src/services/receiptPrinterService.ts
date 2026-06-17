@@ -29,11 +29,19 @@ export interface ReceiptData {
   /** e.g. "VAT 15%" — rendered inside the Tax line parentheses when provided. */
   taxLabel?: string;
   discount: number;
+  /** Post-tax bill reduction from redeemed loyalty points (0/undefined when none). */
+  loyaltyDiscount?: number;
   total: number;
   paymentMethod: string;
   tendered: number;
   change: number;
   receiptFooter?: string;
+  /** Points earned on this sale (shown in the loyalty footer when a customer is attached). */
+  pointsEarned?: number;
+  /** Points redeemed on this sale. */
+  pointsRedeemed?: number;
+  /** Customer's points balance after this sale. */
+  pointsBalance?: number;
 }
 
 const ITEM_NAME_MAX = 18;
@@ -158,6 +166,9 @@ export const receiptPrinterService = {
             <span>Tax${data.taxLabel ? ` (${escape(data.taxLabel)})` : ''}:</span>
             <span>${money(data.tax)}</span>
           </div>
+          ${data.loyaltyDiscount && data.loyaltyDiscount > 0
+            ? `<div class="row"><span>Points redeemed:</span><span>-${money(data.loyaltyDiscount)}</span></div>`
+            : ''}
 
           <div class="sep"></div>
 
@@ -177,6 +188,14 @@ export const receiptPrinterService = {
           `}
 
           <div class="sep"></div>
+
+          ${(data.pointsEarned ?? 0) > 0 || (data.pointsBalance ?? null) !== null && data.pointsBalance !== undefined
+            ? `<div class="sep"></div>
+               <div class="center">
+                 ${(data.pointsEarned ?? 0) > 0 ? `<div>Points earned: ${data.pointsEarned}</div>` : ''}
+                 ${data.pointsBalance !== undefined ? `<div>Points balance: ${data.pointsBalance}</div>` : ''}
+               </div>`
+            : ''}
 
           <!-- Footer -->
           <div class="footer center">

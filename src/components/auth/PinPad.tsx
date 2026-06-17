@@ -43,7 +43,7 @@ export function PinPad() {
         return;
       }
 
-      setAuth(response.user, response.accessToken, response.refreshToken);
+      setAuth(response.user, response.accessToken, response.refreshToken, 'PIN');
       toast.success("Login successful!");
       // PIN login is the at-the-register login: go straight to the POS terminal.
       router.push('/terminal');

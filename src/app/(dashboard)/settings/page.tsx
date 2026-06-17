@@ -48,7 +48,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, CURRENCY } from "@/lib/utils";
 import { FeatureGuard } from "@/components/auth/FeatureGuard";
 import { QK } from "@/lib/queryKeys";
 
@@ -76,6 +76,11 @@ export default function SettingsPage() {
   const [bizLogoUrl, setBizLogoUrl] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
 
+  // Loyalty settings form state
+  const [loyEnabled, setLoyEnabled] = useState(true);
+  const [loySpend, setLoySpend] = useState("10");
+  const [loyValue, setLoyValue] = useState("0.10");
+
   const { data: tenantInfo, isLoading: tenantLoading } = useQuery({
     queryKey: QK.tenantInfo,
     queryFn: () => tenantService.getInfo(),
@@ -89,6 +94,9 @@ export default function SettingsPage() {
       setBizPhone(tenantInfo.phone ?? "");
       setBizReceiptFooter(tenantInfo.receiptFooter ?? "");
       setBizLogoUrl(tenantInfo.logoUrl ?? "");
+      setLoyEnabled(tenantInfo.loyaltyEnabled);
+      setLoySpend(String(tenantInfo.loyaltySpendPerPoint ?? 10));
+      setLoyValue(String(tenantInfo.loyaltyPointValue ?? 0.1));
     }
   }, [tenantInfo]);
 
@@ -117,6 +125,40 @@ export default function SettingsPage() {
       logoUrl: bizLogoUrl || null,
     });
   };
+
+  const handleSaveLoyalty = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantInfo) return;
+    const spend = Number(loySpend);
+    const value = Number(loyValue);
+    if (!Number.isFinite(spend) || spend <= 0) {
+      toast.error("Spend-per-point must be greater than 0");
+      return;
+    }
+    if (!Number.isFinite(value) || value < 0) {
+      toast.error("Point value must be 0 or more");
+      return;
+    }
+    // The tenant update is a full replace — carry the current business fields
+    // through so saving loyalty settings doesn't wipe the receipt header info.
+    updateTenantMutation.mutate({
+      name: tenantInfo.name,
+      addressLine1: tenantInfo.addressLine1 ?? null,
+      addressLine2: tenantInfo.addressLine2 ?? null,
+      phone: tenantInfo.phone ?? null,
+      logoUrl: tenantInfo.logoUrl ?? null,
+      receiptFooter: tenantInfo.receiptFooter ?? null,
+      loyaltyEnabled: loyEnabled,
+      loyaltySpendPerPoint: spend,
+      loyaltyPointValue: value,
+    });
+  };
+
+  const loyDirty =
+    !!tenantInfo &&
+    (loyEnabled !== tenantInfo.loyaltyEnabled ||
+      Number(loySpend) !== tenantInfo.loyaltySpendPerPoint ||
+      Number(loyValue) !== tenantInfo.loyaltyPointValue);
 
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -265,6 +307,9 @@ export default function SettingsPage() {
           </TabsTrigger>
           <TabsTrigger value="tax" className="lg:w-full lg:justify-start gap-2">
             <Percent size={14} /> Tax
+          </TabsTrigger>
+          <TabsTrigger value="loyalty" className="lg:w-full lg:justify-start gap-2">
+            <Star size={14} /> Loyalty
           </TabsTrigger>
           <TabsTrigger value="receipt" className="lg:w-full lg:justify-start gap-2">
             <ReceiptIcon size={14} /> Receipt
@@ -721,6 +766,106 @@ export default function SettingsPage() {
           </Card>
         </div>
       </FeatureGuard>
+        </TabsContent>
+
+        <TabsContent value="loyalty" className="space-y-4 mt-0">
+          <div className="flex items-center gap-2">
+            <Star className="text-primary" size={20} />
+            <h2 className="text-xl font-semibold text-foreground">Loyalty Program</h2>
+            {!isAdmin && (
+              <Badge variant="outline" className="bg-muted text-muted-foreground border-border ml-2">
+                Read-only
+              </Badge>
+            )}
+          </div>
+
+          <Card className="bg-background border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold text-foreground">Points & redemption</CardTitle>
+              <CardDescription>
+                Reward customers with points as they spend, and let them redeem points for money off
+                future purchases at the register.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {tenantLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground py-4">
+                  <Loader2 className="animate-spin" size={18} /> Loading loyalty settings...
+                </div>
+              ) : (
+                <form onSubmit={handleSaveLoyalty} className="space-y-5 max-w-2xl">
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-0.5">
+                      <label className="text-sm font-medium text-foreground">Enable loyalty program</label>
+                      <p className="text-xs text-muted-foreground">
+                        When off, no points are earned or redeemable at checkout.
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="w-5 h-5 accent-primary rounded"
+                      checked={loyEnabled}
+                      onChange={(e) => setLoyEnabled(e.target.checked)}
+                      disabled={!isAdmin}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Earn rate</label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={loySpend}
+                          onChange={(e) => setLoySpend(e.target.value)}
+                          className="bg-card border-border"
+                          disabled={!isAdmin || !loyEnabled}
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Spend per point. e.g. <strong>{loySpend || "10"}</strong> means 1 point for every{" "}
+                        {CURRENCY.symbol}
+                        {loySpend || "10"} spent.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Point value</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={loyValue}
+                        onChange={(e) => setLoyValue(e.target.value)}
+                        className="bg-card border-border"
+                        disabled={!isAdmin || !loyEnabled}
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Cash value of 1 point when redeemed. e.g. <strong>{loyValue || "0.10"}</strong> means 100
+                        points = {CURRENCY.symbol}
+                        {(Number(loyValue || "0.10") * 100).toFixed(2)} off.
+                      </p>
+                    </div>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        type="submit"
+                        disabled={!loyDirty || updateTenantMutation.isPending}
+                        className="bg-primary hover:bg-primary/90 min-w-[140px]"
+                      >
+                        {updateTenantMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                      </Button>
+                    </div>
+                  )}
+                </form>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="receipt" className="space-y-4 mt-0">

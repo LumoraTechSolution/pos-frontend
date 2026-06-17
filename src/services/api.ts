@@ -101,7 +101,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const { refreshToken, setAuth, user } = useAuthStore.getState();
+      const { refreshToken, setAuth, user, loginMethod } = useAuthStore.getState();
 
       if (!refreshToken || !user) {
         isRefreshing = false;
@@ -118,8 +118,9 @@ api.interceptors.response.use(
         });
         const data = response.data.data;
 
-        // Backend returns `accessToken`, not `token`.
-        setAuth(data.user, data.accessToken, data.refreshToken);
+        // Backend returns `accessToken`, not `token`. Preserve the original login
+        // method across silent refresh so a PIN session stays a PIN session.
+        setAuth(data.user, data.accessToken, data.refreshToken, loginMethod ?? 'PASSWORD');
         processQueue(null, data.accessToken);
 
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;

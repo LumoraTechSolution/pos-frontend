@@ -63,7 +63,7 @@ export function LoginForm() {
         return;
       }
 
-      setAuth(response.user, response.accessToken, response.refreshToken);
+      setAuth(response.user, response.accessToken, response.refreshToken, 'PASSWORD');
 
       toast.success("Welcome back!");
 

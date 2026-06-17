@@ -18,6 +18,9 @@ export interface SaleRequest {
   /** Cash amount tendered. Required for SPLIT; backend auto-fills netAmount for
    *  pure CASH sales when omitted; ignored for CARD/ONLINE. */
   cashTendered?: number;
+  /** Loyalty points to redeem on this sale (requires customerId). Backend caps it
+   *  to the balance and the bill and recomputes the discount. Omit / 0 = none. */
+  pointsToRedeem?: number;
   items: SaleItemRequest[];
 }
 
@@ -51,6 +54,10 @@ export interface SaleResponse {
   customerName?: string;
   earnedPoints?: number;
   loyaltyBalance?: number;
+  /** Points the customer spent on this sale (0 when none). */
+  pointsRedeemed?: number;
+  /** Bill reduction the redeemed points bought (post-tax). */
+  loyaltyDiscountAmount?: number;
   items: SaleItemResponse[];
 }
 

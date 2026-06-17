@@ -65,9 +65,11 @@ export default function TerminalPage() {
   const [logoutWarnOpen, setLogoutWarnOpen] = useState(false);
   // Drives the "Fix stock" recovery action on checkout-time OOS errors.
   const [stockFixProduct, setStockFixProduct] = useState<Product | null>(null);
+  // Loyalty points the cashier has chosen to redeem on the current sale.
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
   // Auth & Navigation
-  const { user } = useAuthStore();
+  const { user, loginMethod } = useAuthStore();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { confirm, dialog: confirmDialog } = useConfirmDialog();
@@ -188,6 +190,12 @@ export default function TerminalPage() {
   const [gridIndex, setGridIndex] = useState(0);
   const [cartIndex, setCartIndex] = useState(0);
 
+  // Reset any pending point redemption when the attached customer changes (or is
+  // cleared) — points belong to a specific customer.
+  useEffect(() => {
+    setPointsToRedeem(0);
+  }, [selectedCustomer?.id]);
+
   useEffect(() => {
     setGridIndex((i) => Math.min(i, Math.max(0, filteredProducts.length - 1)));
   }, [filteredProducts.length]);
@@ -242,6 +250,7 @@ export default function TerminalPage() {
       setLastSale(data);
       setSelectedCustomer(null);
       setCashTendered(0);
+      setPointsToRedeem(0);
       clearCart(); // Also clear the cart on success
       
       // Fire Hardare integrations (Cash Drawer Kick + Thermal Receipt)
@@ -266,11 +275,17 @@ export default function TerminalPage() {
         tax: taxAmount,
         taxLabel: taxLabel,
         discount: discountAmount,
-        total: total,
+        // Use the server-computed net (already reduced by any redeemed points) as
+        // the receipt total so cash/change/points lines reconcile.
+        loyaltyDiscount: data.loyaltyDiscountAmount ?? 0,
+        total: data.netAmount,
         paymentMethod: paymentMethod,
-        tendered: cashTendered > 0 ? cashTendered : total,
-        change: cashTendered > total ? cashTendered - total : 0,
+        tendered: cashTendered > 0 ? cashTendered : data.netAmount,
+        change: cashTendered > data.netAmount ? cashTendered - data.netAmount : 0,
         receiptFooter: tenantInfo?.receiptFooter ?? undefined,
+        pointsEarned: data.earnedPoints ?? undefined,
+        pointsRedeemed: data.pointsRedeemed ?? undefined,
+        pointsBalance: data.loyaltyBalance ?? undefined,
       };
       
       receiptPrinterService.processHardwareCheckoutActions(receiptData);
@@ -320,6 +335,7 @@ export default function TerminalPage() {
       cashTendered: (paymentMethod === 'CASH' || paymentMethod === 'SPLIT') && cashTendered > 0
         ? cashTendered
         : undefined,
+      pointsToRedeem: selectedCustomer && pointsToRedeem > 0 ? pointsToRedeem : undefined,
       items: items.map(item => ({
         productId: item.isCustom ? null : item.id,
         itemName: item.isCustom ? item.name : undefined,
@@ -507,7 +523,17 @@ export default function TerminalPage() {
       <div className="dark h-screen flex items-center justify-center bg-background">
         <StartShiftModal
           open
-          onCancel={() => router.push('/overview')}
+          onCancel={() => {
+            // A PIN login is an at-the-register session with no dashboard access —
+            // cancelling the shift must drop back to the login screen, not hand the
+            // user the dashboard. A full email/password login already has a dashboard
+            // session, so cancelling just returns there.
+            if (loginMethod === 'PIN') {
+              void doLogout();
+            } else {
+              router.push('/overview');
+            }
+          }}
         />
       </div>
     );
@@ -643,6 +669,11 @@ export default function TerminalPage() {
         total={total}
         isProcessing={checkoutMutation.isPending}
         onComplete={handleCheckout}
+        loyaltyEnabled={!!tenantInfo?.loyaltyEnabled && !!selectedCustomer}
+        customerPoints={selectedCustomer?.loyaltyPoints ?? 0}
+        pointValue={tenantInfo?.loyaltyPointValue ?? 0}
+        pointsToRedeem={pointsToRedeem}
+        onPointsToRedeemChange={setPointsToRedeem}
       />
 
       <ShortcutsOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />

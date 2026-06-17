@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CreditCard, Banknote, QrCode, SplitSquareHorizontal, Loader2, CheckCircle2 } from 'lucide-react';
+import { CreditCard, Banknote, QrCode, SplitSquareHorizontal, Loader2, CheckCircle2, Star } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,14 @@ interface TenderOverlayProps {
   isProcessing: boolean;
   /** Fire the sale. Parent owns the mutation + closes the overlay on success. */
   onComplete: () => void;
+  /** Loyalty redemption — the control only renders when the program is on and the
+   *  attached customer has points worth redeeming. */
+  loyaltyEnabled?: boolean;
+  customerPoints?: number;
+  /** Cash value of one point (e.g. 0.10). */
+  pointValue?: number;
+  pointsToRedeem?: number;
+  onPointsToRedeemChange?: (points: number) => void;
 }
 
 const PAYMENT_OPTIONS: { method: PaymentMethod; icon: typeof Banknote; label: string }[] = [
@@ -62,8 +70,24 @@ export function TenderOverlay({
   total,
   isProcessing,
   onComplete,
+  loyaltyEnabled = false,
+  customerPoints = 0,
+  pointValue = 0,
+  pointsToRedeem = 0,
+  onPointsToRedeemChange,
 }: TenderOverlayProps) {
   const [cashStr, setCashStr] = useState(cashTendered > 0 ? String(cashTendered) : '');
+
+  // Loyalty redemption. Points are capped to the balance and to what the bill can
+  // absorb (you can't redeem more than the total). The discount is recomputed from
+  // the configured point value; the backend re-validates and is the source of truth.
+  const loyaltyActive = loyaltyEnabled && customerPoints > 0 && pointValue > 0;
+  const maxRedeemablePoints = loyaltyActive
+    ? Math.min(customerPoints, Math.floor(total / pointValue))
+    : 0;
+  const redeemPts = Math.max(0, Math.min(pointsToRedeem, maxRedeemablePoints));
+  const loyaltyDiscount = loyaltyActive ? +(redeemPts * pointValue).toFixed(2) : 0;
+  const amountDue = Math.max(0, +(total - loyaltyDiscount).toFixed(2));
 
   useEffect(() => {
     if (cashTendered === 0) setCashStr('');
@@ -84,9 +108,9 @@ export function TenderOverlay({
   };
 
   const showCashFlow = paymentMethod === 'CASH' || paymentMethod === 'SPLIT';
-  const cashChange = paymentMethod === 'CASH' && cashTendered > total ? cashTendered - total : 0;
+  const cashChange = paymentMethod === 'CASH' && cashTendered > amountDue ? cashTendered - amountDue : 0;
   const cashShort =
-    paymentMethod === 'CASH' && cashTendered > 0 && cashTendered < total ? total - cashTendered : 0;
+    paymentMethod === 'CASH' && cashTendered > 0 && cashTendered < amountDue ? amountDue - cashTendered : 0;
   const completeDisabled = isProcessing || cashShort > 0;
 
   // Keyboard inside the overlay: digits/decimal/backspace edit the cash amount,
@@ -96,13 +120,19 @@ export function TenderOverlay({
     const methods: PaymentMethod[] = ['CASH', 'CARD', 'ONLINE', 'SPLIT'];
     const onKey = (e: KeyboardEvent) => {
       if (typeof e.key !== 'string') return;
+      // Don't hijack keystrokes while the user is typing in a field (e.g. the
+      // redeem-points box) — otherwise the cash-amount handler swallows the digits.
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
         e.preventDefault();
         const i = methods.indexOf(paymentMethod);
         onPaymentMethodChange(methods[(i + (e.key === 'ArrowRight' ? 1 : 3)) % 4]);
         return;
       }
-      if (e.key === 'F10') { e.preventDefault(); if (total > 0) setTender(total); return; }
+      if (e.key === 'F10') { e.preventDefault(); if (amountDue > 0) setTender(amountDue); return; }
       if (e.key === 'Enter') { e.preventDefault(); if (!completeDisabled) onComplete(); return; }
       if (!showCashFlow) return;
       if (/^[0-9]$/.test(e.key)) { e.preventDefault(); appendDigit(e.key); return; }
@@ -112,7 +142,7 @@ export function TenderOverlay({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, paymentMethod, showCashFlow, completeDisabled, cashStr, total]);
+  }, [open, paymentMethod, showCashFlow, completeDisabled, cashStr, amountDue]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -125,7 +155,7 @@ export function TenderOverlay({
             </DialogDescription>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold">Amount due</div>
-              <div className="text-3xl font-black text-primary tabular-nums">{CURRENCY.symbol} {total.toFixed(2)}</div>
+              <div className="text-3xl font-black text-primary tabular-nums">{CURRENCY.symbol} {amountDue.toFixed(2)}</div>
             </div>
           </div>
         </DialogHeader>
@@ -155,6 +185,56 @@ export function TenderOverlay({
             })}
           </div>
 
+          {loyaltyActive && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  <Star size={16} className="text-primary" aria-hidden="true" />
+                  <span className="font-semibold text-foreground">Redeem points</span>
+                  <span className="text-muted-foreground">({customerPoints} available)</span>
+                </div>
+                {redeemPts > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onPointsToRedeemChange?.(0)}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={maxRedeemablePoints}
+                  value={redeemPts || ''}
+                  onChange={(e) =>
+                    onPointsToRedeemChange?.(
+                      Math.max(0, Math.min(maxRedeemablePoints, parseInt(e.target.value, 10) || 0))
+                    )
+                  }
+                  placeholder="0"
+                  className="w-24 rounded-md bg-background border border-border px-2 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPointsToRedeemChange?.(maxRedeemablePoints)}
+                  disabled={maxRedeemablePoints === 0}
+                >
+                  Max ({maxRedeemablePoints})
+                </Button>
+                {loyaltyDiscount > 0 && (
+                  <span className="ml-auto text-sm font-bold text-success tabular-nums">
+                    - {CURRENCY.symbol} {loyaltyDiscount.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {showCashFlow ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-3">
@@ -171,7 +251,7 @@ export function TenderOverlay({
                   <div className="flex items-baseline justify-between text-sm border-t border-border pt-2">
                     <span className="text-muted-foreground">Remaining (card / other)</span>
                     <span className="font-semibold text-foreground tabular-nums">
-                      {CURRENCY.symbol} {Math.max(0, total - cashTendered).toFixed(2)}
+                      {CURRENCY.symbol} {Math.max(0, amountDue - cashTendered).toFixed(2)}
                     </span>
                   </div>
                 )}
@@ -192,7 +272,7 @@ export function TenderOverlay({
             </div>
           ) : (
             <div className="rounded-xl border border-border bg-background/40 p-4 text-sm text-muted-foreground">
-              Collect <span className="font-semibold text-foreground">{CURRENCY.symbol} {total.toFixed(2)}</span>{' '}
+              Collect <span className="font-semibold text-foreground">{CURRENCY.symbol} {amountDue.toFixed(2)}</span>{' '}
               via {paymentMethod === 'CARD' ? 'card terminal' : 'online / QR'} and confirm payment received,
               then complete the sale.
             </div>
@@ -213,6 +293,12 @@ export function TenderOverlay({
               <span className="text-muted-foreground">{taxLabel}</span>
               <span className="text-foreground/90 font-medium tabular-nums">{CURRENCY.symbol} {taxAmount.toFixed(2)}</span>
             </div>
+            {loyaltyDiscount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-primary">Points redeemed ({redeemPts})</span>
+                <span className="text-primary font-medium tabular-nums">- {CURRENCY.symbol} {loyaltyDiscount.toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">
@@ -222,7 +308,7 @@ export function TenderOverlay({
             <Button
               onClick={onComplete}
               disabled={completeDisabled}
-              aria-label={`Complete sale, total ${CURRENCY.symbol} ${total.toFixed(2)}`}
+              aria-label={`Complete sale, total ${CURRENCY.symbol} ${amountDue.toFixed(2)}`}
               className="flex-1 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-2xl shadow-xl shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {isProcessing ? (
