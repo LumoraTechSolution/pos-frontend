@@ -5,6 +5,12 @@ import { bindSentryUser, clearSentryUser } from '@/lib/sentry';
 
 export type { User };
 
+/** How the current session was authenticated. PIN is the at-the-register quick
+ *  login (lands straight on the POS terminal); PASSWORD is the full management
+ *  login (lands on the dashboard). Drives where the terminal sends a user who
+ *  cancels the Start-Shift prompt. */
+export type LoginMethod = 'PIN' | 'PASSWORD';
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -14,9 +20,11 @@ interface AuthState {
    *  entering the app. While true, `token` is a change-password-scoped token and
    *  `isAuthenticated` is false. */
   passwordChangeRequired: boolean;
+  /** How this session was authenticated (PIN vs email/password). Null when signed out. */
+  loginMethod: LoginMethod | null;
 
   // Actions
-  setAuth: (user: User, token: string, refreshToken: string) => void;
+  setAuth: (user: User, token: string, refreshToken: string, loginMethod?: LoginMethod) => void;
   /** Stash the change-password-scoped token + identity for the forced-change flow. */
   setPendingPasswordChange: (user: User, token: string) => void;
   logout: () => void;
@@ -33,9 +41,10 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       passwordChangeRequired: false,
+      loginMethod: null,
 
-      setAuth: (user: User, token: string, refreshToken: string) => {
-        set({ user, token, refreshToken, isAuthenticated: true, passwordChangeRequired: false });
+      setAuth: (user: User, token: string, refreshToken: string, loginMethod: LoginMethod = 'PASSWORD') => {
+        set({ user, token, refreshToken, isAuthenticated: true, passwordChangeRequired: false, loginMethod });
         bindSentryUser(user);
       },
 
@@ -44,7 +53,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        set({ user: null, token: null, refreshToken: null, isAuthenticated: false, passwordChangeRequired: false });
+        set({ user: null, token: null, refreshToken: null, isAuthenticated: false, passwordChangeRequired: false, loginMethod: null });
         clearSentryUser();
       },
 
@@ -78,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         passwordChangeRequired: state.passwordChangeRequired,
+        loginMethod: state.loginMethod,
       }),
     }
   )

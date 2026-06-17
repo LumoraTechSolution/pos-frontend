@@ -114,6 +114,12 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
           <span>Tax{taxLabel ? ` (${taxLabel})` : ''}:</span>
           <span>{fmt(sale.taxAmount)}</span>
         </p>
+        {(sale.loyaltyDiscountAmount ?? 0) > 0 && (
+          <p className="flex justify-between">
+            <span>Points redeemed:</span>
+            <span>- {fmt(sale.loyaltyDiscountAmount ?? 0)}</span>
+          </p>
+        )}
       </div>
 
       <div className="border-t border-dashed border-black my-2" />
@@ -139,6 +145,16 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
           <span>Paid:</span>
           <span>{sale.paymentMethod}</span>
         </p>
+      )}
+
+      {(sale.customerName && ((sale.earnedPoints ?? 0) > 0 || sale.loyaltyBalance != null)) && (
+        <>
+          <div className="border-t border-dashed border-black my-2" />
+          <div className="text-center">
+            {(sale.earnedPoints ?? 0) > 0 && <p>Points earned: {sale.earnedPoints}</p>}
+            {sale.loyaltyBalance != null && <p>Points balance: {sale.loyaltyBalance}</p>}
+          </div>
+        </>
       )}
 
       <div className="border-t border-dashed border-black my-2" />

@@ -8,6 +8,12 @@ export interface TenantInfo {
   phone?: string | null;
   logoUrl?: string | null;
   receiptFooter?: string | null;
+  /** Loyalty program settings (always present — server fills defaults). */
+  loyaltyEnabled: boolean;
+  /** Currency spent to earn 1 point (e.g. 10 → 1 pt per LKR 10). */
+  loyaltySpendPerPoint: number;
+  /** Cash value of 1 point when redeemed (e.g. 0.10 → 100 pts = LKR 10). */
+  loyaltyPointValue: number;
 }
 
 export interface TenantInfoUpdateRequest {
@@ -17,6 +23,10 @@ export interface TenantInfoUpdateRequest {
   phone?: string | null;
   logoUrl?: string | null;
   receiptFooter?: string | null;
+  /** Omit to leave loyalty settings unchanged. */
+  loyaltyEnabled?: boolean;
+  loyaltySpendPerPoint?: number;
+  loyaltyPointValue?: number;
 }
 
 export const tenantService = {

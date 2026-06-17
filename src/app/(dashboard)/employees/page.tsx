@@ -176,7 +176,30 @@ function CreateUserModal({
         </div>
         <div className="flex gap-3 mt-8">
           <Button variant="outline" className="flex-1 border-border" onClick={onClose} disabled={isPending}>Cancel</Button>
-          <Button className="flex-1 bg-primary hover:bg-primary" onClick={() => mutate(form)} disabled={isPending || !form.firstName || !form.email || !form.password}>
+          <Button
+            className="flex-1 bg-primary hover:bg-primary"
+            onClick={() => {
+              const pin = (form.pin ?? "").trim();
+              if (pin && pin.length !== 4) {
+                toast.error("PIN must be exactly 4 digits");
+                return;
+              }
+              // Only send optional fields when filled — an empty PIN string fails
+              // the backend's exactly-4-digits rule and blocks the whole create.
+              const payload: CreateUserRequest = {
+                firstName: form.firstName.trim(),
+                lastName: form.lastName.trim(),
+                email: form.email.trim(),
+                password: form.password,
+                roleNames: form.roleNames,
+              };
+              if (pin) payload.pin = pin;
+              const phone = (form.phone ?? "").trim();
+              if (phone) payload.phone = phone;
+              mutate(payload);
+            }}
+            disabled={isPending || !form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.password}
+          >
             {isPending ? <Loader2 size={16} className="mr-2 animate-spin" /> : <UserPlus size={16} className="mr-2" />}
             Create Employee
           </Button>
@@ -200,7 +223,6 @@ function EditUserModal({
     lastName: user?.lastName ?? "",
     phone: user?.phone ?? "",
     roleNames: user?.roles ?? [],
-    pin: "",
   });
 
   // Hydrate form when user changes
@@ -211,7 +233,6 @@ function EditUserModal({
         lastName: user.lastName,
         phone: user.phone ?? "",
         roleNames: user.roles,
-        pin: "",
       });
     }
   }, [user]);
@@ -274,28 +295,18 @@ function EditUserModal({
             <Input placeholder="+1 234 567 8900" className="bg-card border-border" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
           </div>
 
-          {/* PIN — used for manager approvals (e.g. payment corrections after the
-              cashier self-serve window). Blank leaves the existing PIN untouched. */}
+          {/* PIN status (read-only). For security, a PIN can only be set or changed
+              by the user themselves on the Profile page — never reset from here. */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-muted-foreground block">
-                {user.hasPin ? "Reset PIN (4 digits)" : "Set PIN (4 digits)"}
-              </label>
+              <label className="text-xs text-muted-foreground block">Quick-login PIN</label>
               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${user.hasPin ? "text-success border-success/30 bg-success/10" : "text-warning border-warning/30 bg-warning/10"}`}>
                 {user.hasPin ? "PIN set" : "No PIN"}
               </span>
             </div>
-            <Input
-              type="password"
-              inputMode="numeric"
-              placeholder={user.hasPin ? "Leave blank to keep current PIN" : "••••"}
-              maxLength={4}
-              className="bg-card border-border"
-              value={form.pin ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))}
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Managers need a PIN to approve payment corrections after the 5-minute cashier window.
+            <p className="text-[10px] text-muted-foreground">
+              PINs are managed by each employee from their own Profile page (Set/Change PIN).
+              Admins can&apos;t set or reset another person&apos;s PIN here.
             </p>
           </div>
 
@@ -321,20 +332,14 @@ function EditUserModal({
           <Button
             className="flex-1 bg-violet-600 hover:bg-violet-500"
             onClick={() => {
-              const trimmedPin = (form.pin ?? "").trim();
-              if (trimmedPin && trimmedPin.length !== 4) {
-                toast.error("PIN must be exactly 4 digits");
-                return;
-              }
-              // Omit pin entirely when left blank so the existing PIN is kept.
-              const payload: UpdateUserRequest = {
+              // PIN is deliberately not editable here — it's self-service on the
+              // Profile page only. Send just the profile fields and roles.
+              mutate({
                 firstName: form.firstName,
                 lastName: form.lastName,
                 phone: form.phone,
                 roleNames: form.roleNames,
-              };
-              if (trimmedPin) payload.pin = trimmedPin;
-              mutate(payload);
+              });
             }}
             disabled={isPending}
           >

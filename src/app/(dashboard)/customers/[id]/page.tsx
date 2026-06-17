@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Mail, Phone, MapPin, Star, Calendar, Receipt, ShoppingBag, Loader2 } from 'lucide-react';
 import { customerService } from '@/services/customerService';
 import { salesService, SaleResponse } from '@/services/salesService';
+import { loyaltyService, LoyaltyTransaction } from '@/services/loyaltyService';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +27,7 @@ export default function CustomerProfilePage() {
   const router = useRouter();
   const customerId = params.id as string;
   const [salesPage, setSalesPage] = useState(0);
+  const [loyaltyPage, setLoyaltyPage] = useState(0);
 
   const { data: customer, isLoading: customerLoading } = useQuery({
     queryKey: ['customer', customerId],
@@ -35,6 +38,12 @@ export default function CustomerProfilePage() {
   const { data: salesData, isLoading: salesLoading } = useQuery({
     queryKey: ['customer-sales', customerId, salesPage],
     queryFn: () => salesService.getSalesByCustomer(customerId, salesPage, 10),
+    enabled: !!customerId
+  });
+
+  const { data: loyaltyData, isLoading: loyaltyLoading } = useQuery({
+    queryKey: ['customer-loyalty', customerId, loyaltyPage],
+    queryFn: () => loyaltyService.getLedger(customerId, loyaltyPage, 10),
     enabled: !!customerId
   });
 
@@ -217,19 +226,100 @@ export default function CustomerProfilePage() {
         </TabsContent>
 
         <TabsContent value="loyalty" className="mt-6">
-          <Card className="bg-card border-border shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold text-foreground">Loyalty Mechanics</CardTitle>
+          <Card className="bg-card border-border shadow-xl overflow-hidden">
+            <CardHeader className="bg-muted/40 pb-4">
+              <CardTitle className="text-lg font-bold text-foreground">Loyalty Activity</CardTitle>
+              <CardDescription>
+                Every points earned and redeemed for this customer, newest first. Current balance:{' '}
+                <span className="font-bold text-primary">{customer.loyaltyPoints} pts</span>.
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-muted-foreground flex flex-col items-center justify-center p-12 text-center rounded-xl border border-dashed border-border">
-                <Star size={48} className="text-primary opacity-20 mb-4" />
-                <p className="max-w-md">Detailed loyalty point ledger (earning vs redemption history) will be implemented in a future update.</p>
-                <div className="mt-4 p-4 bg-muted/60 rounded-lg text-sm text-left w-full max-w-sm">
-                  <p className="font-bold flex justify-between mb-2"><span>Current Balance:</span> <span className="text-primary">{customer.loyaltyPoints} pts</span></p>
-                  <p className="font-bold flex justify-between text-muted-foreground"><span>Est. Value:</span> <span>${(customer.loyaltyPoints * 0.1).toFixed(2)}</span></p>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/60">
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest pl-6">Date</TableHead>
+                    <TableHead className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Activity</TableHead>
+                    <TableHead className="text-right text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Points</TableHead>
+                    <TableHead className="text-right text-muted-foreground font-bold uppercase text-[10px] tracking-widest pr-6">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loyaltyLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <Loader2 className="animate-spin text-primary inline-block" size={32} />
+                      </TableCell>
+                    </TableRow>
+                  ) : !loyaltyData || loyaltyData.content.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center text-muted-foreground">
+                        <Star size={48} className="opacity-10 mx-auto mb-2" />
+                        <p className="font-medium">No loyalty activity yet.</p>
+                        <p className="text-xs mt-1">Points appear here once this customer earns or redeems them.</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    loyaltyData.content.map((tx: LoyaltyTransaction) => (
+                      <TableRow key={tx.id} className="border-border hover:bg-foreground/5 transition-colors">
+                        <TableCell className="py-4 pl-6 text-foreground">
+                          {format(new Date(tx.createdAt), 'dd MMM yyyy, HH:mm')}
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded text-[10px] font-bold ${
+                              tx.type === 'EARN'
+                                ? 'bg-success/10 text-success'
+                                : tx.type === 'REDEEM'
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {tx.type}
+                          </span>
+                          {tx.description && (
+                            <span className="text-xs text-muted-foreground ml-2">{tx.description}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className={`text-right font-bold tabular-nums ${tx.points >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {tx.points >= 0 ? '+' : ''}{tx.points}
+                        </TableCell>
+                        <TableCell className="text-right pr-6 font-medium text-foreground tabular-nums">
+                          {tx.balanceAfter}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+
+              {loyaltyData && loyaltyData.totalPages > 1 && (
+                <div className="p-4 border-t border-border flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground font-medium">
+                    Showing {(loyaltyPage * 10) + 1} to {Math.min((loyaltyPage + 1) * 10, loyaltyData.totalElements)} of {loyaltyData.totalElements} entries
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      disabled={loyaltyPage === 0}
+                      onClick={() => setLoyaltyPage(p => p - 1)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-background border-border text-muted-foreground h-8"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      disabled={(loyaltyPage + 1) >= loyaltyData.totalPages}
+                      onClick={() => setLoyaltyPage(p => p + 1)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-background border-border text-muted-foreground h-8"
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

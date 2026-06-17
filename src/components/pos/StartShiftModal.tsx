@@ -141,7 +141,7 @@ export function StartShiftModal({ open, onCancel, onStarted }: StartShiftModalPr
               variant="outline"
               onClick={onCancel}
               disabled={startMutation.isPending}
-              className="border-gray-700 hover:bg-gray-800"
+              className="border-gray-700 bg-transparent text-gray-200 hover:bg-gray-800 hover:text-white"
             >
               Cancel
             </Button>

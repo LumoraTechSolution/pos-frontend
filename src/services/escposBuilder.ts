@@ -102,6 +102,9 @@ export function buildReceiptCommands(data: ReceiptData, opts: EscPosOptions): Pr
   cmds.push(leftRight('Subtotal:', money(data.subtotal), width));
   if (data.discount > 0) cmds.push(leftRight('Discount:', money(data.discount), width));
   cmds.push(leftRight(`Tax${data.taxLabel ? ` (${data.taxLabel})` : ''}:`, money(data.tax), width));
+  if (data.loyaltyDiscount && data.loyaltyDiscount > 0) {
+    cmds.push(leftRight('Points redeemed:', `-${money(data.loyaltyDiscount)}`, width));
+  }
   cmds.push(sep, BOLD_ON, leftRight('TOTAL:', money(data.total), width), BOLD_OFF);
 
   if (method === 'CASH') {
@@ -112,6 +115,14 @@ export function buildReceiptCommands(data: ReceiptData, opts: EscPosOptions): Pr
     cmds.push(leftRight('Card:', money(Math.max(0, data.total - data.tendered)), width));
   } else {
     cmds.push(leftRight('Paid:', data.paymentMethod, width));
+  }
+
+  // ── Loyalty ───────────────────────────────────────────────────────────
+  if ((data.pointsEarned ?? 0) > 0 || data.pointsBalance !== undefined) {
+    cmds.push(sep, ALIGN_CENTER);
+    if ((data.pointsEarned ?? 0) > 0) cmds.push(`Points earned: ${data.pointsEarned}\n`);
+    if (data.pointsBalance !== undefined) cmds.push(`Points balance: ${data.pointsBalance}\n`);
+    cmds.push(ALIGN_LEFT);
   }
 
   // ── Footer ────────────────────────────────────────────────────────────
