@@ -14,6 +14,9 @@ export interface TenantInfo {
   loyaltySpendPerPoint: number;
   /** Cash value of 1 point when redeemed (e.g. 0.10 → 100 pts = LKR 10). */
   loyaltyPointValue: number;
+  /** True if shelf prices are VAT-inclusive (tax extracted for the invoice) vs
+   *  exclusive (tax added at the till). Defaults to inclusive (LK convention). */
+  taxInclusive: boolean;
 }
 
 export interface TenantInfoUpdateRequest {
@@ -27,6 +30,8 @@ export interface TenantInfoUpdateRequest {
   loyaltyEnabled?: boolean;
   loyaltySpendPerPoint?: number;
   loyaltyPointValue?: number;
+  /** Omit to leave the pricing mode unchanged. */
+  taxInclusive?: boolean;
 }
 
 export const tenantService = {

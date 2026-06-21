@@ -9,6 +9,8 @@ interface CartSummaryProps {
   discountAmount?: number;
   taxAmount: number;
   taxLabel?: string;
+  /** When true, tax is shown as included in the total rather than added on top. */
+  taxInclusive?: boolean;
   total: number;
   itemCount: number;
   /** Open the tender overlay. */
@@ -27,6 +29,7 @@ export function CartSummary({
   discountAmount = 0,
   taxAmount,
   taxLabel = 'Tax',
+  taxInclusive = false,
   total,
   itemCount,
   onCharge,
@@ -49,7 +52,7 @@ export function CartSummary({
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{taxLabel}</span>
+          <span className="text-muted-foreground">{taxInclusive ? `Incl. ${taxLabel}` : taxLabel}</span>
           <span className="text-foreground/90 font-medium tabular-nums">{CURRENCY.symbol} {taxAmount.toFixed(2)}</span>
         </div>
         <div className="flex justify-between items-baseline text-2xl font-black pt-2 border-t border-border">

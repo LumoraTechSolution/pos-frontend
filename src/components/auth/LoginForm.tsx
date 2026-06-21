@@ -65,7 +65,7 @@ export function LoginForm() {
 
       setAuth(response.user, response.accessToken, response.refreshToken, 'PASSWORD');
 
-      toast.success("Welcome back!");
+      toast.success(`Welcome ${response.user.firstName}!`);
 
       // Email/password is the management login: land on the dashboard.
       router.push('/overview');

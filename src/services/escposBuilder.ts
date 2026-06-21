@@ -101,11 +101,19 @@ export function buildReceiptCommands(data: ReceiptData, opts: EscPosOptions): Pr
   cmds.push(sep);
   cmds.push(leftRight('Subtotal:', money(data.subtotal), width));
   if (data.discount > 0) cmds.push(leftRight('Discount:', money(data.discount), width));
-  cmds.push(leftRight(`Tax${data.taxLabel ? ` (${data.taxLabel})` : ''}:`, money(data.tax), width));
+  // Inclusive: tax is already inside the prices, broken out below the total.
+  // Exclusive: tax is a separate added line.
+  if (!data.taxInclusive) {
+    cmds.push(leftRight(`Tax${data.taxLabel ? ` (${data.taxLabel})` : ''}:`, money(data.tax), width));
+  }
   if (data.loyaltyDiscount && data.loyaltyDiscount > 0) {
     cmds.push(leftRight('Points redeemed:', `-${money(data.loyaltyDiscount)}`, width));
   }
   cmds.push(sep, BOLD_ON, leftRight('TOTAL:', money(data.total), width), BOLD_OFF);
+  if (data.taxInclusive) {
+    cmds.push(leftRight('Taxable value:', money(data.total - data.tax), width));
+    cmds.push(leftRight(`${data.taxLabel ?? 'VAT'} (incl.):`, money(data.tax), width));
+  }
 
   if (method === 'CASH') {
     cmds.push(leftRight('Cash:', money(data.tendered), width));

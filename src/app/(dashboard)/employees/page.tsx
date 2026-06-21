@@ -812,12 +812,12 @@ export default function EmployeesPage() {
   return (
     <div className="p-8 space-y-6 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Employee Management</h1>
           <p className="text-muted-foreground mt-1">Manage staff accounts, roles, and access permissions.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {(currentUser?.roles?.includes('ADMIN') || currentUser?.roles?.includes('MANAGER')) && (
             <FeatureGuard feature="TIME_CLOCK">
               <Button onClick={() => router.push('/employees/timesheets')} variant="outline" className="border-border bg-card hover:bg-muted hover:text-foreground text-foreground gap-2 h-10 shadow-sm">

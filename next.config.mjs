@@ -15,10 +15,20 @@ const nextConfig = {
   // Security headers (CSP with per-request nonce, X-Frame-Options, etc.) are
   // applied in middleware.ts so they can carry a fresh nonce on every request.
   images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-      { protocol: 'http', hostname: 'localhost' },
-    ],
+    // Product images are admin-supplied URLs, so the optimizer needs a host
+    // allowlist rather than a fixed set. Set IMAGE_REMOTE_HOSTS to a comma-
+    // separated host list (wildcards allowed, e.g. "*.cdn.example.com") to
+    // shrink the optimizer's SSRF/DoS surface in production. Defaults to the
+    // previous open allowlist so existing product images keep loading.
+    remotePatterns: process.env.IMAGE_REMOTE_HOSTS
+      ? process.env.IMAGE_REMOTE_HOSTS.split(',')
+          .map((h) => h.trim())
+          .filter(Boolean)
+          .map((hostname) => ({ protocol: 'https', hostname }))
+      : [
+          { protocol: 'https', hostname: '**' },
+          { protocol: 'http', hostname: 'localhost' },
+        ],
   },
   experimental: {
     // Sentry's server SDK pulls in OpenTelemetry + require-in-the-middle, which

@@ -53,7 +53,13 @@ function stockForBranch(product: Product, branchId?: string): number {
   return product.stockQuantity;
 }
 
-export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?: string) => {
+export const useCart = (
+  taxContext: TaxContext | null = null,
+  selectedBranchId?: string,
+  /** When true, basePrice is VAT-inclusive: tax is extracted from the price
+   *  rather than added on top, and the payable total excludes any added tax. */
+  taxInclusive: boolean = false,
+) => {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = useCallback((product: Product) => {
@@ -179,7 +185,13 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
 
       const lineSubtotal = item.basePrice * item.cartQuantity;
       const taxableBase = Math.max(0, lineSubtotal - item.discountAmount);
-      return { rate, name, amount: taxableBase * rate };
+      // Round each line's tax to 2dp before summing, mirroring the backend
+      // (per line, HALF_UP). Inclusive: extract the VAT already inside the price
+      // (base − base/(1+rate)). Exclusive: add VAT on top (base × rate).
+      const lineTax = taxInclusive
+        ? taxableBase - Math.round((taxableBase / (1 + rate)) * 100) / 100
+        : Math.round(taxableBase * rate * 100) / 100;
+      return { rate, name, amount: lineTax };
     });
 
     const totalAmount = itemTaxes.reduce((sum, t) => sum + t.amount, 0);
@@ -203,11 +215,13 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
     }
 
     return { totalAmount, label };
-  }, [items, taxContext]);
+  }, [items, taxContext, taxInclusive]);
 
   const total = useMemo(
-    () => subtotal - discountAmount + taxInfo.totalAmount,
-    [subtotal, discountAmount, taxInfo.totalAmount]
+    // Inclusive: tax is already inside the prices, so the payable is just
+    // subtotal − discount. Exclusive: add the computed tax on top.
+    () => (taxInclusive ? subtotal - discountAmount : subtotal - discountAmount + taxInfo.totalAmount),
+    [subtotal, discountAmount, taxInfo.totalAmount, taxInclusive]
   );
 
   return {
@@ -222,6 +236,7 @@ export const useCart = (taxContext: TaxContext | null = null, selectedBranchId?:
     discountAmount,
     taxAmount: taxInfo.totalAmount,
     taxLabel: taxInfo.label,
+    taxInclusive,
     total,
     itemCount: items.reduce((sum, item) => sum + item.cartQuantity, 0),
   };

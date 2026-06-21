@@ -27,6 +27,8 @@ interface TenderOverlayProps {
   discountAmount?: number;
   taxAmount: number;
   taxLabel?: string;
+  /** When true, tax is shown as included in the total rather than added on top. */
+  taxInclusive?: boolean;
   total: number;
   isProcessing: boolean;
   /** Fire the sale. Parent owns the mutation + closes the overlay on success. */
@@ -67,6 +69,7 @@ export function TenderOverlay({
   discountAmount = 0,
   taxAmount,
   taxLabel = 'Tax',
+  taxInclusive = false,
   total,
   isProcessing,
   onComplete,
@@ -290,7 +293,7 @@ export function TenderOverlay({
               </div>
             )}
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{taxLabel}</span>
+              <span className="text-muted-foreground">{taxInclusive ? `Incl. ${taxLabel}` : taxLabel}</span>
               <span className="text-foreground/90 font-medium tabular-nums">{CURRENCY.symbol} {taxAmount.toFixed(2)}</span>
             </div>
             {loyaltyDiscount > 0 && (

@@ -9,8 +9,9 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'StoreX',
-  description: 'Enterprise Point of Sale System powerd by Lumora Tech',
+  title: 'Lumora POS',
+  description: 'Enterprise Point of Sale System powered by Lumora Tech',
+  robots: { index: false, follow: false },
 //   manifest: '/manifest.json',
 };
 

@@ -26,6 +26,10 @@ export const CURRENCY = {
   locale: 'en-LK',
 } as const;
 
+/** Store calendar zone — timestamps render in this zone, not the device's, so a
+ *  tablet set to another timezone still prints store-local receipt/report times. */
+export const STORE_TIMEZONE = 'Asia/Colombo';
+
 /** Shorthand: format a number using the app's primary currency */
 export function fc(amount: number): string {
   return formatCurrency(amount, CURRENCY.code);
@@ -54,6 +58,13 @@ export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOpt
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: STORE_TIMEZONE,
   };
-  return new Date(date).toLocaleDateString('en-US', options || defaultOptions);
+  // toLocaleString (not toLocaleDateString, which silently drops the time fields)
+  // so hour/minute actually render, and always pin the store timezone unless the
+  // caller explicitly overrides it.
+  const opts: Intl.DateTimeFormatOptions = options
+    ? { timeZone: STORE_TIMEZONE, ...options }
+    : defaultOptions;
+  return new Date(date).toLocaleString('en-US', opts);
 }
