@@ -272,10 +272,10 @@ export default function ProductsPage() {
   return (
     <div className="p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {confirmDialog}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground flex items-center gap-2">
+          <p className="text-muted-foreground flex flex-wrap items-center gap-2">
             Manage your inventory, pricing, and stock levels.
             <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider ${isLimitReached ? 'bg-warning/10 text-warning border-warning/20' : 'bg-muted text-muted-foreground border-border'}`}>
                {totalElements} / {maxProducts} Products
@@ -286,9 +286,9 @@ export default function ProductsPage() {
             </span>
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button
+            variant="outline"
             className="gap-2 border-border"
             onClick={() => inventoryService.exportProducts()}
           >

@@ -58,6 +58,9 @@ export interface SaleResponse {
   pointsRedeemed?: number;
   /** Bill reduction the redeemed points bought (post-tax). */
   loyaltyDiscountAmount?: number;
+  /** True if prices were VAT-inclusive (taxAmount extracted from netAmount)
+   *  rather than added on top. Drives the receipt's VAT breakdown. */
+  taxInclusive?: boolean;
   items: SaleItemResponse[];
 }
 

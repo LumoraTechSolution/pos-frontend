@@ -31,6 +31,9 @@ export interface ReceiptData {
   discount: number;
   /** Post-tax bill reduction from redeemed loyalty points (0/undefined when none). */
   loyaltyDiscount?: number;
+  /** True if prices are VAT-inclusive: the receipt breaks the tax out of the
+   *  total instead of adding it as a separate line. */
+  taxInclusive?: boolean;
   total: number;
   paymentMethod: string;
   tendered: number;
@@ -162,10 +165,10 @@ export const receiptPrinterService = {
           <!-- Summary -->
           <div class="row"><span>Subtotal:</span><span>${money(data.subtotal)}</span></div>
           ${data.discount > 0 ? `<div class="row"><span>Discount:</span><span>${money(data.discount)}</span></div>` : ''}
-          <div class="row">
+          ${data.taxInclusive ? '' : `<div class="row">
             <span>Tax${data.taxLabel ? ` (${escape(data.taxLabel)})` : ''}:</span>
             <span>${money(data.tax)}</span>
-          </div>
+          </div>`}
           ${data.loyaltyDiscount && data.loyaltyDiscount > 0
             ? `<div class="row"><span>Points redeemed:</span><span>-${money(data.loyaltyDiscount)}</span></div>`
             : ''}
@@ -176,6 +179,10 @@ export const receiptPrinterService = {
             <span>TOTAL:</span>
             <span>${money(data.total)}</span>
           </div>
+          ${data.taxInclusive ? `
+          <div class="row"><span>Taxable value:</span><span>${money(data.total - data.tax)}</span></div>
+          <div class="row"><span>${data.taxLabel ? escape(data.taxLabel) : 'VAT'} (incl.):</span><span>${money(data.tax)}</span></div>
+          ` : ''}
 
           ${isCash ? `
             <div class="row"><span>Cash:</span><span>${money(data.tendered)}</span></div>

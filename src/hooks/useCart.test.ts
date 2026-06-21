@@ -147,4 +147,21 @@ describe("useCart", () => {
     expect(result.current.taxAmount).toBe(0);
     expect(result.current.total).toBe(50);
   });
+
+  it("extracts VAT from the price in inclusive mode instead of adding it", () => {
+    const taxContext: TaxContext = {
+      taxRates: [
+        { id: "t1", name: "VAT", rate: 0.18, isDefault: true, isActive: true } as TaxContext["taxRates"][number],
+      ],
+      categories: [],
+    };
+    // Third arg = taxInclusive. 100 @ 18% inclusive: VAT = 100 − 100/1.18 = 15.25,
+    // and the customer still pays exactly 100 (tax is inside the price).
+    const { result } = renderHook(() => useCart(taxContext, undefined, true));
+    act(() => result.current.addToCart(makeProduct({ basePrice: 100 })));
+
+    expect(result.current.taxInclusive).toBe(true);
+    expect(result.current.taxAmount).toBeCloseTo(15.25);
+    expect(result.current.total).toBeCloseTo(100);
+  });
 });

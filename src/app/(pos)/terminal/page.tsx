@@ -157,9 +157,10 @@ export default function TerminalPage() {
     discountAmount,
     taxAmount,
     taxLabel,
+    taxInclusive,
     total,
     itemCount,
-  } = useCart(taxContext, selectedBranch?.id);
+  } = useCart(taxContext, selectedBranch?.id, tenantInfo?.taxInclusive ?? true);
 
   // Per-product cart quantities — fed to ProductGrid so it can show "at limit"
   // when a tile's cart count equals the branch stock.
@@ -278,6 +279,7 @@ export default function TerminalPage() {
         // Use the server-computed net (already reduced by any redeemed points) as
         // the receipt total so cash/change/points lines reconcile.
         loyaltyDiscount: data.loyaltyDiscountAmount ?? 0,
+        taxInclusive: data.taxInclusive ?? taxInclusive,
         total: data.netAmount,
         paymentMethod: paymentMethod,
         tendered: cashTendered > 0 ? cashTendered : data.netAmount,
@@ -442,6 +444,7 @@ export default function TerminalPage() {
     tax: Number(sale.taxAmount),
     taxLabel,
     discount: Number(sale.discountAmount),
+    taxInclusive: sale.taxInclusive ?? false,
     total: Number(sale.netAmount),
     paymentMethod: sale.paymentMethod as 'CASH' | 'CARD' | 'ONLINE',
     tendered: Number(sale.amountTendered ?? sale.netAmount),
@@ -641,6 +644,7 @@ export default function TerminalPage() {
           discountAmount={discountAmount}
           taxAmount={taxAmount}
           taxLabel={taxLabel}
+          taxInclusive={taxInclusive}
           total={total}
           itemCount={itemCount}
           onCharge={openTender}
@@ -666,6 +670,7 @@ export default function TerminalPage() {
         discountAmount={discountAmount}
         taxAmount={taxAmount}
         taxLabel={taxLabel}
+        taxInclusive={taxInclusive}
         total={total}
         isProcessing={checkoutMutation.isPending}
         onComplete={handleCheckout}

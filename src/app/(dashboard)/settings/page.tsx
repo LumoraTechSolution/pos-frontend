@@ -81,6 +81,10 @@ export default function SettingsPage() {
   const [loySpend, setLoySpend] = useState("10");
   const [loyValue, setLoyValue] = useState("0.10");
 
+  // Pricing mode: true = shelf prices include VAT (extracted on the invoice),
+  // false = VAT added at the till. Defaults to inclusive (LK convention).
+  const [taxInclusive, setTaxInclusive] = useState(true);
+
   const { data: tenantInfo, isLoading: tenantLoading } = useQuery({
     queryKey: QK.tenantInfo,
     queryFn: () => tenantService.getInfo(),
@@ -97,6 +101,7 @@ export default function SettingsPage() {
       setLoyEnabled(tenantInfo.loyaltyEnabled);
       setLoySpend(String(tenantInfo.loyaltySpendPerPoint ?? 10));
       setLoyValue(String(tenantInfo.loyaltyPointValue ?? 0.1));
+      setTaxInclusive(tenantInfo.taxInclusive ?? true);
     }
   }, [tenantInfo]);
 
@@ -123,6 +128,20 @@ export default function SettingsPage() {
       phone: bizPhone.trim() || null,
       receiptFooter: bizReceiptFooter.trim() || null,
       logoUrl: bizLogoUrl || null,
+    });
+  };
+
+  const handleSetTaxInclusive = (next: boolean) => {
+    if (!tenantInfo || next === taxInclusive) return;
+    setTaxInclusive(next); // optimistic; reverts on refetch if the save fails
+    updateTenantMutation.mutate({
+      name: tenantInfo.name,
+      addressLine1: tenantInfo.addressLine1 ?? null,
+      addressLine2: tenantInfo.addressLine2 ?? null,
+      phone: tenantInfo.phone ?? null,
+      logoUrl: tenantInfo.logoUrl ?? null,
+      receiptFooter: tenantInfo.receiptFooter ?? null,
+      taxInclusive: next,
     });
   };
 
@@ -560,6 +579,46 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {/* Pricing mode: inclusive vs exclusive VAT */}
+          <Card className="bg-background border-border">
+            <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">Pricing mode</p>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  {taxInclusive
+                    ? "Prices include VAT. The marked price is what the customer pays; VAT is broken out on the invoice (Sri Lankan retail convention)."
+                    : "Prices exclude VAT. VAT is added on top of the price at the till."}
+                </p>
+              </div>
+              <div className="flex rounded-xl border border-border overflow-hidden shrink-0 self-start">
+                <button
+                  type="button"
+                  onClick={() => handleSetTaxInclusive(true)}
+                  disabled={updateTenantMutation.isPending}
+                  className={`px-4 py-2 text-sm font-semibold transition-colors ${
+                    taxInclusive
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-transparent text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  Inclusive
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetTaxInclusive(false)}
+                  disabled={updateTenantMutation.isPending}
+                  className={`px-4 py-2 text-sm font-semibold transition-colors border-l border-border ${
+                    !taxInclusive
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-transparent text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  Exclusive
+                </button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

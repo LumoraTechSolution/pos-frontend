@@ -35,6 +35,9 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
   const storeName = tenant?.name || 'STORE';
   const firstName = sale.cashierName?.split(' ')[0] ?? sale.cashierName ?? 'Staff';
   const isCash = sale.paymentMethod === 'CASH';
+  // Inclusive: tax is already inside the prices — break it out below the total
+  // (LK tax-invoice requirement) instead of adding it as a line above.
+  const taxInclusive = sale.taxInclusive ?? false;
 
   // Currency-agnostic number formatting — two decimals, aligns right via tabular-nums.
   const fmt = (n: number) => n.toFixed(2);
@@ -110,10 +113,12 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
             <span>{fmt(sale.discountAmount)}</span>
           </p>
         )}
-        <p className="flex justify-between">
-          <span>Tax{taxLabel ? ` (${taxLabel})` : ''}:</span>
-          <span>{fmt(sale.taxAmount)}</span>
-        </p>
+        {!taxInclusive && (
+          <p className="flex justify-between">
+            <span>Tax{taxLabel ? ` (${taxLabel})` : ''}:</span>
+            <span>{fmt(sale.taxAmount)}</span>
+          </p>
+        )}
         {(sale.loyaltyDiscountAmount ?? 0) > 0 && (
           <p className="flex justify-between">
             <span>Points redeemed:</span>
@@ -128,6 +133,19 @@ export const Receipt = forwardRef<HTMLDivElement, ReceiptProps>(function Receipt
         <span>TOTAL:</span>
         <span>{fmt(sale.netAmount)}</span>
       </p>
+
+      {taxInclusive && (
+        <div className="mt-1">
+          <p className="flex justify-between">
+            <span>Taxable value:</span>
+            <span>{fmt(sale.netAmount - sale.taxAmount)}</span>
+          </p>
+          <p className="flex justify-between">
+            <span>{taxLabel || 'VAT'} (incl.):</span>
+            <span>{fmt(sale.taxAmount)}</span>
+          </p>
+        </div>
+      )}
 
       {isCash ? (
         <div className="mt-1">

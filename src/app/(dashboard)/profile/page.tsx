@@ -28,7 +28,7 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="p-8 space-y-6 animate-in fade-in duration-500 max-w-3xl">
+    <div className="p-8 space-y-6 animate-in fade-in duration-500 max-w-5xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
         <p className="text-muted-foreground mt-1">Your account details and security settings.</p>
@@ -39,11 +39,13 @@ export default function ProfilePage() {
           <Loader2 className="animate-spin" size={18} /> Loading profile…
         </div>
       ) : (
-        <>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <DetailsCard profile={profile} onSaved={refetch} />
-          <ChangePasswordCard />
-          <ChangePinCard hasPin={profile.hasPin} onSaved={refetch} />
-        </>
+          <div className="space-y-6">
+            <ChangePasswordCard />
+            <ChangePinCard hasPin={profile.hasPin} onSaved={refetch} />
+          </div>
+        </div>
       )}
     </div>
   );
